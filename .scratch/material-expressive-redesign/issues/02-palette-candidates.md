@@ -4,14 +4,16 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] 2–3 candidates, each with light and dark variants, covering every theme role the app uses
 - [x] Candidates switchable in the running web app without code edits between them
 - [x] Each candidate meets M3 contrast for text on its surfaces
-- [ ] User has chosen a candidate (record the choice under `## Comments`)
+- [x] User has chosen a candidate (record the choice under `## Comments`)
 
 ## Comments
+
+**Decision (2026-10-30):** user chose **candidate A · Fidelity** (seed `#850122`, logo red). Ticket 03 applies A as the app palette.
 
 **How to switch (no code edits):** run the web app, log in, open **Settings → Appearance → Color theme**. Below the usual entries there are six extra ones, `M3 candidate A · Fidelity (light)` … `M3 candidate C · Tonal (dark)`. Picking one applies it immediately and it is remembered across reloads (stored like any other theme preference). Pick `Light` / `Dark` / `Automatic` to go back. The entries only appear in the Mail app (not Calendar/Drive).
 
