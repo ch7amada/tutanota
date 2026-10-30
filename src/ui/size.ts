@@ -153,6 +153,15 @@ export const component_shape = {
 	get button(): number {
 		return shape.full
 	},
+	/**
+	 * While pressed, buttons tighten their pill corners and spring back on release (M3 Expressive shape morph).
+	 * The pressed corner grows with the button: small up to 40px height, medium up to 56px, large above.
+	 */
+	button_pressed(buttonHeight: number): number {
+		if (buttonHeight <= 40) return shape.small
+		if (buttonHeight <= 56) return shape.medium
+		return shape.large
+	},
 	/** Chips, bubbles, counter badges */
 	get chip(): number {
 		return shape.full

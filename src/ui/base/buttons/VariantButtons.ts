@@ -3,11 +3,13 @@ import m, { Children, ClassComponent, Vnode } from "mithril"
 import { BaseButton, BaseButtonAttrs } from "./BaseButton.js"
 import { lang } from "../../utils/LanguageViewModel.js"
 import { DefaultAnimationTime } from "../../animation/Animations.js"
+import { springTransition } from "../../animation/Motion.js"
 import { ButtonSize, ButtonVariant, ButtonWidth, resolveButtonClasses } from "./ButtonStyles.js"
 import { AllIcons, Icon, IconSize } from "../Icon"
 import { theme } from "../../theme"
 
-const BUTTON_TRANSITION = `background ${DefaultAnimationTime}ms ease-in-out, color ${DefaultAnimationTime}ms ease-in-out, opacity ${DefaultAnimationTime}ms ease-in-out`
+// border-radius: the press morph, see buttonPressMorphStyles() in main-styles.ts
+const BUTTON_TRANSITION = `background ${DefaultAnimationTime}ms ease-in-out, color ${DefaultAnimationTime}ms ease-in-out, opacity ${DefaultAnimationTime}ms ease-in-out, ${springTransition("fast_spatial", "border-radius")}`
 
 export interface CommonButtonAttrs extends Omit<BaseButtonAttrs, "icon"> {
 	icon?: AllIcons | Children

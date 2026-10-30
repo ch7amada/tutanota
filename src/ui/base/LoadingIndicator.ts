@@ -1,6 +1,7 @@
 import m, { Children, Component, Vnode } from "mithril"
 import { theme } from "../theme"
 import { LOADING_INDICATOR_VIEWBOX, loadingIndicatorPaths } from "./LoadingIndicatorShapes.js"
+import { prefersReducedMotion } from "../animation/Motion.js"
 
 export type LoadingIndicatorAttrs = {
 	/** extra classes for the container, e.g. a size class like "icon-24" (defaults to the 16px `.icon` size, same as {@link Icon}) */
@@ -17,16 +18,6 @@ const GLOBAL_ROTATION_DURATION_MS = 4666
 const MORPH_EASING = "0.2 0 0 1"
 
 const CENTER = LOADING_INDICATOR_VIEWBOX / 2
-
-let reducedMotionQuery: MediaQueryList | null | undefined
-
-function prefersReducedMotion(): boolean {
-	if (reducedMotionQuery === undefined) {
-		reducedMotionQuery =
-			typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null
-	}
-	return reducedMotionQuery?.matches ?? false
-}
 
 type Animation = {
 	morph: { values: string; keyTimes: string; keySplines: string; dur: string }

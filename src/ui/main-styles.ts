@@ -7,6 +7,7 @@ import { BaseThemeProvider, getElevatedBackground, getNavigationMenuBg, isLightT
 import { hexToRGBAString } from "./base/Color"
 import { goEuropeanBlue } from "./builtinThemes"
 import { DefaultAnimationTime } from "./animation/Animations"
+import { reducedMotionSpringCustomProperties, springCssVars, springCustomProperties, springTransition } from "./animation/Motion"
 import { FontIcons } from "./base/icons/FontIcons"
 import type { IWindowFacade } from "./IWindowFacade.js"
 import { ClientDetector } from "../platform-kit/app-env/boot/ClientDetector"
@@ -51,6 +52,46 @@ function typeScaleClasses(): Record<string, Record<string, string | number>> {
 		classes[`.${role}-emphasized`] = typeRoleStyle(role, true)
 	}
 	return classes
+}
+
+/**
+ * M3 Expressive press morph: a pressed button tightens its pill corners ({@link component_shape.button_pressed}) and the fast spatial
+ * spring brings them back. At rest these buttons get half their height as radius instead of the 9999px "full" radius (same pill),
+ * otherwise the transition from 9999px would only become visible at its very end.
+ */
+function buttonPressMorphStyles(): Record<string, any> {
+	const buttons: Array<[string, number]> = [
+		// legacy Button, OutlineButton, option dialogs (and the variant buttons, overridden by their size below)
+		[".shape-button:is(.button-content, .button-height)", component_size.button_height],
+		// PrimaryButton, SecondaryButton, TertiaryButton
+		[".shape-button.base-button-sm", component_size.button_height_sm],
+		[".shape-button.base-button-md", component_size.button_height_md],
+		[".shape-button.base-button-lg", component_size.button_height_lg],
+		// IconButton; the large one is a FAB, which keeps its shape
+		[".icon-button:not(.large)", component_size.button_height],
+		[".icon-button-small", component_size.button_height_sm],
+	]
+	const radiusTransition = springTransition("fast_spatial", "border-radius")
+	const styles: Record<string, any> = {
+		// the variant buttons set their transition inline (VariantButtons.ts), these keep the existing transitions of the others
+		".shape-button:is(.button-content, .button-height)": {
+			transition: `opacity ${DefaultAnimationTime}ms, ${radiusTransition}`,
+		},
+		".icon-button.state-bg, .icon-button-small.state-bg": {
+			transition: `background 0.6s, ${radiusTransition}`,
+		},
+		".icon-button.state-bg:is(:hover, :focus, :active), .icon-button-small.state-bg:is(:hover, :focus, :active)": {
+			"transition-duration": `.3s, ${springCssVars("fast_spatial").duration}`,
+		},
+	}
+	const pressed: Record<string, any> = {}
+	for (const [selector, height] of buttons) {
+		styles[selector] = { ...styles[selector], "border-radius": px(height / 2) }
+		pressed[`${selector}:active:not(:disabled, .disabled)`] = { "border-radius": px(component_shape.button_pressed(height)) }
+	}
+	// no morph at all with reduced motion
+	styles["@media (prefers-reduced-motion: no-preference)"] = pressed
+	return styles
 }
 
 export const boxShadowHigh = `0 10px 20px rgba(0,0,0,0.10), 0 6px 6px rgba(0,0,0,0.10)`
@@ -191,6 +232,11 @@ export class MainStyles {
 					"--safe-area-inset-top": EnvProvider.get().isAndroidApp() ? "var(--safe-area-inset-top)" : "env(safe-area-inset-top)",
 					"--safe-area-inset-right": EnvProvider.get().isAndroidApp() ? "var(--safe-area-inset-right)" : "env(safe-area-inset-right)",
 					"--safe-area-inset-left": EnvProvider.get().isAndroidApp() ? "var(--safe-area-inset-left)" : "env(safe-area-inset-left)",
+					// spring motion tokens (--motion-<token> and --motion-<token>-duration), see Motion.ts
+					...springCustomProperties("fallback"),
+				},
+				"@supports (transition-timing-function: linear(0, 1))": {
+					":root": springCustomProperties("linear"),
 				},
 				"html, body": {
 					height: "100%",
@@ -1598,11 +1644,13 @@ export class MainStyles {
 					"transform-origin": "50% 50%",
 					display: "inline-block",
 				},
-				// spinners use LoadingIndicator (which handles reduced motion itself); this only stops the remaining decorative rotating icons
+				// spinners use LoadingIndicator (which handles reduced motion itself); this stops the remaining decorative rotating icons
+				// and makes every spring transition (--motion-*) instant
 				"@media (prefers-reduced-motion: reduce)": {
 					".icon-progress > svg": {
 						"animation-name": "none",
 					},
+					":root": reducedMotionSpringCustomProperties(),
 				},
 				".icon-button": {
 					"border-radius": px(component_shape.button),
@@ -3520,6 +3568,7 @@ export class MainStyles {
 				".tutaui-button-ghost:active": {
 					"background-color": theme.state_bg_active,
 				},
+				...buttonPressMorphStyles(),
 				".login-textfield": {
 					"background-color": theme.surface_container_high,
 					"transition-property": "border-radius, background-color",
