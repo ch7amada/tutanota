@@ -53,6 +53,7 @@ import { DesktopListToolbar, DesktopViewerToolbar } from "../../../../ui/Desktop
 import { MobileHeader } from "../../../../ui/MobileHeader.js"
 import { MailQuickSearchBar } from "./MailQuickSearchBar.js"
 import { MultiselectMobileHeader } from "../../../../ui/MultiselectMobileHeader.js"
+import { MailListMobileHeader } from "./MailListMobileHeader.js"
 import { MailViewModel } from "./MailViewModel.js"
 import { selectionAttrsForList } from "../../../common/misc/ListModel.js"
 import { ListLoadingState, MultiselectMode } from "../../../../ui/base/List.js"
@@ -306,27 +307,7 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 									}),
 								)
 							: null,
-						mobileHeader: () =>
-							this.mailViewModel.listModel?.isInMultiselect()
-								? m(MultiselectMobileHeader, {
-										...selectionAttrsForList(this.mailViewModel.listModel),
-										message: getMailSelectionMessage(this.mailViewModel.listModel.getSelectedAsArray()),
-									})
-								: m(MobileHeader, {
-										...vnode.attrs.header,
-										title: this.listColumn.getTitle(),
-										columnType: "first",
-										actions: [
-											this.renderFilterButton(),
-											m(EnterMultiselectIconButton, {
-												clickAction: () => {
-													this.mailViewModel.listModel?.enterMultiselect()
-												},
-											}),
-										],
-										primaryAction: () => this.renderHeaderRightView(),
-										backAction: () => this.viewSlider.focusPreviousColumn(),
-									}),
+						mobileHeader: () => this.renderListMobileHeader(vnode.attrs.header),
 					})
 				},
 			},
@@ -871,6 +852,47 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 		} else {
 			return null
 		}
+	}
+
+	private renderListMobileHeader(header: AppHeaderAttrs): Children {
+		const listModel = this.mailViewModel.listModel
+		const selectionHeader = listModel?.isInMultiselect()
+			? m(MultiselectMobileHeader, {
+					...selectionAttrsForList(listModel),
+					message: getMailSelectionMessage(listModel.getSelectedAsArray()),
+				})
+			: null
+		const actions = [
+			this.renderFilterButton(),
+			m(EnterMultiselectIconButton, {
+				clickAction: () => {
+					this.mailViewModel.listModel?.enterMultiselect()
+				},
+			}),
+		]
+
+		// search is not available for external users, they keep the plain header
+		if (locator.logins.isInternalUserLoggedIn()) {
+			return m(MailListMobileHeader, {
+				...header,
+				title: this.listColumn.getTitle(),
+				actions,
+				primaryAction: () => this.renderHeaderRightView(),
+				backAction: () => this.viewSlider.focusPreviousColumn(),
+				selectionHeader,
+			})
+		}
+		return (
+			selectionHeader ??
+			m(MobileHeader, {
+				...header,
+				title: this.listColumn.getTitle(),
+				columnType: "first",
+				actions,
+				primaryAction: () => this.renderHeaderRightView(),
+				backAction: () => this.viewSlider.focusPreviousColumn(),
+			})
+		)
 	}
 
 	private renderHeaderRightView(): Children {

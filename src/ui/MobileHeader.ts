@@ -114,7 +114,7 @@ export const MobileHeaderTitle = pureComponent(({ title, bottom, onTap }: { titl
 	])
 })
 
-export const MobileHeaderMenuButton = pureComponent((attrs: Pick<MobileHeaderAttrs, "newsItemsCount" | "backAction">) => {
+export const MobileHeaderMenuButton = pureComponent((attrs: Pick<MobileHeaderAttrs, "newsItemsCount" | "backAction"> & { style?: Record<string, string> }) => {
 	return m(".rel", [
 		m(IconButton, {
 			label: "menu_label",
@@ -122,6 +122,7 @@ export const MobileHeaderMenuButton = pureComponent((attrs: Pick<MobileHeaderAtt
 			click: () => {
 				attrs.backAction()
 			},
+			style: attrs.style,
 		}),
 		m(CounterBadge, {
 			count: attrs.newsItemsCount(),
