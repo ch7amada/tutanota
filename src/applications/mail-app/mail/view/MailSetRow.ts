@@ -1,9 +1,8 @@
 import m, { Children, Component, Vnode } from "mithril"
 import type { NavButtonAttrs } from "../../../../ui/base/NavButton.js"
-import { isNavButtonSelected, NavButton } from "../../../../ui/base/NavButton.js"
-import { CounterBadge } from "../../../../ui/base/CounterBadge"
+import { getDrawerItemColors, getDrawerItemHeight, isNavButtonSelected, NavButton } from "../../../../ui/base/NavButton.js"
 import { theme } from "../../../../ui/theme"
-import { component_size, px, size } from "../../../../ui/size"
+import { px, size } from "../../../../ui/size"
 import { IconButton, IconButtonAttrs } from "../../../../ui/base/IconButton.js"
 import { Icon, IconAttrs } from "../../../../ui/base/Icon.js"
 import { Icons } from "../../../../ui/base/icons/Icons.js"
@@ -58,14 +57,18 @@ export class MailSetRow implements Component<MailSetRowAttrs> {
 		}
 
 		const indentationMargin = indentationLevel * size.spacing_12
-		const paddingNeeded = size.spacing_8
-		const buttonWidth = size.icon_24 + paddingNeeded * 2
+		// M3 navigation drawer item: 16px before the icon, 12px between icon and label (the NavButton adds 8px itself)
+		const paddingStart = size.spacing_16
+		const paddingEnd = size.spacing_4
+		const buttonWidth = paddingStart + size.icon_24 + paddingEnd
+		const rowHeight = getDrawerItemHeight()
+		const colors = getDrawerItemColors(isNavButtonSelected(button))
 
 		return m(
-			".folder-row.flex.flex-row.mlr-8.border-radius-4.state-bg",
+			".folder-row.flex.flex-row.mlr-12.shape-navigation-drawer-item.state-bg",
 			{
 				style: {
-					background: isNavButtonSelected(button) ? theme.state_bg_hover : "",
+					background: colors.background,
 				},
 				title: lang.getTranslationText(button.label),
 				onmouseenter: onHover,
@@ -81,9 +84,10 @@ export class MailSetRow implements Component<MailSetRowAttrs> {
 					? m(Icon, {
 							style: {
 								position: "absolute",
-								bottom: px(9),
-								left: px(5 + indentationMargin + buttonWidth / 2),
-								fill: isNavButtonSelected(button) ? theme.primary : theme.on_surface_variant,
+								// bottom right corner of the folder icon
+								bottom: px((rowHeight - size.icon_24) / 2 - 1),
+								left: px(indentationMargin + paddingStart + size.icon_24 / 2 + 5),
+								fill: colors.content,
 							},
 							icon: Icons.Plus,
 							class: "icon-small",
@@ -94,16 +98,16 @@ export class MailSetRow implements Component<MailSetRowAttrs> {
 						marginLeft: px(indentationMargin),
 					},
 				}),
-				this.renderHierarchyLine(vnode.attrs, indentationMargin),
+				this.renderHierarchyLine(vnode.attrs, indentationMargin, paddingStart, rowHeight),
 				m(
 					"button.flex.items-center.justify-end" + (editMode ? ".no-hover" : ""),
 					{
 						style: {
 							left: px(indentationMargin),
 							width: px(buttonWidth),
-							height: px(component_size.button_height),
-							paddingLeft: px(paddingNeeded),
-							paddingRight: px(paddingNeeded),
+							height: px(rowHeight),
+							paddingLeft: px(paddingStart),
+							paddingRight: px(paddingEnd),
 							// the zIndex is so the hierarchy lines never get drawn over the icon
 							zIndex: 3,
 						},
@@ -131,25 +135,27 @@ export class MailSetRow implements Component<MailSetRowAttrs> {
 							},
 							onkeydown: handleForwardsTab,
 						})
-					: m("", { style: { marginRight: px(size.spacing_8) } }, [
-							m(CounterBadge, {
-								count,
-								color: theme.surface_container,
-								background: theme.on_surface_variant,
-								showFullCount: true,
-							}),
-						]),
+					: // M3 navigation drawer badge: plain label text at the end of the item
+						count > 0
+						? m(".label-l.pr-24", { style: { color: colors.content } }, count)
+						: null,
 			],
 		)
 	}
 
-	private renderHierarchyLine({ indentationLevel, numberOfPreviousRows, isLastSibling, onSelectedPath }: MailSetRowAttrs, indentationMargin: number) {
+	private renderHierarchyLine(
+		{ indentationLevel, numberOfPreviousRows, isLastSibling, onSelectedPath }: MailSetRowAttrs,
+		indentationMargin: number,
+		paddingStart: number,
+		rowHeight: number,
+	) {
 		const lineSize = 1
 		const border = `${lineSize}px solid ${theme.outline}`
-		const verticalOffsetInsideRow = component_size.button_height / 2 + 1
-		const verticalOffsetForParent = (component_size.button_height - size.icon_24) / 2
+		const verticalOffsetInsideRow = rowHeight / 2 + 1
+		const verticalOffsetForParent = (rowHeight - size.icon_24) / 2
 		const lengthOfHorizontalLine = size.spacing_12 - 2
-		const leftOffset = indentationMargin
+		// the line starts below the parent's icon, which is indented by one level less
+		const leftOffset = indentationMargin + paddingStart - size.spacing_8
 
 		return indentationLevel !== 0
 			? [
@@ -161,8 +167,8 @@ export class MailSetRow implements Component<MailSetRowAttrs> {
 									borderBottomLeftRadius: "3px",
 									// there's some subtle difference between border we use here and the top for the other element and this +1 is to
 									// accommodate it
-									height: px(1 + verticalOffsetInsideRow + verticalOffsetForParent + numberOfPreviousRows * component_size.button_height),
-									top: px(-verticalOffsetForParent - numberOfPreviousRows * component_size.button_height),
+									height: px(1 + verticalOffsetInsideRow + verticalOffsetForParent + numberOfPreviousRows * rowHeight),
+									top: px(-verticalOffsetForParent - numberOfPreviousRows * rowHeight),
 									left: px(leftOffset),
 									borderLeft: border,
 									borderBottom: border,

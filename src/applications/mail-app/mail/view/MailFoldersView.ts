@@ -4,7 +4,7 @@ import { locator } from "../../../common/api/main/CommonLocator.js"
 import { SidebarSection } from "../../../../ui/SidebarSection.js"
 import { IconButton } from "../../../../ui/base/IconButton.js"
 import { FolderSubtree, FolderSystem } from "../../../common/api/common/mail/FolderSystem.js"
-import { isNavButtonSelected, isSelectedPrefix } from "../../../../ui/base/NavButton.js"
+import { getDrawerItemColors, getDrawerItemHeight, isNavButtonSelected, isSelectedPrefix } from "../../../../ui/base/NavButton.js"
 import { MAIL_PREFIX } from "../../../../ui/utils/RouteChange.js"
 import { isNotEmpty } from "../../../../platform-kit/utils"
 import { DropdownButtonAttrs } from "../../../../ui/base/Dropdown.js"
@@ -15,7 +15,6 @@ import { RowButton } from "../../../../ui/base/buttons/RowButton.js"
 import { MailModel } from "../model/MailModel.js"
 import { getMailSetName } from "../model/MailUtils.js"
 import { DropData } from "../../../../ui/base/GuiUtils"
-import { theme } from "../../../../ui/theme.js"
 import { MailSet } from "@tutao/entities/tutanota"
 import { elementIdPart, elementIdToId, getElementId } from "../../../../platform-kit/meta"
 import { getFolderIcon } from "./MailGuiUtils"
@@ -85,7 +84,7 @@ export class MailFoldersView implements Component<MailFolderViewAttrs> {
 				icon: getFolderIcon(mailSet),
 				size: IconSize.PX24,
 				style: {
-					fill: button && isNavButtonSelected(button) ? theme.primary : theme.on_surface_variant,
+					fill: getDrawerItemColors(button != null && isNavButtonSelected(button)).content,
 				},
 			}),
 			getFolderName(system: FolderSubtree): string {
@@ -141,9 +140,12 @@ export class MailFoldersView implements Component<MailFolderViewAttrs> {
 			label: "addFolder_action",
 			key: "addFolder",
 			icon: Icons.Plus,
-			class: "folder-row mlr-8 border-radius-4",
+			class: "folder-row mlr-12 shape-navigation-drawer-item",
 			style: {
-				width: `calc(100% - ${px(size.spacing_8 * 2)})`,
+				width: `calc(100% - ${px(size.spacing_12 * 2)})`,
+				height: px(getDrawerItemHeight()),
+				// align the icon with the folder icons
+				paddingLeft: px(size.spacing_16),
 			},
 			onclick: () => {
 				attrs.onShowFolderAddEditDialog(elementIdToId(attrs.mailboxDetail.mailGroup._id), null, null)

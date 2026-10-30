@@ -90,12 +90,15 @@ export class ViewColumn implements Component<Attrs> {
 	}
 
 	view(vnode: Vnode<Attrs>): Children {
-		const zIndex = !this.isVisible && this.columnType === ColumnType.Foreground ? LayerType.ForegroundMenu + 1 : ""
+		// a foreground column that is not part of the visible columns slides in over the others as a modal drawer
+		const isModalDrawer = !this.isVisible && this.columnType === ColumnType.Foreground
+		const zIndex = isModalDrawer ? LayerType.ForegroundMenu + 1 : ""
 		const landmark = this.ariaRole ? landmarkAttrs(this.ariaRole, this.ariaLabel()) : {}
 		return m(
 			".view-column.fill-absolute",
 			{
 				...landmark,
+				class: isModalDrawer ? "modal-drawer" : undefined,
 				tabindex: TabIndex.Programmatic,
 				"data-testid": `section:${this.testId ?? lang.getTranslationText(this.getTitle())}`,
 				inert: this.notInteractable(),

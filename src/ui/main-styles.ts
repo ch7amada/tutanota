@@ -1972,6 +1972,18 @@ export class MainStyles {
 					"align-items": "center",
 					position: "relative",
 				},
+				// M3 navigation drawer: on narrow layouts the folder column is shown as a modal drawer over the content
+				".modal-drawer": {
+					"border-top-right-radius": px(component_shape.navigation_drawer),
+					"border-bottom-right-radius": px(component_shape.navigation_drawer),
+					overflow: "hidden",
+				},
+				".modal-drawer .navigation-drawer": {
+					"background-color": theme.surface_container_low,
+				},
+				".shape-navigation-drawer-item": {
+					"border-radius": px(component_shape.navigation_drawer_item),
+				},
 				".template-list-row": {
 					"border-left": px(size.radius_4) + " solid transparent",
 					"align-items": "center",
