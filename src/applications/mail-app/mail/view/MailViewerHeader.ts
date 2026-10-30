@@ -33,10 +33,11 @@ import { companyTeamLabel } from "../../../../platform-kit/app-env/boot/ClientCo
 import { getMailAddressDisplayText, isTutaTeamMail } from "../../../common/mailFunctionality/SharedMailUtils.js"
 import { MailAddressAndName } from "../../../common/api/common/CommonMailUtils.js"
 import { Label } from "../../../../ui/base/Label.js"
-import { px, size } from "../../../../ui/size.js"
+import { component_size, px, size } from "../../../../ui/size.js"
 import { highlightTextInQueryAsChildren } from "../../../../ui/TextHighlightViewUtils"
 import { EventBanner, EventBannerAttrs } from "./EventBanner"
 import { getGroupColors } from "../../../common/misc/GroupColors"
+import { AVATAR_DEFAULT_SIZE, SenderAvatar } from "../../../../ui/base/SenderAvatar.js"
 import { getTimeFormatForUser } from "../../../common/api/common/utils/UserUtils"
 import { File } from "@tutao/entities/tutanota"
 import { InboxRuleType, NewsletterBannerRule } from "../../../../entities/tutanota/Utils"
@@ -46,6 +47,9 @@ import { DownloadPostProcessing } from "../../../common/file/FileController"
 import { elementIdToId } from "@tutao/meta"
 import { contextDropdown } from "../../../../ui/base/GuiUtils"
 import { ExtensionPoint, PluginLanguageCode } from "../../../../plugin-kit/sdk/hostApi/PluginHostApi"
+
+/** Indent of the lines under the sender name so they line up with it, next to the avatar. */
+const SENDER_AVATAR_INDENT = AVATAR_DEFAULT_SIZE + size.spacing_12
 
 export type MailAddressDropdownCreator = (args: {
 	mailAddress: MailAddressAndName
@@ -157,22 +161,10 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 
 		const displayedSender = viewModel.getDisplayedSender()
 		return m(
-			".flex.mt-4.click.col",
+			".flex.col",
 			{
 				class: responsiveCardHMargin(),
-				role: "button",
-				"aria-pressed": String(this.detailsExpanded),
-				"aria-expanded": String(this.detailsExpanded),
-				tabindex: TabIndex.Default,
-				onclick: () => {
-					this.detailsExpanded = !this.detailsExpanded
-				},
-				onkeydown: (e: KeyboardEvent) => {
-					if (isKeyPressed(e.key, Keys.SPACE, Keys.RETURN)) {
-						this.detailsExpanded = !this.detailsExpanded
-						e.preventDefault()
-					}
-				},
+				style: { paddingLeft: px(SENDER_AVATAR_INDENT) },
 			},
 			[
 				displayedSender == null
@@ -180,8 +172,8 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 					: m(".small.flex.flex-wrap.items-start", [
 							m("span.text-break", this.renderAddress(attrs.viewModel, displayedSender.name, displayedSender.address)),
 						]),
-				m(".flex", [
-					this.getRecipientEmailAddress(attrs),
+				m(".flex.items-center", [
+					this.renderDetailsToggle(attrs),
 					m(".flex-grow"),
 					m(".flex.items-center.white-space-pre.ml-8.ml-between-4", {
 						// Orca refuses to read ut unless it's not focusable
@@ -231,7 +223,7 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 
 		return m(classes, [
 			m(
-				".flex.flex-grow.align-self-start.items-start.overflow-hidden",
+				".flex.flex-grow.align-self-start.items-center.overflow-hidden",
 				{
 					class: Styles.get().isSingleColumnLayout() ? "mt-12" : "mt-16",
 					role: "button",
@@ -251,6 +243,7 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 					},
 				},
 				[
+					this.renderSenderAvatar(viewModel),
 					viewModel.isUnread() ? this.renderUnreadDot() : null,
 					viewModel.isEditableDraft()
 						? m(
@@ -285,6 +278,13 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 				this.moreButton(attrs),
 			),
 		])
+	}
+
+	/** Same avatar as in the mail list; decorative, the sender name next to it is the label. */
+	private renderSenderAvatar(viewModel: MailViewerViewModel): Children {
+		const sender = viewModel.getDisplayedSender()
+		if (sender == null) return null
+		return m(".flex-no-grow.no-shrink", { style: { marginRight: px(size.spacing_12) } }, m(SenderAvatar, { address: sender.address, name: sender.name }))
 	}
 
 	private renderUnreadDot(): Children {
@@ -877,13 +877,51 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 		})
 	}
 
+	/**
+	 * Compact "to: me +2 ▾" button that shows and hides the details (all recipients, full addresses, envelope sender).
+	 * Security indicators (confidential marker, banners) are rendered outside of the collapsed part so they stay visible.
+	 */
+	private renderDetailsToggle(attrs: MailViewerHeaderAttrs): Children {
+		const recipient = this.getRecipientEmailAddress(attrs)
+		return m(
+			"button.flex.items-center.click.state-bg.border-radius-8",
+			{
+				style: {
+					// full touch target, the negative margin keeps the text aligned with the sender name
+					minHeight: px(component_size.button_height_md),
+					minWidth: "20px",
+					marginLeft: px(-size.spacing_4),
+					padding: `0 ${px(size.spacing_4)}`,
+					color: theme.on_surface_variant,
+				},
+				"aria-expanded": String(this.detailsExpanded),
+				title: lang.get("details_label"),
+				onclick: () => {
+					this.detailsExpanded = !this.detailsExpanded
+				},
+			},
+			recipient === "" ? m(".flex.small.items-center.ml-between-4", [m("", lang.get("details_label")), this.renderExpandIcon()]) : recipient,
+		)
+	}
+
+	private renderExpandIcon(): Children {
+		return m(Icon, {
+			icon: Icons.ArrowDown,
+			container: "div",
+			style: {
+				fill: theme.on_surface_variant,
+				transform: this.detailsExpanded ? "rotate(180deg)" : "",
+			},
+		})
+	}
+
 	getRecipientEmailAddress({ viewModel }: MailViewerHeaderAttrs): Children {
 		const relevantRecipient = viewModel.getRelevantRecipient()
 
 		if (relevantRecipient) {
 			const numberOfAllRecipients = viewModel.getNumberOfRecipients()
 			return m(
-				".flex.click.small.ml-between-4.items-center",
+				".flex.small.ml-between-4.items-center",
 				{
 					style: {
 						// use this to allow the container to shrink, otherwise it doesn't want to cut the recipient address
@@ -893,17 +931,7 @@ export class MailViewerHeader implements Component<MailViewerHeaderAttrs> {
 				[
 					m("", lang.get("mailViewerRecipients_label")),
 					m(".text-ellipsis", this.renderAddress(viewModel, "", relevantRecipient.address)),
-					m(".flex.no-wrap", [
-						numberOfAllRecipients > 1 ? `+ ${numberOfAllRecipients - 1}` : null,
-						m(Icon, {
-							icon: Icons.ArrowDown,
-							container: "div",
-							style: {
-								fill: theme.on_surface,
-								transform: this.detailsExpanded ? "rotate(180deg)" : "",
-							},
-						}),
-					]),
+					m(".flex.no-wrap", [numberOfAllRecipients > 1 ? `+ ${numberOfAllRecipients - 1}` : null, this.renderExpandIcon()]),
 				],
 			)
 		} else {

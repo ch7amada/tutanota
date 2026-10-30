@@ -161,8 +161,9 @@ export class MailViewer implements Component<MailViewerAttrs> {
 
 		return [
 			m(".mail-viewer.overflow-x-hidden", [
-				this.renderMailHeader(vnode.attrs),
+				// subject first, above the sender row (M3 Expressive / Gmail reading layout)
 				this.renderMailSubject(vnode.attrs),
+				this.renderMailHeader(vnode.attrs),
 				m(
 					".flex-grow.scroll-x.pt-16.pb-16.border-radius-12" + (forceWhiteBackground ? ".bg-white.content-black" : ""),
 					{
@@ -180,7 +181,7 @@ export class MailViewer implements Component<MailViewerAttrs> {
 
 	private renderMailSubject(attrs: MailViewerAttrs) {
 		return m(
-			"h4.font-weight-600.mt-16.mb-16.text-break.selectable." + responsiveCardHMargin(),
+			"h4.headline-s-emphasized.mt-16.mb-4.text-break.selectable." + responsiveCardHMargin(),
 			{
 				"data-testid": `h:${lang.getTestId("subject_label")}`,
 			},
