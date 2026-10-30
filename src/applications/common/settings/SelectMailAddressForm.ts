@@ -4,7 +4,7 @@ import { lang } from "../../../ui/utils/LanguageViewModel.js"
 import { isMailAddress } from "../../../platform-kit/utils/FormatUtils.js"
 import { AccessDeactivatedError } from "@tutao/rest-client/error"
 import { formatMailAddressFromParts } from "../../../ui/utils/Formatter.js"
-import { Icon } from "../../../ui/base/Icon.js"
+import { LoadingIndicator } from "../../../ui/base/LoadingIndicator.js"
 import { locator } from "../api/main/CommonLocator.js"
 import { EnvProvider } from "@tutao/app-env"
 import { font_size, px } from "../../../ui/size.js"
@@ -135,9 +135,8 @@ export class SelectMailAddressForm implements Component<SelectMailAddressFormAtt
 	}
 
 	private progressIcon(): Children {
-		return m(Icon, {
-			icon: Icons.Sync,
-			class: "icon-progress mr-8",
+		return m(LoadingIndicator, {
+			class: "mr-8",
 		})
 	}
 

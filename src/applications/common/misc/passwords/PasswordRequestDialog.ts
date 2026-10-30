@@ -7,8 +7,7 @@ import { MaybeTranslation, TranslationKey } from "../../../../ui/utils/LanguageV
 import { Dialog, INPUT } from "../../../../ui/base/Dialog.js"
 import m from "mithril"
 import { Autocomplete } from "../../../../ui/base/LegacyTextField.js"
-import { Icon } from "../../../../ui/base/Icon.js"
-import { Icons } from "../../../../ui/base/icons/Icons"
+import { LoadingIndicator } from "../../../../ui/base/LoadingIndicator.js"
 
 export function showRequestPasswordDialog(props: {
 	title?: MaybeTranslation
@@ -46,9 +45,8 @@ export function showRequestPasswordDialog(props: {
 							onReturnKeyPressed: () => doAction(),
 						} satisfies PasswordFieldAttrs),
 					])
-				: m(Icon, {
-						icon: Icons.Sync,
-						class: "icon-32 icon-progress block mt-16 mb-16",
+				: m(LoadingIndicator, {
+						class: "icon-32 block mt-16 mb-16",
 						style: {
 							marginLeft: "auto",
 							marginRight: "auto",

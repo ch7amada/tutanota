@@ -1540,6 +1540,12 @@ export class MainStyles {
 					"transform-origin": "50% 50%",
 					display: "inline-block",
 				},
+				// spinners use LoadingIndicator (which handles reduced motion itself); this only stops the remaining decorative rotating icons
+				"@media (prefers-reduced-motion: reduce)": {
+					".icon-progress > svg": {
+						"animation-name": "none",
+					},
+				},
 				".icon-button": {
 					"border-radius": "25%",
 					width: px(component_size.button_height),

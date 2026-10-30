@@ -13,7 +13,7 @@ import { IconButton } from "../../../ui/base/IconButton"
 import { Icons } from "../../../ui/base/icons/Icons"
 import { ButtonSize } from "../../../ui/base/ButtonSize"
 import { PrimaryButton } from "../../../ui/base/buttons/VariantButtons.js"
-import { Icon, IconSize } from "../../../ui/base/Icon"
+import { LoadingIndicator } from "../../../ui/base/LoadingIndicator"
 import { ExpanderButton, ExpanderPanel } from "../../../ui/base/Expander"
 import { ColumnWidth, Table } from "../../../ui/base/Table"
 
@@ -105,10 +105,8 @@ export class MailExportSettings implements Component<MailExportSettingsAttrs> {
 						}),
 					),
 			m(".flex-space-between.border-radius-12.mt-8.rel.nav-bg.full-width.center-vertically", [
-				m(Icon, {
-					icon: Icons.Sync,
-					class: "flex-center items-center icon-progress-tiny icon-progress ml-8",
-					size: IconSize.PX24,
+				m(LoadingIndicator, {
+					class: "icon-24 flex-center items-center icon-progress-tiny ml-8",
 				}),
 				m(IconButton, {
 					label: "cancel_action",
