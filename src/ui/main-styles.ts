@@ -1901,6 +1901,47 @@ export class MainStyles {
 					"padding-bottom": "var(--safe-area-inset-bottom)",
 					"z-index": 2,
 				},
+				// M3 Expressive navigation bar (BottomNav): no divider, surface_container, pill indicator behind the active icon
+				".bottom-nav-bar": {
+					"border-top": "none",
+					"background-color": theme.surface_container,
+				},
+				".bottom-nav-item": {
+					"padding-top": px(size.spacing_4 + 2),
+					gap: px(size.spacing_4),
+					"min-width": 0,
+					"-webkit-tap-highlight-color": "transparent",
+				},
+				".bottom-nav-item-icon": {
+					width: px(component_size.bottom_nav_indicator_width),
+					height: px(component_size.bottom_nav_indicator_height),
+					"border-radius": px(shape.full),
+					position: "relative",
+				},
+				// state layer on the indicator area, M3 nav bars don't highlight the whole item
+				".bottom-nav-item:hover .bottom-nav-item-icon, .bottom-nav-item:focus-visible .bottom-nav-item-icon": {
+					"background-color": theme.state_bg_hover,
+				},
+				".bottom-nav-item:active .bottom-nav-item-icon": {
+					"background-color": theme.state_bg_active,
+				},
+				".bottom-nav-item:focus-visible": {
+					outline: "none",
+				},
+				".bottom-nav-item:focus-visible .bottom-nav-item-icon": {
+					outline: `2px solid ${theme.secondary}`,
+				},
+				".bottom-nav-indicator": {
+					top: px(size.spacing_4 + 2),
+					left: 0,
+					"pointer-events": "none",
+				},
+				".bottom-nav-indicator-pill": {
+					width: px(component_size.bottom_nav_indicator_width),
+					height: px(component_size.bottom_nav_indicator_height),
+					"border-radius": px(shape.full),
+					"background-color": theme.secondary_container,
+				},
 				// M3 Expressive floating toolbar (FloatingToolbar): vibrant colors, elevation level 3, floats above the content
 				".floating-toolbar": {
 					position: "absolute",

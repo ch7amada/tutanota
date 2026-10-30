@@ -335,7 +335,10 @@ export const component_size = {
 	navbar_height_mobile: 52,
 	/** M3 search bar */
 	search_bar_height: 56,
-	bottom_nav_bar: 50,
+	/** M3 Expressive (short) navigation bar, without the safe-area inset; also used by the mobile bottom action bars */
+	bottom_nav_bar: 64,
+	bottom_nav_indicator_width: 56,
+	bottom_nav_indicator_height: 32,
 	navbar_button_width: 80,
 	navbar_edge_width_mobile: 58,
 	header_logo_height: 36,
