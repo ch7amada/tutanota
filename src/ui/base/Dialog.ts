@@ -265,22 +265,26 @@ export class Dialog implements ModalComponent {
 	}
 
 	private getDialogStyle(dialogType: DialogType): string {
-		let dialogStyle = ".dialog.elevated-bg.flex-grow.border-radius-top-8"
+		let dialogStyle = ".dialog.elevated-bg.flex-grow.shape-dialog-top"
 
 		if (dialogType === DialogType.Progress) {
-			dialogStyle += ".dialog-width-s.dialog-progress.border-radius-bottom-8"
+			dialogStyle += ".dialog-width-s.dialog-progress.shape-dialog-bottom"
 		} else if (dialogType === DialogType.Alert) {
-			dialogStyle += ".dialog-width-alert.pt-16.border-radius-bottom-8"
+			dialogStyle += ".dialog-width-alert.pt-16.shape-dialog-bottom"
 		} else if (dialogType === DialogType.Reminder) {
-			dialogStyle += ".dialog-width-m.pt-16.flex.flex-column.border-radius-bottom-8"
+			dialogStyle += ".dialog-width-m.pt-16.flex.flex-column.shape-dialog-bottom"
 		} else if (dialogType === DialogType.EditSmall) {
-			dialogStyle += ".dialog-width-s.flex.flex-column.border-radius-bottom-8"
+			dialogStyle += ".dialog-width-s.flex.flex-column.shape-dialog-bottom"
 		} else if (dialogType === DialogType.EditMedium) {
-			dialogStyle += ".dialog-width-m.border-radius-bottom-8"
+			dialogStyle += ".dialog-width-m.shape-dialog-bottom"
 		} else if (dialogType === DialogType.EditLarge || dialogType === DialogType.EditLarger) {
-			dialogStyle += ".dialog-width-l.border-radius-bottom-8"
+			dialogStyle += ".dialog-width-l"
+			// on phones the large dialog reaches the bottom edge of the screen, so only round the top corners there
+			if (!(dialogType === DialogType.EditLarge && Styles.get().isSingleColumnLayout())) {
+				dialogStyle += ".shape-dialog-bottom"
+			}
 		} else if (dialogType === DialogType.SetupWizard) {
-			dialogStyle = ".dialog.flex-grow.border-radius-top-8.dialog-width-l.border-radius-bottom-8.nav-bg"
+			dialogStyle = ".dialog.flex-grow.shape-dialog-top.dialog-width-l.shape-dialog-bottom.nav-bg"
 		}
 
 		return dialogStyle
@@ -1183,7 +1187,7 @@ export class Dialog implements ModalComponent {
 	): Dialog {
 		return new Dialog(DialogType.EditMedium, {
 			view: () =>
-				m(".flex.col.border-radius", { style: dialogStyle }, [
+				m(".flex.col.shape-dialog", { style: dialogStyle }, [
 					/** fixed-height header with a title, left and right buttons that's fixed to the top of the dialog's area */
 					headerBarAttrs.noHeader ? null : m(DialogHeaderBar, headerBarAttrs),
 					/** variable-size child container that may be scrollable. */

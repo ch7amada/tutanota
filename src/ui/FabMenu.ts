@@ -75,7 +75,7 @@ export class FabMenu implements Component<FabMenuAttrs> {
 						]
 					: null,
 				m(
-					"fab.accent-bg.fab-shadow.fit-content.border-radius",
+					"fab.accent-bg.fab-shadow.fit-content.shape-fab",
 					m(IconButton, {
 						icon: Icons.Plus,
 						colors: ButtonColor.Fab,
@@ -93,8 +93,8 @@ export class FabMenu implements Component<FabMenuAttrs> {
 						label: this.isMobileFabClicked ? "close_alt" : title,
 						size: ButtonSize.Large,
 						style: {
-							// cancel IconButton's border radius to match the outer button
-							borderRadius: "initial",
+							// use the outer button's shape for the IconButton
+							borderRadius: "inherit",
 						},
 					}),
 				),

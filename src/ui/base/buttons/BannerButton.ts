@@ -20,7 +20,7 @@ export class BannerButton implements Component<BannerButtonAttrs> {
 		return m(BaseButton, {
 			label: attrs.text,
 			text: lang.getTranslationText(attrs.text),
-			class: `border-radius center ${attrs.class} ${attrs.disabled ? "disabled" : ""}`,
+			class: `shape-button center ${attrs.class} ${attrs.disabled ? "disabled" : ""}`,
 			style: {
 				border: `2px solid ${attrs.disabled ? theme.on_surface_variant : attrs.borderColor}`,
 				color: attrs.disabled ? theme.on_surface : attrs.color,

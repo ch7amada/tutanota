@@ -1,5 +1,5 @@
 import { Styles } from "./styles"
-import { component_size, font_size, layout_size, px, size } from "./size"
+import { component_shape, component_size, font_size, layout_size, px, shape, size } from "./size"
 import { EnvProvider } from "@tutao/app-env"
 import { lang } from "./utils/LanguageViewModel"
 import { noselect, position_absolute } from "./mixins"
@@ -1014,7 +1014,7 @@ export class MainStyles {
 				},
 				".visible-scrollbar::-webkit-scrollbar-thumb": {
 					background: theme.on_surface_variant,
-					"border-radius": "3px",
+					"border-radius": px(shape.full),
 				},
 				// we are trying to handle 3 cases:
 				// gecko/FF: supports scrollbar-gutter but not custom scrollbars
@@ -1383,6 +1383,54 @@ export class MainStyles {
 				".border-radius-16": {
 					"border-radius": px(size.radius_16),
 				},
+				".border-radius-20": {
+					"border-radius": px(size.radius_20),
+				},
+				".border-radius-28": {
+					"border-radius": px(size.radius_28),
+				},
+				".border-radius-32": {
+					"border-radius": px(size.radius_32),
+				},
+				".border-radius-48": {
+					"border-radius": px(size.radius_48),
+				},
+				".border-radius-full": {
+					"border-radius": px(size.radius_full),
+				},
+				// component shapes, see component_shape in size.ts
+				".shape-button": {
+					"border-radius": px(component_shape.button),
+				},
+				".shape-chip": {
+					"border-radius": px(component_shape.chip),
+				},
+				".shape-fab": {
+					"border-radius": px(component_shape.fab),
+				},
+				".shape-card": {
+					"border-radius": px(component_shape.card),
+				},
+				".shape-dialog": {
+					"border-radius": px(component_shape.dialog),
+				},
+				".shape-bottom-sheet": {
+					"border-radius": px(component_shape.bottom_sheet),
+				},
+				".shape-menu": {
+					"border-radius": px(component_shape.menu),
+				},
+				".shape-search-bar": {
+					"border-radius": px(component_shape.search_bar),
+				},
+				".shape-dialog-top": {
+					"border-top-left-radius": px(component_shape.dialog),
+					"border-top-right-radius": px(component_shape.dialog),
+				},
+				".shape-dialog-bottom": {
+					"border-bottom-left-radius": px(component_shape.dialog),
+					"border-bottom-right-radius": px(component_shape.dialog),
+				},
 				".border-radius-top-left-8": {
 					"border-top-left-radius": px(size.radius_8),
 				},
@@ -1541,14 +1589,14 @@ export class MainStyles {
 					display: "inline-block",
 				},
 				".icon-button": {
-					"border-radius": "25%",
+					"border-radius": px(component_shape.button),
 					width: px(component_size.button_height),
 					height: px(component_size.button_height),
 					"max-width": px(component_size.button_height),
 					"max-height": px(component_size.button_height),
 				},
 				".icon-button-small": {
-					"border-radius": "25%",
+					"border-radius": px(component_shape.button),
 					width: px(component_size.button_height_sm),
 					height: px(component_size.button_height_sm),
 					"max-width": px(component_size.button_height_sm),
@@ -1558,7 +1606,7 @@ export class MainStyles {
 					margin: "0 auto",
 				},
 				".toggle-button": {
-					"border-radius": "25%",
+					"border-radius": px(component_shape.button),
 					width: px(component_size.button_height),
 					height: px(component_size.button_height),
 					"max-width": px(component_size.button_height),
@@ -1615,7 +1663,7 @@ export class MainStyles {
 					color: "inherit",
 					width: px(component_size.button_icon_bg_size),
 					height: px(component_size.button_icon_bg_size),
-					"border-radius": px(component_size.button_icon_bg_size),
+					"border-radius": px(shape.full),
 					"min-width": px(component_size.button_icon_bg_size),
 					display: "flex",
 					"justify-content": "center",
@@ -1797,13 +1845,13 @@ export class MainStyles {
 				".logo-circle": {
 					width: px(component_size.button_icon_bg_size),
 					height: px(component_size.button_icon_bg_size),
-					"border-radius": "50%",
+					"border-radius": px(shape.full),
 					overflow: "hidden",
 				},
 				".dot": {
 					width: px(component_size.dot_size),
 					height: px(component_size.dot_size),
-					"border-radius": "50%",
+					"border-radius": px(shape.full),
 					overflow: "hidden",
 					"margin-top": px(6),
 				},
@@ -1916,7 +1964,7 @@ export class MainStyles {
 				".counter-badge": {
 					"padding-left": px(4),
 					"padding-right": px(4),
-					"border-radius": px(8),
+					"border-radius": px(component_shape.chip),
 					"line-height": px(16),
 					"font-size": px(font_size.small),
 					"font-weight": "bold",
@@ -2029,7 +2077,7 @@ export class MainStyles {
 					width: 0,
 					height: 0,
 					overflow: "hidden", // while the dropdown is slided open we do not want to show the scrollbars. overflow-y is later overwritten to show scrollbars if necessary
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.menu),
 				},
 				".dropdown-panel-scrollable": {
 					position: "absolute",
@@ -2101,12 +2149,12 @@ export class MainStyles {
 				".button-icon": {
 					width: px(component_size.button_icon_bg_size),
 					height: px(component_size.button_icon_bg_size),
-					"border-radius": px(component_size.button_icon_bg_size),
+					"border-radius": px(shape.full),
 					"min-width": px(component_size.button_icon_bg_size),
 				},
 				".login": {
 					width: "100%",
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.button),
 				},
 				".small-login-button": {
 					width: "260px",
@@ -2119,13 +2167,13 @@ export class MainStyles {
 					"padding-top": px(size.spacing_24),
 				},
 				".bubble": {
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.chip),
 					"background-color": theme.surface_container_high,
 					color: theme.on_surface,
 				},
 				".keyword-bubble": {
 					"max-width": "300px",
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.chip),
 					"margin-bottom": px(size.spacing_8 / 2),
 					"margin-right": px(size.spacing_8 / 2),
 					"background-color": theme.surface_container_high,
@@ -2134,7 +2182,7 @@ export class MainStyles {
 				},
 				".keyword-bubble-no-padding": {
 					"max-width": "300px",
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.chip),
 					margin: px(size.spacing_8 / 2),
 					"background-color": theme.surface_container_high,
 					color: theme.on_surface,
@@ -2167,17 +2215,17 @@ export class MainStyles {
 					background: "transparent",
 				},
 				".segmentControlItem:last-child": {
-					"border-bottom-right-radius": px(size.radius_4),
-					"border-top-right-radius": px(size.radius_4),
+					"border-bottom-right-radius": px(component_shape.button),
+					"border-top-right-radius": px(component_shape.button),
 				},
 				".segmentControlItem:first-child": {
-					"border-bottom-left-radius": px(size.radius_4),
-					"border-top-left-radius": px(size.radius_4),
+					"border-bottom-left-radius": px(component_shape.button),
+					"border-top-left-radius": px(component_shape.button),
 				},
 
 				// IconSegmentControl
 				".icon-segment-control": {
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.button),
 				},
 				".icon-segment-control-item": {
 					// Make thin border between items via border-right
@@ -2195,13 +2243,13 @@ export class MainStyles {
 					"transition-duration": ".3s",
 				},
 				".icon-segment-control-item:first-child": {
-					"border-bottom-left-radius": px(size.radius_8),
-					"border-top-left-radius": px(size.radius_8),
+					"border-bottom-left-radius": px(component_shape.button),
+					"border-top-left-radius": px(component_shape.button),
 					"border-left": `1px solid ${theme.outline_variant}`,
 				},
 				".icon-segment-control-item:last-child": {
-					"border-bottom-right-radius": px(size.radius_8),
-					"border-top-right-radius": px(size.radius_8),
+					"border-bottom-right-radius": px(component_shape.button),
+					"border-top-right-radius": px(component_shape.button),
 					"border-right": `1px solid ${theme.outline_variant}`,
 				},
 				".onboarding-logo": {
@@ -2360,7 +2408,7 @@ export class MainStyles {
 					padding: px(6),
 				},
 				".info-badge": {
-					"border-radius": px(8),
+					"border-radius": px(shape.full),
 					"line-height": px(16),
 					"font-size": px(12),
 					"font-weight": "bold",
@@ -2380,7 +2428,7 @@ export class MainStyles {
 					color: theme.surface,
 					"text-align": "center",
 					padding: "5px 5px",
-					"border-radius": px(6),
+					"border-radius": px(component_shape.tooltip),
 					position: "absolute",
 					"z-index": 1,
 					top: "150%",
@@ -2470,7 +2518,7 @@ export class MainStyles {
 					width: px(22),
 					"border-width": "1.5px",
 					"border-style": "solid",
-					"border-radius": "2px",
+					"border-radius": px(shape.extra_small),
 				},
 				".checkbox-override": {
 					appearance: "none",
@@ -2490,7 +2538,7 @@ export class MainStyles {
 					"min-width": px(component_size.checkbox_size),
 					"min-height": px(component_size.checkbox_size),
 					border: `${px(component_size.checkbox_border_size)} solid ${theme.outline}`,
-					"border-radius": "3px",
+					"border-radius": px(shape.extra_small),
 					position: "relative",
 					transition: `border ${DefaultAnimationTime}ms cubic-bezier(.4,.0,.23,1)`,
 					opacity: "0.8",
@@ -2586,7 +2634,7 @@ export class MainStyles {
 					width: "22px",
 				},
 				".calendar-event": {
-					"border-radius": px(4),
+					"border-radius": px(shape.extra_small),
 					border: ` ${layout_size.calendar_event_border}px solid ${theme.surface}`,
 					"padding-left": "4px",
 					"font-weight": "600",
@@ -2801,7 +2849,7 @@ export class MainStyles {
 					transition: `margin-bottom 200ms ease-in-out`,
 				},
 				".circle": {
-					"border-radius": "50%",
+					"border-radius": px(shape.full),
 				},
 				".clickable": {
 					cursor: "pointer",
@@ -3018,11 +3066,11 @@ export class MainStyles {
 					"min-width": px(100),
 					height: px(100),
 					"min-height": px(100),
-					"border-radius": px(100),
+					"border-radius": px(shape.full),
 				},
 				".day-events-indicator": {
 					"background-color": theme.primary,
-					"border-radius": "50%",
+					"border-radius": px(shape.full),
 					display: "inline-block",
 					height: "5px",
 					width: "5px",
@@ -3049,7 +3097,7 @@ export class MainStyles {
 				".tutaui-card-container": {
 					"box-sizing": "border-box",
 					"background-color": theme.surface,
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.card),
 					padding: px(size.spacing_8),
 					height: "fit-content",
 				},
@@ -3065,7 +3113,7 @@ export class MainStyles {
 					"box-sizing": "border-box",
 					"background-color": "transparent",
 					border: "none",
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.text_field),
 					color: theme.on_surface,
 					width: "100%",
 					padding: px(size.spacing_12),
@@ -3103,7 +3151,7 @@ export class MainStyles {
 					width: "52px",
 					height: "32px",
 					"background-color": theme.surface_container_high,
-					"border-radius": px(size.spacing_8 * 4),
+					"border-radius": px(shape.full),
 					border: `2px solid ${theme.outline}`,
 					transition: `background-color ${DefaultAnimationTime}ms ease-out`,
 				},
@@ -3119,7 +3167,7 @@ export class MainStyles {
 					transform: "translateY(-50%)",
 					margin: "0 8px",
 					"background-color": theme.outline,
-					"border-radius": "50%",
+					"border-radius": px(shape.full),
 					left: 0,
 					transition: `left ${DefaultAnimationTime}ms ease-out`,
 				},
@@ -3160,7 +3208,7 @@ export class MainStyles {
 				},
 				".tutaui-button-outline": {
 					border: "1px solid",
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.button),
 					padding: px(size.radius_8),
 					"text-align": "center",
 					"border-color": theme.outline_variant,
@@ -3265,7 +3313,7 @@ export class MainStyles {
 					"font-weight": "bold",
 					"background-color": theme.secondary_container,
 					color: theme.on_secondary_container,
-					"border-radius": "3px",
+					"border-radius": px(shape.extra_small),
 				},
 				".clip": {
 					overflow: "clip",
@@ -3387,25 +3435,25 @@ export class MainStyles {
 				".base-button-sm": {
 					"padding-inline": px(12),
 					height: px(component_size.button_height_sm),
-					"border-radius": px(size.radius_4),
+					"border-radius": px(component_shape.button),
 					"text-align": "center",
 				},
 				".base-button-md": {
 					"padding-inline": px(16),
 					height: px(component_size.button_height_md),
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.button),
 					"text-align": "center",
 				},
 				".base-button-lg": {
 					"padding-inline": px(24),
 					height: px(component_size.button_height_lg),
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.button),
 					"text-align": "center",
 				},
 				".tutaui-button-ghost": {
 					"background-color": "transparent",
 					color: theme.on_surface,
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.button),
 				},
 				".tutaui-button-ghost:hover, .tutaui-button-ghost:focus-visible": {
 					"background-color": theme.state_bg_hover,
@@ -3424,7 +3472,7 @@ export class MainStyles {
 				},
 				".snackbar": {
 					"background-color": theme.surface_container_high,
-					"border-radius": px(size.radius_8),
+					"border-radius": px(component_shape.snackbar),
 					color: theme.on_surface,
 					"padding-top": px(size.spacing_8),
 					"padding-bottom": px(size.spacing_8),

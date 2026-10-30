@@ -10,7 +10,7 @@ import m, { Children } from "mithril"
 import { IconButtonAttrs } from "./IconButton.js"
 import { ClientDetector } from "../../platform-kit/app-env/boot/ClientDetector.js"
 import { isColorLight, isValidCSSHexColor } from "./Color.js"
-import { font_size, px, size } from "../size"
+import { font_size, px, shape, size } from "../size"
 
 import { PosRect } from "../utils/PosRect"
 import { Icon, IconSize } from "./Icon"
@@ -462,7 +462,7 @@ export function renderDragElement(name: string, icon: Icons, count: number, subS
 									backgroundColor: theme.primary,
 									color: theme.on_primary,
 									aspectRatio: "1 / 1",
-									borderRadius: "100%",
+									borderRadius: px(shape.full),
 									padding: px(size.base_4),
 									lineHeight: px(font_size.small),
 									height: `calc(1em + ${size.base_4}px * 2)`,

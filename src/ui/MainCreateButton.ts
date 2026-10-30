@@ -39,7 +39,7 @@ export class MainCreateButton implements Component<MainCreateButtonAttrs> {
 						},
 					})
 				: null,
-			class: `plr-16 border-radius-12 flex-start items-center b flash ${vnode.attrs.class}`,
+			class: `plr-16 shape-fab flex-start items-center b flash ${vnode.attrs.class}`,
 			style: {
 				// matching toolbar
 				height: px(component_size.button_height + size.spacing_4 * 2),

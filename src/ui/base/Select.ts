@@ -380,7 +380,7 @@ class OptionListContainer implements ClassComponent {
 
 		this.view = () => {
 			return m(
-				".dropdown-panel-scrollable.elevated-bg.border-radius.dropdown-shadow",
+				".dropdown-panel-scrollable.elevated-bg.shape-menu.dropdown-shadow",
 				{
 					style: {
 						opacity: 0,

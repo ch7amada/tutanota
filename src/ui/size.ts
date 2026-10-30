@@ -80,6 +80,8 @@ export const size = {
 	},
 
 	// Radii
+	// The numeric steps of the Material 3 corner shape scale. Prefer the semantic names in `shape` (or the
+	// component roles in `component_shape`) below; these numeric names stay for existing code.
 	get radius_4(): number {
 		return this.base_4
 	},
@@ -91,6 +93,98 @@ export const size = {
 	},
 	get radius_16(): number {
 		return this.core_16
+	},
+	get radius_20(): number {
+		return this.core_16 + this.base_4
+	},
+	get radius_28(): number {
+		return this.core_24 + this.base_4
+	},
+	get radius_32(): number {
+		return this.core_32
+	},
+	get radius_48(): number {
+		return this.core_48
+	},
+	/** Fully rounded: pill for rectangles, circle for squares. */
+	radius_full: 9999,
+}
+
+/**
+ * The central Material 3 (Expressive) corner shape scale. All corner radii in the UI should come from here.
+ * See https://m3.material.io/styles/shape/corner-radius-scale
+ */
+export const shape = {
+	none: 0,
+	get extra_small(): number {
+		return size.radius_4
+	},
+	get small(): number {
+		return size.radius_8
+	},
+	get medium(): number {
+		return size.radius_12
+	},
+	get large(): number {
+		return size.radius_16
+	},
+	get large_increased(): number {
+		return size.radius_20
+	},
+	get extra_large(): number {
+		return size.radius_28
+	},
+	get extra_large_increased(): number {
+		return size.radius_32
+	},
+	get extra_extra_large(): number {
+		return size.radius_48
+	},
+	get full(): number {
+		return size.radius_full
+	},
+}
+
+/**
+ * Which step of the shape scale each kind of component uses.
+ */
+export const component_shape = {
+	/** All button variants (filled, outlined, text, icon, toggle, segmented) */
+	get button(): number {
+		return shape.full
+	},
+	/** Chips, bubbles, counter badges */
+	get chip(): number {
+		return shape.full
+	},
+	/** Floating action buttons (M3: large) */
+	get fab(): number {
+		return shape.large
+	},
+	get card(): number {
+		return shape.extra_large
+	},
+	get dialog(): number {
+		return shape.extra_large
+	},
+	get bottom_sheet(): number {
+		return shape.extra_large
+	},
+	/** Menus, dropdowns and popovers */
+	get menu(): number {
+		return shape.large
+	},
+	get search_bar(): number {
+		return shape.full
+	},
+	get text_field(): number {
+		return shape.small
+	},
+	get snackbar(): number {
+		return shape.small
+	},
+	get tooltip(): number {
+		return shape.extra_small
 	},
 }
 
