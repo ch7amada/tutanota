@@ -101,6 +101,9 @@ export interface ListAttrs<T, R extends ViewHolder<T>> {
 	onStopLoading(): unknown
 
 	contextDropdownAttrs?: (entity: T) => DropdownButtonAttrs[]
+
+	/** extra space below the last row, e.g. so that a floating action button does not cover it */
+	bottomSpacing?: number
 }
 
 export interface ListRow<T, R extends ViewHolder<T>> {
@@ -139,6 +142,7 @@ export class List<T, VH extends ViewHolder<T>> implements ClassComponent<ListAtt
 			".list-container.overflow-y-scroll.nofocus.overflow-x-hidden.fill-absolute",
 			{
 				"data-testid": "unordered_list",
+				style: { paddingBottom: attrs.bottomSpacing ? px(attrs.bottomSpacing) : "" },
 				oncreate: ({ dom }: VnodeDOM) => {
 					this.containerDom = dom as HTMLElement
 

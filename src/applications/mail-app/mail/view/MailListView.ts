@@ -17,6 +17,8 @@ import { MAIL_ROW_HEIGHT, MailRow } from "./MailRow"
 import { generateMailFile, getMailExportMode } from "../export/Exporter"
 import { deduplicateFilenames } from "../../../../ui/utils/FileUtils"
 import { downloadMailBundle } from "../export/Bundler"
+import { component_size, size } from "../../../../ui/size.js"
+import { isFabShown } from "../../../../ui/base/FloatingActionButton.js"
 import { ListColumnWrapper } from "../../../../ui/ListColumnWrapper"
 import { MailViewModel } from "./MailViewModel.js"
 import { List, ListAttrs, ListSwipeDecision, MultiselectMode, RenderConfig, SwipeConfiguration } from "../../../../ui/base/List.js"
@@ -362,6 +364,8 @@ export class MailListView implements Component<MailListViewAttrs> {
 						})
 					: m(List, {
 							state: listModel.stateStream(),
+							// keep the last row clear of the "New email" FAB (mobile)
+							bottomSpacing: isFabShown() ? component_size.button_floating_size + size.spacing_16 * 2 : 0,
 							renderConfig: this.renderConfig,
 							onLoadMore() {
 								listModel.loadMore()
