@@ -22,7 +22,7 @@ export interface ButtonStyleConfig {
 	disabled?: boolean
 }
 
-export const BaseButtonClasses: readonly string[] = ["button-content", "border-radius", "text-center", "flex", "justify-center", "items-center", "gap-8"]
+export const BaseButtonClasses: readonly string[] = ["button-content", "shape-button", "text-center", "flex", "justify-center", "items-center", "gap-8"]
 
 export function resolveButtonClasses(config: ButtonStyleConfig): string[] {
 	const classes: string[] = BaseButtonClasses.slice()

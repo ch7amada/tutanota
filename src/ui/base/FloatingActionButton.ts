@@ -27,7 +27,7 @@ export class FloatingActionButton implements Component<FloatingActionButtonAttrs
 	}
 	view({ attrs: { title, colors, icon, click }, children }: Vnode<FloatingActionButtonAttrs>): Children {
 		return m(
-			"fab.fab-position.accent-bg.fab-shadow.z4.border-radius",
+			"fab.fab-position.accent-bg.fab-shadow.z4.shape-fab",
 			m(IconButton, {
 				colors,
 				icon,

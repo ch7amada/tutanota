@@ -1,5 +1,5 @@
 import m, { Children, ClassComponent, CVnode } from "mithril"
-import { font_size, px, size } from "../size"
+import { component_shape, font_size, px, size } from "../size"
 import { DefaultAnimationTime } from "../animation/Animations"
 import { theme } from "../theme"
 import type { MaybeTranslation } from "../utils/LanguageViewModel"
@@ -85,9 +85,9 @@ export class TextField implements ClassComponent<TextFieldAttrs> {
 		const borderWidth = 3
 		const activeBorderColor = a.borderColor ?? theme.primary
 		const borderColor = this.active ? activeBorderColor : "transparent"
-		const borderBottomRadius = this.active ? "0px" : px(size.radius_8)
+		const borderBottomRadius = this.active ? "0px" : px(component_shape.text_field)
 
-		const borderRadius = `${px(size.radius_8)} ${px(size.radius_8)} ${borderBottomRadius} ${borderBottomRadius}`
+		const borderRadius = `${px(component_shape.text_field)} ${px(component_shape.text_field)} ${borderBottomRadius} ${borderBottomRadius}`
 
 		return m(
 			".full-width.text-ellipsis",

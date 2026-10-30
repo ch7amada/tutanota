@@ -114,6 +114,7 @@ export class Button implements ClassComponent<ButtonAttrs> {
 
 	private resolveClasses(type: ButtonType, customClasses?: Array<string>, inline?: boolean) {
 		const classes = ["limit-width", "noselect", "bg-transparent", "text-ellipsis", "content-accent-fg", "items-center", "justify-center", "flash"]
+		classes.push("shape-button")
 
 		if (!inline) {
 			classes.push("button-height")

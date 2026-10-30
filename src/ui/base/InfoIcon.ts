@@ -99,13 +99,7 @@ export class InfoIcon implements Component<InfoIconAttrs> {
 
 	private showOverlay() {
 		if (this.closeOverlayFunction == null) {
-			this.closeOverlayFunction = displayOverlay(
-				() => this.makeOverlayRect(),
-				this.tooltipComponent!,
-				undefined,
-				undefined,
-				"dropdown-shadow border-radius",
-			)
+			this.closeOverlayFunction = displayOverlay(() => this.makeOverlayRect(), this.tooltipComponent!, undefined, undefined, "dropdown-shadow shape-menu")
 		} else {
 			m.redraw()
 		}
