@@ -73,7 +73,7 @@ export class BottomNav implements Component<Attrs> {
 			m.route.Link,
 			{
 				href: item.href,
-				selector: "a.bottom-nav-item.flex-grow.col.items-center.click.no-text-decoration.noselect",
+				selector: "a.bottom-nav-item.flex.flex-grow.col.items-center.click.no-text-decoration.noselect",
 				"aria-current": selected ? "page" : undefined,
 				title: label,
 				"data-testid": `btn:${lang.getTestId(item.label)}`,
