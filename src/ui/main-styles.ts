@@ -1,5 +1,5 @@
 import { Styles } from "./styles"
-import { component_shape, component_size, font_size, layout_size, px, shape, size } from "./size"
+import { component_shape, component_size, font_size, layout_size, px, shape, size, type_scale, TypeRoleName } from "./size"
 import { EnvProvider } from "@tutao/app-env"
 import { lang } from "./utils/LanguageViewModel"
 import { noselect, position_absolute } from "./mixins"
@@ -31,6 +31,26 @@ export function getFonts(): string {
 	if (env.platformId === "win32" && lang.code === "ja") fonts.push("SimHei", "黑体")
 	fonts.push("Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol")
 	return fonts.join(", ")
+}
+
+/** CSS for one role of the {@link type_scale}. */
+export function typeRoleStyle(role: TypeRoleName, emphasized: boolean = false): Record<string, string | number> {
+	const { size, lineHeight, weight, emphasizedWeight } = type_scale[role]
+	return {
+		"font-size": px(size),
+		"line-height": px(lineHeight),
+		"font-weight": emphasized ? emphasizedWeight : weight,
+	}
+}
+
+/** `.<role>` and `.<role>-emphasized` classes for every role of the {@link type_scale}. */
+function typeScaleClasses(): Record<string, Record<string, string | number>> {
+	const classes: Record<string, Record<string, string | number>> = {}
+	for (const role of Object.keys(type_scale) as TypeRoleName[]) {
+		classes[`.${role}`] = typeRoleStyle(role)
+		classes[`.${role}-emphasized`] = typeRoleStyle(role, true)
+	}
+	return classes
 }
 
 export const boxShadowHigh = `0 10px 20px rgba(0,0,0,0.10), 0 6px 6px rgba(0,0,0,0.10)`
@@ -302,24 +322,14 @@ export class MainStyles {
 				".big": {
 					"font-size": px(font_size.base * 2.5),
 				},
-				"h1, .h1": {
-					"font-size": px(font_size.base * 2),
-				},
-				"h2, .h2": {
-					"font-size": px(font_size.base * 1.8),
-				},
-				"h3, .h3": {
-					"font-size": px(font_size.base * 1.6),
-				},
-				"h4, .h4": {
-					"font-size": px(font_size.base * 1.4),
-				},
-				"h5, .h5": {
-					"font-size": px(font_size.base * 1.2),
-				},
-				"h6, .h6": {
-					"font-size": px(font_size.base * 1.1),
-				},
+				// headings use the emphasized roles of the type scale
+				"h1, .h1": typeRoleStyle("headline-l", true),
+				"h2, .h2": typeRoleStyle("headline-m", true),
+				"h3, .h3": typeRoleStyle("headline-s", true),
+				"h4, .h4": typeRoleStyle("title-l", true),
+				"h5, .h5": typeRoleStyle("title-m", true),
+				"h6, .h6": typeRoleStyle("title-s", true),
+				...typeScaleClasses(),
 				"input, button, select, textarea": {
 					"font-family": "inherit",
 					"font-size": "inherit",

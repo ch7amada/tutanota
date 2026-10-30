@@ -201,6 +201,58 @@ export const font_size = {
 	},
 }
 
+/**
+ * One role of the type scale: font size and line height in px, the regular weight and the weight of the emphasized variant.
+ */
+export type TypeRole = {
+	size: number
+	lineHeight: number
+	weight: number
+	emphasizedWeight: number
+}
+
+export type TypeRoleName =
+	| "display-l"
+	| "display-m"
+	| "display-s"
+	| "headline-l"
+	| "headline-m"
+	| "headline-s"
+	| "title-l"
+	| "title-m"
+	| "title-s"
+	| "body-l"
+	| "body-m"
+	| "body-s"
+	| "label-l"
+	| "label-m"
+	| "label-s"
+
+/**
+ * Material 3 (Expressive) type scale, rendered with the system font.
+ * Body roles reuse the existing {@link font_size} sizes so body text is unchanged.
+ * Emphasized variants are one weight step bolder: 500 for display/headline/body, 600 for title/label (the weight headers already used).
+ * Each role is available as a CSS class (e.g. `.headline-m`) and an emphasized variant (e.g. `.headline-m-emphasized`).
+ * h1-h6 map to headline-l..title-s emphasized (see main-styles).
+ */
+export const type_scale: Record<TypeRoleName, TypeRole> = {
+	"display-l": { size: 57, lineHeight: 64, weight: 400, emphasizedWeight: 500 },
+	"display-m": { size: 45, lineHeight: 52, weight: 400, emphasizedWeight: 500 },
+	"display-s": { size: 36, lineHeight: 44, weight: 400, emphasizedWeight: 500 },
+	"headline-l": { size: 32, lineHeight: 40, weight: 400, emphasizedWeight: 500 },
+	"headline-m": { size: 28, lineHeight: 36, weight: 400, emphasizedWeight: 500 },
+	"headline-s": { size: 24, lineHeight: 32, weight: 400, emphasizedWeight: 500 },
+	"title-l": { size: 22, lineHeight: 28, weight: 400, emphasizedWeight: 600 },
+	"title-m": { size: 16, lineHeight: 24, weight: 500, emphasizedWeight: 600 },
+	"title-s": { size: 14, lineHeight: 20, weight: 500, emphasizedWeight: 600 },
+	"body-l": { size: font_size.base, lineHeight: 24, weight: 400, emphasizedWeight: 500 },
+	"body-m": { size: font_size.smaller, lineHeight: 20, weight: 400, emphasizedWeight: 500 },
+	"body-s": { size: font_size.small, lineHeight: 16, weight: 400, emphasizedWeight: 500 },
+	"label-l": { size: 14, lineHeight: 20, weight: 500, emphasizedWeight: 600 },
+	"label-m": { size: 12, lineHeight: 16, weight: 500, emphasizedWeight: 600 },
+	"label-s": { size: 11, lineHeight: 16, weight: 500, emphasizedWeight: 600 },
+}
+
 export const layout_size = {
 	get calendar_line_height(): number {
 		return font_size.small + 6
