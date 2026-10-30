@@ -17,3 +17,9 @@
 ## Comments
 
 The early Android test build (old ticket 06) was dropped on 2026-10-30: the user tests everything in the web app and builds Android only at the end. That aborted attempt left a self-signed keystore and its env file in `~/.tuta-keystore/` (outside the repo), which can be reused here.
+
+2026-10-30 build steps (APK built and installed on a Pixel 9; device testing done by the user):
+- Gradle 8.13 does not run on the system Java 25: Temurin JDK 21 lives in `~/.jdks/jdk-21.0.13+9` (user-local).
+- Build: `source ~/emsdk/emsdk_env.sh; export PATH="$HOME/emsdk/upstream/bin:$HOME/Android/Sdk/platform-tools:$PATH" ANDROID_HOME=$HOME/Android/Sdk JAVA_HOME=~/.jdks/jdk-21.0.13+9; export PATH="$JAVA_HOME/bin:$PATH"; source ~/.tuta-keystore/env.sh; node android prod -b release`
+- The dist web build runs a chunk dependency check that `node make` skips; `Motion.ts` and `FloatingToolbar.ts` had to be assigned to the `gui-base` chunk in `buildSrc/RollupConfig.js`.
+- Output: `artifacts/app-android/tutanota-app-tutao-release-<version>.apk`; install with `adb install` after uninstalling the official app (different signature).

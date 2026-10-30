@@ -493,7 +493,8 @@ export function getChunkName(moduleId, { getModuleInfo }) {
 		return "worker"
 	} else if (isIn("src/entities")) {
 		return "common"
-	} else if (isIn("src/ui/base")) {
+	} else if (isIn("src/ui/base") || isIn("src/ui/animation/Motion.ts") || isIn("src/ui/FloatingToolbar.ts")) {
+		// Motion tokens and the floating toolbar clearance are used by base components (buttons, dialogs, snackbars)
 		return "gui-base"
 	} else if (isIn("src/ui") && !isIn("src/ui/translations")) {
 		return "main"
