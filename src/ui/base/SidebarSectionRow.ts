@@ -1,12 +1,11 @@
 import m, { Children, Component, Vnode } from "mithril"
 import { AllIcons, Icon, IconSize } from "./Icon"
-import { isNavButtonSelected, NavButton, NavButtonAttrs } from "./NavButton"
+import { getDrawerItemColors, isNavButtonSelected, NavButton, NavButtonAttrs, NavButtonColor } from "./NavButton"
 import { ClickHandler, contextDropdown, DropData } from "./GuiUtils"
 import type { MaybeTranslation } from "../utils/LanguageViewModel"
 import { assertNotNull } from "../../platform-kit/utils"
 import { ClientDetector } from "../../platform-kit/app-env/boot/ClientDetector"
 import { IconButton, IconButtonAttrs } from "./IconButton"
-import { theme } from "../theme"
 import { DropdownButtonAttrs } from "./Dropdown"
 
 export interface SidebarSectionRowAttrs {
@@ -48,6 +47,7 @@ export class SidebarSectionRow implements Component<SidebarSectionRowAttrs> {
 		const navButtonAttrs: NavButtonAttrs = {
 			label: attrs.label,
 			href: () => attrs.path,
+			colors: NavButtonColor.Nav,
 			disableHoverBackground: true,
 			disableSelectedBackground: true,
 			click: attrs.onClick,
@@ -58,10 +58,11 @@ export class SidebarSectionRow implements Component<SidebarSectionRowAttrs> {
 			dropHandler: attrs.dropHandler ? (dropData) => assertNotNull(attrs.dropHandler)(dropData) : undefined,
 		}
 
+		const colors = getDrawerItemColors(isNavButtonSelected(navButtonAttrs))
 		return m(
-			".folder-row.flex.flex-row.mlr-8.border-radius-4.state-bg",
+			".folder-row.flex.flex-row.mlr-12.shape-navigation-drawer-item.state-bg",
 			{
-				style: { background: isNavButtonSelected(navButtonAttrs) ? theme.state_bg_hover : "" },
+				style: { background: colors.background },
 				onmouseenter: onHover,
 				onmouseleave: () => {
 					this.hovered = false
@@ -75,12 +76,12 @@ export class SidebarSectionRow implements Component<SidebarSectionRowAttrs> {
 			[
 				// we render icon on our own to be able to override the color and to control the padding
 				m(
-					".button-height.flex.items-center.plr-8",
+					".flex.items-center.pl-16.pr-4",
 					m(Icon, {
 						icon: attrs.icon,
 						size: IconSize.PX24,
 						style: {
-							fill: attrs.iconColor ?? (isNavButtonSelected(navButtonAttrs) ? theme.primary : theme.on_surface_variant),
+							fill: attrs.iconColor ?? colors.content,
 						},
 					}),
 				),

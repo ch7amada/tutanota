@@ -1,10 +1,9 @@
 import m from "mithril"
 import { SidebarSection } from "../../../../ui/SidebarSection"
 import { lang, Translation } from "../../../../ui/utils/LanguageViewModel"
-import { isSelectedPrefix, NavButton, NavButtonColor } from "../../../../ui/base/NavButton"
+import { getDrawerItemColors, isSelectedPrefix, NavButton, NavButtonColor } from "../../../../ui/base/NavButton"
 import { Icons } from "../../../../ui/base/icons/Icons"
 import { elementIdPart, listIdPart } from "../../../../platform-kit/meta"
-import { theme } from "../../../../ui/theme"
 import { pureComponent } from "../../../../ui/base/PureComponent"
 import { AllIcons } from "../../../../ui/base/Icon"
 import { ClickHandler, DriveDropData } from "../../../../ui/base/GuiUtils"
@@ -81,10 +80,10 @@ const DriveFolderRow = pureComponent(
 		children,
 	) => {
 		return m(
-			".folder-row.flex.flew-row.mlr-8.border-radius-4.state-bg",
+			".folder-row.flex.flew-row.mlr-12.shape-navigation-drawer-item.state-bg",
 			{
 				style: {
-					background: isSelectedPrefix(href) ? theme.state_bg_hover : "",
+					background: getDrawerItemColors(isSelectedPrefix(href)).background,
 				},
 			},
 			m(NavButton, {

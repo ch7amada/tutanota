@@ -21,7 +21,7 @@ export class FolderColumnView implements Component<Attrs> {
 	view({ attrs }: Vnode<Attrs>): Children {
 		const isAndroidWithBottomNavAndDrawer = EnvProvider.get().isAndroidApp() && Styles.get().isAppUsingBottomNav() && !Styles.get().isMobileDesktopLayout()
 		return m(
-			".flex.height-100p.nav-bg" +
+			".navigation-drawer.flex.height-100p.nav-bg" +
 				(isAndroidWithBottomNavAndDrawer ? ".pb-safe-inset" : "") +
 				(Styles.get().isDesktopLayout() ? ".column-resize-padding" : ""),
 			[

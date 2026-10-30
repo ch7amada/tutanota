@@ -177,6 +177,14 @@ export const component_shape = {
 	get search_bar(): number {
 		return shape.full
 	},
+	/** Trailing corners of the modal navigation drawer (folder column on narrow layouts) */
+	get navigation_drawer(): number {
+		return shape.large
+	},
+	/** Active indicator of a navigation drawer item */
+	get navigation_drawer_item(): number {
+		return shape.full
+	},
 	get text_field(): number {
 		return shape.small
 	},
@@ -316,6 +324,8 @@ export const component_size = {
 	navbar_edge_width_mobile: 58,
 	header_logo_height: 36,
 	list_row_height: 68,
+	/** M3 navigation drawer item (folder row); the desktop layout uses the denser button_height */
+	navigation_drawer_item_height: 56,
 	dot_size: 7,
 	checkbox_size: 14,
 	checkbox_border_size: 2,

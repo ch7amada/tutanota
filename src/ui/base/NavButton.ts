@@ -59,6 +59,7 @@ export class NavButton implements Component<NavButtonAttrs> {
 
 		const linkAttrs = this.createButtonAttributes(a)
 		const icon = a.icon?.()
+		const isDrawerItem = a.colors === NavButtonColor.Nav
 		const children = [
 			a.leftInjection?.() ?? null,
 			icon
@@ -66,11 +67,20 @@ export class NavButton implements Component<NavButtonAttrs> {
 						icon,
 						class: this._getIconClass(a),
 						style: {
-							fill: isNavButtonSelected(a) || this._draggedOver ? theme.primary : theme.on_surface_variant,
+							fill: isDrawerItem
+								? getDrawerItemColors(isNavButtonSelected(a)).content
+								: isNavButtonSelected(a) || this._draggedOver
+									? theme.primary
+									: theme.on_surface_variant,
 						},
 					})
 				: null,
-			!a.hideLabel ? m("span.label.click.text-ellipsis" + (!a.vertical && icon ? ".pl-8" : ""), lang.getTranslationText(a.label)) : null,
+			!a.hideLabel
+				? m(
+						"span.label.click.text-ellipsis" + (!a.vertical && icon ? (isDrawerItem ? ".pl-12" : ".pl-8") : "") + (isDrawerItem ? ".label-l" : ""),
+						lang.getTranslationText(a.label),
+					)
+				: null,
 		]
 
 		// allow nav button without label for registration button on mobile devices
@@ -87,7 +97,9 @@ export class NavButton implements Component<NavButtonAttrs> {
 
 	_getNavButtonClass(a: NavButtonAttrs): string {
 		return (
-			"a.nav-button.noselect.items-center.click.plr-8.no-text-decoration.button-height.shape-button" +
+			"a.nav-button.noselect.items-center.click.no-text-decoration" +
+			// drawer items get their height inline (see getDrawerItemHeight()), a full pill and M3 item padding when they show the icon themselves
+			(a.colors === NavButtonColor.Nav ? ".shape-navigation-drawer-item" + (a.icon ? ".pl-16.pr-24" : ".plr-8") : ".shape-button.plr-8.button-height") +
 			(a.vertical ? ".col" : "") +
 			(!a.centred ? ".flex-start" : ".flex-center") +
 			(a.disableHoverBackground ? "" : ".state-bg") +
@@ -116,6 +128,8 @@ export class NavButton implements Component<NavButtonAttrs> {
 
 	createButtonAttributes(a: NavButtonAttrs): RouteLinkAttrs {
 		const hasCurrentStyle = this._draggedOver || (isNavButtonSelected(a) && !a.disableSelectedBackground)
+		const isDrawerItem = a.colors === NavButtonColor.Nav
+		const drawerItemColors = getDrawerItemColors(isNavButtonSelected(a))
 		let attr: RouteLinkAttrs = {
 			role: "button",
 			// aria-current should not depend on drag/background
@@ -126,8 +140,16 @@ export class NavButton implements Component<NavButtonAttrs> {
 			ondragstart: a.dragStartHandler,
 			style: {
 				"font-size": a.fontSize ? px(a.fontSize) : "",
-				color: this._draggedOver || isNavButtonSelected(a) ? theme.primary : theme.on_surface,
-				...(hasCurrentStyle && { background: theme.state_bg_active }),
+				...(isDrawerItem
+					? {
+							height: px(getDrawerItemHeight()),
+							color: drawerItemColors.content,
+							...(hasCurrentStyle && { background: this._draggedOver ? theme.state_bg_active : drawerItemColors.background }),
+						}
+					: {
+							color: this._draggedOver || isNavButtonSelected(a) ? theme.primary : theme.on_surface,
+							...(hasCurrentStyle && { background: theme.state_bg_active }),
+						}),
 			},
 			title: lang.getTranslationText(a.label),
 			target: this._isExternalUrl(a.href) ? "_blank" : undefined,
@@ -222,8 +244,24 @@ export class NavButton implements Component<NavButtonAttrs> {
 	}
 }
 
+/**
+ * Colors of an M3 navigation drawer item (sidebar/folder rows, {@link NavButtonColor.Nav}): the active item gets a
+ * secondary_container pill with on_secondary_container content.
+ */
+export function getDrawerItemColors(selected: boolean): { background: string; content: string } {
+	return selected ? { background: theme.secondary_container, content: theme.on_secondary_container } : { background: "", content: theme.on_surface_variant }
+}
+
+/**
+ * Height of a navigation drawer item: 56px as in M3, the denser desktop layout keeps the regular button height.
+ */
+export function getDrawerItemHeight(): number {
+	return Styles.get().isDesktopLayout() ? component_size.button_height : component_size.navigation_drawer_item_height
+}
+
 export const enum NavButtonColor {
 	Header = "header",
+	/** Item of a navigation drawer / sidebar, see {@link getDrawerItemColors} */
 	Nav = "nav",
 	Content = "content",
 }
