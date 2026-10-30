@@ -14,7 +14,7 @@ export const MultiselectMobileHeader = pureComponent((attrs: MultiselectMobileHe
 	const { selectAll, selectNone, selected, message } = attrs
 	return m(BaseMobileHeader, {
 		left: m(SelectAllCheckbox, { selectNone, selectAll, selected }),
-		center: m(".font-weight-600", lang.getTranslationText(message)),
+		center: m(".title-l-emphasized.text-ellipsis", lang.getTranslationText(message)),
 		right: m(IconButton, {
 			icon: Icons.X,
 			label: "cancel_action",

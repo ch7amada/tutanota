@@ -85,14 +85,29 @@ export const MobileHeaderBackButton = pureComponent(({ backAction }: { backActio
 	})
 })
 
+/**
+ * Shows a view title in the emphasized title-l role and falls back to the emphasized title-m role when the title does not fit, so the larger
+ * title never truncates text that fit before.
+ */
+function fitMobileHeaderTitle(dom: HTMLElement) {
+	dom.classList.replace("title-m-emphasized", "title-l-emphasized")
+	if (dom.scrollWidth > dom.clientWidth) {
+		dom.classList.replace("title-l-emphasized", "title-m-emphasized")
+	}
+}
+
 export const MobileHeaderTitle = pureComponent(({ title, bottom, onTap }: { title?: string | Children; bottom: Children; onTap?: ClickHandler }) => {
 	// normally min-width: is 0 but inside flex it's auto and we need to teach it how to shrink
 	// align-self: stretch restrict the child to the parent width
 	// text-ellipsis already sets min-width to 0
 	return m(".flex.col.items-start.min-width-0", [
 		m(
-			(onTap ? "button" : "") + ".font-weight-600.text-ellipsis.align-self-stretch",
-			{ onclick: (event: MouseEvent) => onTap?.(event, event.target as HTMLElement) },
+			(onTap ? "button" : "") + ".title-l-emphasized.text-ellipsis.align-self-stretch",
+			{
+				onclick: (event: MouseEvent) => onTap?.(event, event.target as HTMLElement),
+				oncreate: ({ dom }) => fitMobileHeaderTitle(dom as HTMLElement),
+				onupdate: ({ dom }) => fitMobileHeaderTitle(dom as HTMLElement),
+			},
 			title ?? NBSP,
 		),
 		bottom,

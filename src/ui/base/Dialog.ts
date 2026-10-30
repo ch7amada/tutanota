@@ -827,7 +827,7 @@ export class Dialog implements ModalComponent {
 		return new Dialog(DialogType.Reminder, {
 			view: () => [
 				m(".dialog-contentButtonsBottom.text-break.scroll", [
-					m(".h2.pb-16", title),
+					m(".headline-s-emphasized.pb-16", title),
 					m(".flex-direction-change.items-center", [
 						m("#dialog-message.pb-16.selectable", typeof message === "function" ? message() : message),
 						m("img.dialog-img.mb-16.bg-white.border-radius", {
