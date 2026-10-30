@@ -24,7 +24,7 @@ o.spec("CustomColorEditorViewModel", () => {
 	// These customizations should always be set if no changes are made
 	const defaultCustomizations: Readonly<ThemeCustomizations> = downcast(
 		Object.freeze({
-			sourceColor: "#8F4A4E",
+			sourceColor: "#B02A3D",
 			base: "light",
 			version: WHITELABEL_CUSTOMIZATION_VERSION,
 		}),

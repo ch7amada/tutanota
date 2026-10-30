@@ -3,7 +3,7 @@ import Stream from "mithril/stream"
 import { AppType, EnvProvider } from "../platform-kit/app-env"
 import { downcast, findAndRemove, LazyLoaded, mapAndFilterNull, typedValues } from "../platform-kit/utils"
 import m from "mithril"
-import { BaseThemeId, BaseThemeProvider, Theme, ThemeId, ThemePreference } from "./theme"
+import { BaseThemeId, BaseThemeProvider, fillMissingColorRoles, Theme, ThemeId, ThemePreference } from "./theme"
 import { themes } from "./builtinThemes"
 import { getWhitelabelCustomizations } from "./utils/WhitelabelUtils"
 import { getCalendarLogoSvg, getMailLogoSvg } from "./base/Logo"
@@ -11,7 +11,6 @@ import type { WhitelabelThemeGenerator } from "./WhitelabelThemeGenerator"
 import { ThemeCustomizations, UnknownThemeCustomizations, WHITELABEL_CUSTOMIZATION_VERSION } from "./WhitelabelCustomizations"
 import { HtmlSanitizerInterface } from "./utils/HtmlSanitizerInterface"
 import { type ThemeFacade } from "../app-kit/native-bridge/common/generatedipc/types/ThemeFacade"
-import { generatePaletteCandidateTheme, parsePaletteCandidateThemeId } from "./paletteCandidates"
 
 EnvProvider.assertMainOrNodeBoot()
 
@@ -113,7 +112,7 @@ export class ThemeController implements BaseThemeProvider {
 	 */
 	public isLightTheme = (theme: Theme = this.getCurrentTheme()) => {
 		const lightThemes: Array<ThemeId> = ["light", "light_secondary"]
-		return lightThemes.includes(theme.themeId) || parsePaletteCandidateThemeId(theme.themeId)?.base === "light"
+		return lightThemes.includes(theme.themeId)
 	}
 
 	private parseCustomizations(stringTheme: string): ThemeCustomizations {
@@ -153,10 +152,7 @@ export class ThemeController implements BaseThemeProvider {
 	}
 
 	private async getTheme(themeId: ThemeId): Promise<Theme> {
-		const paletteCandidate = parsePaletteCandidateThemeId(themeId)
-		if (paletteCandidate) {
-			return generatePaletteCandidateTheme(themeId, this.getBaseTheme(paletteCandidate.base))
-		} else if (themes()[themeId]) {
+		if (themes()[themeId]) {
 			// Make a defensive copy so that original theme definition is not modified.
 			return Object.assign({}, themes()[themeId])
 		} else {
@@ -165,7 +161,8 @@ export class ThemeController implements BaseThemeProvider {
 
 			if (customTheme) {
 				await this.sanitizeTheme(customTheme)
-				return customTheme
+				// custom themes saved by older clients lack the color roles added since
+				return fillMissingColorRoles(customTheme, customTheme)
 			} else {
 				return this.getDefaultTheme()
 			}
@@ -299,12 +296,14 @@ export class ThemeController implements BaseThemeProvider {
 	 * Assembles a new theme object from customizations.
 	 */
 	private assembleTheme(customizations: ThemeCustomizations): Theme {
+		// Customizations made before color roles were added don't have them. Derive those from the customized colors rather than
+		// taking the base theme's, which would not match the customized ones.
 		if (!customizations.base) {
-			return Object.assign({}, customizations as Theme)
+			return fillMissingColorRoles(Object.assign({}, customizations as Theme), customizations)
 		} else if (customizations.base && customizations.logo) {
-			return Object.assign({}, this.getBaseTheme(customizations.base), customizations)
+			return fillMissingColorRoles(Object.assign({}, this.getBaseTheme(customizations.base), customizations), customizations)
 		} else {
-			const themeWithoutLogo = Object.assign({}, this.getBaseTheme(customizations.base), customizations)
+			const themeWithoutLogo = fillMissingColorRoles(Object.assign({}, this.getBaseTheme(customizations.base), customizations), customizations)
 			// This is a whitelabel theme where logo has not been overwritten.
 			// Generate a logo with muted colors. We do not want to color our logo in
 			// some random color.

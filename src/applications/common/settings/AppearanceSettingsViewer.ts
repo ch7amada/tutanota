@@ -14,7 +14,6 @@ import { getHourCycle } from "../../../entities/tutanota/Utils"
 import { UserSettingsGroupRootTypeRef } from "@tutao/entities/tutanota"
 import { deviceConfig } from "../misc/DeviceConfig"
 import { idToElementId } from "@tutao/meta"
-import { paletteCandidateThemeOptions } from "../../../ui/paletteCandidates"
 
 export class AppearanceSettingsViewer implements UpdatableSettingsViewer {
 	private _customThemes: Array<ThemeId> | null = null
@@ -75,7 +74,6 @@ export class AppearanceSettingsViewer implements UpdatableSettingsViewer {
 					name: lang.get(name),
 					value: value,
 				})),
-				...(ClientDetector.get().isCalendarApp() || ClientDetector.get().isDriveApp() ? [] : paletteCandidateThemeOptions()),
 				...customOptions,
 			],
 			selectedValue: locator.themeController.themePreference,
