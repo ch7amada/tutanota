@@ -1,5 +1,5 @@
 import { EnvProvider } from "../platform-kit/app-env"
-import { isColorLight } from "./base/Color"
+import { hexToRgb, isColorLight, isValidSolidColorCode, rgbToHex } from "./base/Color"
 
 EnvProvider.assertMainOrNodeBoot()
 
@@ -22,6 +22,7 @@ export type Theme = {
 	on_primary: string
 	primary_container: string
 	on_primary_container: string
+	inverse_primary: string
 	primary_fixed: string
 	on_primary_fixed: string
 	primary_fixed_dim: string
@@ -43,13 +44,20 @@ export type Theme = {
 	tertiary_fixed_dim: string
 	on_tertiary_fixed_variant: string
 	surface: string
+	surface_dim: string
+	surface_bright: string
+	surface_container_lowest: string
+	surface_container_low: string
 	surface_container: string
 	surface_container_high: string
 	surface_container_highest: string
 	on_surface: string
 	on_surface_variant: string
+	inverse_surface: string
+	inverse_on_surface: string
 	outline: string
 	outline_variant: string
+	shadow: string
 	scrim: string
 	// semantic colors
 	error: string
@@ -162,6 +170,7 @@ export const MATERIAL_COLORS = Object.freeze([
 	"on_primary",
 	"primary_container",
 	"on_primary_container",
+	"inverse_primary",
 	"secondary",
 	"on_secondary",
 	"secondary_container",
@@ -171,17 +180,88 @@ export const MATERIAL_COLORS = Object.freeze([
 	"tertiary_container",
 	"on_tertiary_container",
 	"surface",
+	"surface_dim",
+	"surface_bright",
+	"surface_container_lowest",
+	"surface_container_low",
 	"surface_container",
 	"surface_container_high",
 	"surface_container_highest",
 	"on_surface",
 	"on_surface_variant",
+	"inverse_surface",
+	"inverse_on_surface",
 	"outline",
 	"outline_variant",
+	"shadow",
 	"scrim",
 ] as const satisfies (keyof Theme)[])
 
 export type MaterialPalette = Record<(typeof MATERIAL_COLORS)[number], string>
+
+/** Mix two solid hex colors in sRGB; {@param weight} is the share of {@param b}. */
+function mixColors(a: string, b: string, weight: number): string {
+	const ca = hexToRgb(a)
+	const cb = hexToRgb(b)
+	const mix = (x: number, y: number) => Math.round(x + (y - x) * weight)
+	return rgbToHex({ r: mix(ca.r, cb.r), g: mix(ca.g, cb.g), b: mix(ca.b, cb.b) })
+}
+
+type DerivableColorRole =
+	| "inverse_primary"
+	| "surface_dim"
+	| "surface_bright"
+	| "surface_container_lowest"
+	| "surface_container_low"
+	| "inverse_surface"
+	| "inverse_on_surface"
+	| "shadow"
+
+/**
+ * M3 roles added to {@link Theme} after whitelabel and custom themes could already be saved, and how to approximate each of them
+ * from roles every theme has. The approximations follow the M3 tone relations (e.g. surface_container_low sits between surface and
+ * surface_container, inverse_surface has the tone of on_surface).
+ */
+const DERIVABLE_COLOR_ROLES: Record<DerivableColorRole, { from: ReadonlyArray<keyof Theme>; derive: (t: Theme, isLight: boolean) => string }> = {
+	inverse_primary: { from: ["primary"], derive: (t, isLight) => mixColors(t.primary, isLight ? "#ffffff" : "#000000", 0.5) },
+	surface_dim: {
+		from: ["surface", "surface_container_highest", "on_surface"],
+		derive: (t, isLight) => (isLight ? mixColors(t.surface_container_highest, t.on_surface, 0.05) : t.surface),
+	},
+	surface_bright: {
+		from: ["surface", "surface_container_highest", "on_surface"],
+		derive: (t, isLight) => (isLight ? t.surface : mixColors(t.surface_container_highest, t.on_surface, 0.05)),
+	},
+	surface_container_lowest: { from: ["surface"], derive: (t, isLight) => (isLight ? "#ffffff" : mixColors(t.surface, "#000000", 0.5)) },
+	surface_container_low: { from: ["surface", "surface_container"], derive: (t) => mixColors(t.surface, t.surface_container, 0.5) },
+	inverse_surface: { from: ["on_surface"], derive: (t) => t.on_surface },
+	inverse_on_surface: { from: ["surface_container"], derive: (t) => t.surface_container },
+	shadow: { from: [], derive: () => "#000000" },
+}
+
+/**
+ * Fills in the color roles in {@link DERIVABLE_COLOR_ROLES} for themes that were defined without them (whitelabel customizations and
+ * custom themes saved by older clients).
+ *
+ * A role is derived from the theme's own colors when {@param provided} (the colors that were actually customized) does not contain it
+ * but does contain one of the roles it is derived from; otherwise the value already in {@param theme} (e.g. from the base theme) is kept.
+ * Roles that cannot be derived because a source color is missing or invalid are left untouched.
+ */
+export function fillMissingColorRoles(theme: Theme, provided: Partial<Theme>): Theme {
+	const result: Theme = { ...theme }
+	if (!isValidSolidColorCode(theme.surface ?? "")) return result
+	const isLight = isColorLight(theme.surface)
+	for (const [role, { from, derive }] of Object.entries(DERIVABLE_COLOR_ROLES) as Array<
+		[DerivableColorRole, (typeof DERIVABLE_COLOR_ROLES)[DerivableColorRole]]
+	>) {
+		if (provided[role] != null) continue
+		const customizedSource = from.some((source) => provided[source] != null)
+		if (theme[role] != null && !customizedSource) continue
+		if (!from.every((source) => isValidSolidColorCode(theme[source] ?? ""))) continue
+		result[role] = derive(theme, isLight)
+	}
+	return result
+}
 
 export interface BaseThemeProvider {
 	getBaseTheme(baseId: BaseThemeId): Theme

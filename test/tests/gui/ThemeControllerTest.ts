@@ -54,6 +54,43 @@ o.spec("ThemeController", () => {
 		o.check(themeManager.getCurrentTheme().logo).equals("sanitized")
 	})
 
+	o.test("whitelabel customizations without the newer color roles get them derived from their own colors", async () => {
+		const customizations: ThemeCustomizations = downcast({
+			themeId: "OldWhitelabel",
+			base: "light",
+			version: WHITELABEL_CUSTOMIZATION_VERSION,
+			primary: "#0040ff",
+			surface: "#ffffff",
+			surface_container: "#eeeeee",
+			on_surface: "#111111",
+		})
+
+		const theme = await themeManager.applyCustomizations(customizations, false)
+
+		o.check(theme.surface_container_low).equals("#f7f7f7")
+		o.check(theme.inverse_surface).equals("#111111")
+		o.check(theme.inverse_primary).equals("#80a0ff")
+		// not derived from customized colors: taken from the base theme
+		o.check(theme.surface_container_high).equals(themeManager.getBaseTheme("light").surface_container_high)
+	})
+
+	o.test("custom themes saved without the newer color roles still load with them filled in", async () => {
+		const savedTheme = downcast<Theme>({ ...themeManager.getBaseTheme("dark"), themeId: "savedCustom" })
+		for (const role of ["surface_container_low", "surface_container_lowest", "surface_dim", "surface_bright", "inverse_surface"] as const) {
+			delete savedTheme[role]
+		}
+		when(themeFacadeMock.getThemes()).thenResolve([savedTheme])
+
+		await themeManager.setThemePreference("savedCustom", false)
+
+		const current = themeManager.getCurrentTheme()
+		o.check(current.surface).equals(savedTheme.surface)
+		o.check(current.surface_dim).equals(savedTheme.surface)
+		o.check(current.inverse_surface).equals(savedTheme.on_surface)
+		// not the light default theme's value
+		o.check(current.surface_container_lowest).notEquals(themeManager.getDefaultTheme().surface_container_lowest)
+	})
+
 	o.spec("map new color tokens to old tokens", () => {
 		o.test("light base theme", () => {
 			const newTokenTheme: ThemeCustomizations = downcast({
