@@ -311,6 +311,8 @@ export const component_size = {
 
 	navbar_height: 72,
 	navbar_height_mobile: 52,
+	/** M3 search bar */
+	search_bar_height: 56,
 	bottom_nav_bar: 50,
 	navbar_button_width: 80,
 	navbar_edge_width_mobile: 58,
