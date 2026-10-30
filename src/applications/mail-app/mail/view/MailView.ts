@@ -15,6 +15,7 @@ import type { MailboxDetail } from "../../../common/mailFunctionality/MailboxMod
 import { locator } from "../../../common/api/main/CommonLocator"
 import { PermissionError } from "../../../common/api/common/error/PermissionError"
 import { Styles } from "../../../../ui/styles"
+import { ButtonColor } from "../../../../ui/base/Button.js"
 import { layout_size, px } from "../../../../ui/size"
 import {
 	checkMailSetName,
@@ -28,6 +29,7 @@ import {
 	ShowMoveMailsDropdownOpts,
 	showMoveMailsFromFolderDropdown,
 } from "./MailGuiUtils"
+import { FabScrollState, FloatingActionButton } from "../../../../ui/base/FloatingActionButton.js"
 import { isNewMailActionAvailable } from "../../../common/gui/nav/NavFunctions"
 import Stream from "mithril/stream"
 import { readLocalFiles } from "../../../common/file/FileController.js"
@@ -136,6 +138,8 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 	private readonly mailViewModel: MailViewModel
 
 	private readonly undoModel: UndoModel
+	private readonly newMailFabScroll = new FabScrollState()
+	private newMailFabFolderId: Id | null = null
 
 	get conversationViewModel(): ConversationViewModel | null {
 		return this.mailViewModel.getConversationViewModel()
@@ -165,6 +169,8 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 										style: {
 											marginBottom: px(conversationCardMargin),
 										},
+										// scroll does not bubble, listen in capture phase to see the list scrolling
+										oncreate: ({ dom }) => dom.addEventListener("scroll", this.onListScroll, true),
 									},
 									m(MailListView, {
 										key: getElementId(folder),
@@ -308,6 +314,7 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 								)
 							: null,
 						mobileHeader: () => this.renderListMobileHeader(vnode.attrs.header),
+						floatingActionButton: () => this.renderNewMailFab(),
 					})
 				},
 			},
@@ -877,7 +884,8 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 				...header,
 				title: this.listColumn.getTitle(),
 				actions,
-				primaryAction: () => this.renderHeaderRightView(),
+				// the new email action is the floating action button on mobile, see renderNewMailFab()
+				primaryAction: () => null,
 				backAction: () => this.viewSlider.focusPreviousColumn(),
 				selectionHeader,
 			})
@@ -889,10 +897,39 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 				title: this.listColumn.getTitle(),
 				columnType: "first",
 				actions,
-				primaryAction: () => this.renderHeaderRightView(),
+				primaryAction: () => null,
 				backAction: () => this.viewSlider.focusPreviousColumn(),
 			})
 		)
+	}
+
+	private readonly onListScroll = (event: Event) => {
+		const target = event.target
+		if (target instanceof HTMLElement && target.classList.contains("list-container") && this.newMailFabScroll.onScroll(target.scrollTop)) {
+			m.redraw()
+		}
+	}
+
+	/** Extended "New email" FAB of the mobile mail list, it replaces the compose button of the list header. */
+	private renderNewMailFab(): Children {
+		const folder = this.mailViewModel.getMailSet()
+		const folderId = folder ? getElementId(folder) : null
+		if (folderId !== this.newMailFabFolderId) {
+			// a new folder starts at the top of its list, show the label again
+			this.newMailFabFolderId = folderId
+			this.newMailFabScroll.reset()
+		}
+		if (!Styles.get().isUsingBottomNavigation() || !isNewMailActionAvailable() || this.mailViewModel.listModel?.isInMultiselect()) {
+			return null
+		}
+		return m(FloatingActionButton, {
+			title: "newMail_action",
+			text: "newMail_action",
+			collapsed: this.newMailFabScroll.collapsed,
+			icon: Icons.Write,
+			colors: ButtonColor.Fab,
+			click: () => this.showNewMailDialog().catch(ofClass(PermissionError, noOp)),
+		})
 	}
 
 	private renderHeaderRightView(): Children {
