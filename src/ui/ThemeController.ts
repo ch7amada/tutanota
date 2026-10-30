@@ -11,6 +11,7 @@ import type { WhitelabelThemeGenerator } from "./WhitelabelThemeGenerator"
 import { ThemeCustomizations, UnknownThemeCustomizations, WHITELABEL_CUSTOMIZATION_VERSION } from "./WhitelabelCustomizations"
 import { HtmlSanitizerInterface } from "./utils/HtmlSanitizerInterface"
 import { type ThemeFacade } from "../app-kit/native-bridge/common/generatedipc/types/ThemeFacade"
+import { generatePaletteCandidateTheme, parsePaletteCandidateThemeId } from "./paletteCandidates"
 
 EnvProvider.assertMainOrNodeBoot()
 
@@ -112,7 +113,7 @@ export class ThemeController implements BaseThemeProvider {
 	 */
 	public isLightTheme = (theme: Theme = this.getCurrentTheme()) => {
 		const lightThemes: Array<ThemeId> = ["light", "light_secondary"]
-		return lightThemes.includes(theme.themeId)
+		return lightThemes.includes(theme.themeId) || parsePaletteCandidateThemeId(theme.themeId)?.base === "light"
 	}
 
 	private parseCustomizations(stringTheme: string): ThemeCustomizations {
@@ -152,7 +153,10 @@ export class ThemeController implements BaseThemeProvider {
 	}
 
 	private async getTheme(themeId: ThemeId): Promise<Theme> {
-		if (themes()[themeId]) {
+		const paletteCandidate = parsePaletteCandidateThemeId(themeId)
+		if (paletteCandidate) {
+			return generatePaletteCandidateTheme(themeId, this.getBaseTheme(paletteCandidate.base))
+		} else if (themes()[themeId]) {
 			// Make a defensive copy so that original theme definition is not modified.
 			return Object.assign({}, themes()[themeId])
 		} else {
