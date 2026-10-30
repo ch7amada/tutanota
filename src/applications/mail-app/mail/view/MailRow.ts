@@ -2,18 +2,8 @@ import { FontIcons } from "../../../../ui/base/icons/FontIcons"
 import { formatTimeOrDateOrYesterday } from "../../../../ui/utils/Formatter.js"
 import m, { Children } from "mithril"
 import Badge from "../../../../ui/base/Badge"
-import {
-	checkboxOpacity,
-	scaleXHide,
-	scaleXShow,
-	selectableRowAnimParams,
-	SelectableRowContainer,
-	SelectableRowSelectedSetter,
-	setVisibility,
-	shouldAlwaysShowMultiselectCheckbox,
-} from "../../../../ui/SelectableRowContainer.js"
-import { component_size, px, size } from "../../../../ui/size.js"
-import { noOp } from "../../../../platform-kit/utils"
+import { SelectableRowContainer, SelectableRowSelectedSetter, setVisibility } from "../../../../ui/SelectableRowContainer.js"
+import { component_size, px, shape, size } from "../../../../ui/size.js"
 import { setHTMLElementTextWithHighlighting, VirtualRow } from "../../../../ui/base/ListUtils.js"
 import { companyTeamLabel } from "../../../../platform-kit/app-env/boot/ClientConstants.js"
 import { getConfidentialFontIcon } from "./MailGuiUtils.js"
@@ -29,8 +19,11 @@ import { ClientDetector } from "../../../../platform-kit/app-env/boot/ClientDete
 import { isTutaTeamMail } from "../../../common/mailFunctionality/SharedMailUtils"
 import { isEditableDraft } from "../model/MailChecks"
 import { Mail, MailSet } from "@tutao/entities/tutanota"
-import { MailSetKind, ReplyType } from "../../../../entities/tutanota/Utils"
+import { MailSetKind, MailState, ReplyType } from "../../../../entities/tutanota/Utils"
 import { getMailFolderType } from "../MailUtils"
+import { AvatarSender, renderSenderAvatar, SenderAvatarDom } from "../../../../ui/base/SenderAvatar.js"
+import { isKeyPressed } from "../../../../ui/utils/KeyManager.js"
+import { Keys } from "../../../../ui/utils/KeyboardKeys"
 
 const iconMap: Record<MailSetKind, string> = {
 	[MailSetKind.CUSTOM]: FontIcons.FolderFilled,
@@ -47,11 +40,11 @@ const iconMap: Record<MailSetKind, string> = {
 	[MailSetKind.IMPORTED]: FontIcons.FolderFilled,
 }
 
-export const MAIL_ROW_V_MARGIN = 3
+/** Mail rows are a bit taller than other list rows to fit the avatar with some room (M3 two-line list item: 72px plus the gap between rows). */
+export const MAIL_ROW_HEIGHT = component_size.list_row_height + size.spacing_8
 
-const shiftByForCheckbox = px(10)
-const translateXHide = "translateX(0)"
-const translateXShow = `translateX(${shiftByForCheckbox})`
+/** The avatar doubles as the selection toggle, so it gets a full touch target around the 40px circle. */
+const AVATAR_TOUCH_TARGET = size.core_48
 
 const ELLIPSIS = "\u2026"
 
@@ -67,12 +60,13 @@ export class MailRow implements VirtualRow<Mail> {
 
 	private dateDom!: HTMLElement
 	private iconsDom!: HTMLElement
-	private unreadDom!: HTMLElement
 	private teamLabelDom!: HTMLElement
 	private labelsDom: HTMLElement[] = []
 	private moreLabelsIndicatorDom!: HTMLElement
-	private checkboxDom!: HTMLInputElement
-	private checkboxWasVisible = shouldAlwaysShowMultiselectCheckbox()
+	private avatarToggleDom!: HTMLElement
+	private avatarDom!: SenderAvatarDom
+	/** whether the row is checked in multiselect, shown as a check mark in the avatar */
+	private checked = false
 	private selectionSetter!: SelectableRowSelectedSetter
 
 	private highlightedStrings?: readonly SearchToken[]
@@ -94,7 +88,10 @@ export class MailRow implements VirtualRow<Mail> {
 		this.highlightedStrings = this.getHighlightedStrings?.()
 
 		this.selectionSetter(selected, isInMultiSelect)
-		this.checkboxDom.checked = isInMultiSelect && selected
+		this.checked = isInMultiSelect && selected
+		// only flip the avatar if the same mail was (de)selected, not when the row is reused for another mail while scrolling
+		this.avatarDom.update(getAvatarSender(mail), this.checked, oldEntity === mail)
+		this.avatarToggleDom.setAttribute("aria-checked", String(this.checked))
 		const iconInformation = this.iconsText(mail)
 		this.iconsDom.textContent = iconInformation.iconText
 		const formattedDate = formatTimeOrDateOrYesterday(mail.receivedDate)
@@ -109,25 +106,20 @@ export class MailRow implements VirtualRow<Mail> {
 		if (oldEntity !== this.entity || oldHighlightedStrings !== this.highlightedStrings) {
 			setHTMLElementTextWithHighlighting(this.senderDom, senderString, this.highlightedStrings)
 			setHTMLElementTextWithHighlighting(this.subjectDom, mail.subject, this.highlightedStrings)
+			this.avatarToggleDom.ariaLabel = senderString || getAvatarSender(mail).address
 		}
 
-		if (mail.unread) {
-			this.unreadDom.classList.remove("hidden")
-			this.subjectDom.classList.add("b")
-			this.senderDom.classList.add("b")
-		} else {
-			this.unreadDom.classList.add("hidden")
-
-			this.subjectDom.classList.remove("b")
-			this.senderDom.classList.remove("b")
+		// unread mails are conveyed by bold sender, subject and date (and "unread" in the row description), read ones have a quieter subject and date
+		for (const dom of [this.senderDom, this.subjectDom, this.dateDom]) {
+			dom.classList.toggle("b", mail.unread)
+		}
+		for (const dom of [this.subjectDom, this.dateDom]) {
+			dom.classList.toggle("text-fade", !mail.unread)
 		}
 		const labels = this.updateLabels(mail)
 
 		const isTeamMail = isTutaTeamMail(mail)
 		setVisibility(this.teamLabelDom, isTeamMail)
-		this.showCheckboxAnimated(shouldAlwaysShowMultiselectCheckbox() || isInMultiSelect)
-
-		checkboxOpacity(this.checkboxDom, selected)
 
 		if (this.domElement) {
 			let labelsText = ""
@@ -165,82 +157,9 @@ export class MailRow implements VirtualRow<Mail> {
 		return labels
 	}
 
-	private showCheckboxAnimated(show: boolean): void {
-		// this causes a slide animation where checkbox pops up and the text is shifted to make space for it.
-		// we can't animate the width of the checkbox as it causes the layout shifts and is very slow so instead we change the padding of the text elements in
-		// a single step and then shift them in an animation. The effect is almost the same as if we would expand/shrink the checkbox.
-		// using requestAnimationFrame() because when we toggle it some elements might not be there yet. Could also for the end of the event loop too.
-		// using web animations to be able to cancel them easily. Could probably use transition and listen for the end instead but it would be harder to
-		// do the bookkeeping.
-		// using noOp to catch rejection when the animation is cancelled
-		const shouldShowCheckbox = show
-		if (this.checkboxWasVisible === shouldShowCheckbox) return
-
-		if (shouldShowCheckbox) {
-			this.senderDom.style.paddingRight = shiftByForCheckbox
-			this.subjectDom.style.paddingRight = shiftByForCheckbox
-
-			const showTranslateTransform = { transform: [translateXHide, translateXShow] }
-			const senderAnim = this.senderDom.animate(showTranslateTransform, selectableRowAnimParams)
-			const subjectAnim = this.subjectDom.animate(showTranslateTransform, selectableRowAnimParams)
-			const badgeAnim = this.teamLabelDom.animate(showTranslateTransform, selectableRowAnimParams)
-			const checkboxAnim = this.checkboxDom.animate({ transform: [scaleXHide, scaleXShow] }, selectableRowAnimParams)
-
-			Promise.all([senderAnim.finished, subjectAnim.finished, checkboxAnim.finished]).then(() => {
-				this.showCheckbox(true)
-
-				senderAnim.cancel()
-				subjectAnim.cancel()
-				badgeAnim.cancel()
-				checkboxAnim.cancel()
-			}, noOp)
-		} else {
-			this.senderDom.style.paddingRight = "0"
-			this.subjectDom.style.paddingRight = "0"
-
-			const hideTranslateTransform = { transform: [translateXShow, translateXHide] }
-			const senderAnim = this.senderDom.animate(hideTranslateTransform, selectableRowAnimParams)
-			const subjectAnim = this.subjectDom.animate(hideTranslateTransform, selectableRowAnimParams)
-			const badgeAnim = this.teamLabelDom.animate(hideTranslateTransform, selectableRowAnimParams)
-			const checkboxAnim = this.checkboxDom.animate({ transform: [scaleXShow, scaleXHide] }, selectableRowAnimParams)
-
-			Promise.all([senderAnim.finished, subjectAnim.finished, checkboxAnim.finished]).then(() => {
-				this.showCheckbox(false)
-
-				senderAnim.cancel()
-				subjectAnim.cancel()
-				badgeAnim.cancel()
-				checkboxAnim.cancel()
-			}, noOp)
-		}
-		this.checkboxWasVisible = shouldShowCheckbox
-	}
-
-	private showCheckbox(show: boolean): void {
-		let translate
-		let scale
-		let padding
-		if (show) {
-			translate = translateXShow
-			scale = scaleXShow
-			padding = shiftByForCheckbox
-		} else {
-			translate = translateXHide
-			scale = scaleXHide
-			padding = "0"
-		}
-		this.senderDom.style.transform = translate
-		this.subjectDom.style.transform = translate
-		this.teamLabelDom.style.transform = translate
-		this.checkboxDom.style.transform = scale
-
-		this.senderDom.style.paddingRight = padding
-		this.subjectDom.style.paddingRight = padding
-
-		// we effectively remove it from interaction
-		this.checkboxDom.disabled = !show
-		this.checkboxDom.tabIndex = show ? 0 : -1
-		this.checkboxDom.ariaHidden = String(!show)
+	/** Tapping the avatar toggles the selection like the checkbox it replaces (shift-click is left to the list for range selection). */
+	private toggleSelection(): void {
+		if (this.entity) this.onSelected(this.entity, !this.checked)
 	}
 
 	/**
@@ -250,60 +169,59 @@ export class MailRow implements VirtualRow<Mail> {
 		return m(
 			SelectableRowContainer,
 			{
-				class: "pt-12 pb-12 pl-12 pr-12",
+				class: "items-center pt-12 pb-12 pl-4 pr-16",
 				onSelectedChangeRef: (changer) => {
 					this.selectionSetter = changer
 				},
 				oncreate: (vnode) => {
 					this.domElement = vnode.dom as HTMLElement
-					// doing it right away to avoid visual glitch of it appearing/disappearing
-					// but doing it at the end of the event loop because we touch other DOM elements too which might not be there yet
-					Promise.resolve().then(() => this.showCheckbox(shouldAlwaysShowMultiselectCheckbox()))
 				},
 			},
 			[
 				m(
-					".flex.col.items-center.flex-no-grow.no-shrink.pt-4.abs",
+					".flex.items-center.justify-center.no-shrink.state-bg.mr-8",
 					{
-						"aria-hidden": "true",
-					},
-					m("input.checkbox.list-checkbox", {
-						type: "checkbox",
+						role: "checkbox",
+						tabindex: "0",
+						"aria-checked": "false",
+						"data-testid": "list-row:mail:avatar",
 						style: {
-							marginBottom: "7px",
-							transformOrigin: "left",
+							width: px(AVATAR_TOUCH_TARGET),
+							height: px(AVATAR_TOUCH_TARGET),
+							borderRadius: px(shape.full),
 						},
 						onclick: (e: MouseEvent) => {
-							if (e.shiftKey) {
-								// If the shift is pressed, let it bubble up and be handled by List which will do a range select
+							// If the shift is pressed, let it bubble up and be handled by List which will do a range select
+							if (!e.shiftKey) {
+								e.stopPropagation()
+								this.toggleSelection()
+							}
+						},
+						onkeydown: (e: KeyboardEvent) => {
+							if (isKeyPressed(e.key, Keys.SPACE, Keys.RETURN)) {
+								// don't scroll and don't let the row (which selects on key up) or the global shortcuts handle it
 								e.preventDefault()
-							} else {
 								e.stopPropagation()
 							}
 						},
-						onchange: () => {
-							if (this.entity) this.onSelected(this.entity, this.checkboxDom.checked)
+						onkeyup: (e: KeyboardEvent) => {
+							if (isKeyPressed(e.key, Keys.SPACE, Keys.RETURN)) {
+								e.stopPropagation()
+								this.toggleSelection()
+							}
 						},
 						oncreate: (vnode) => {
-							this.checkboxDom = vnode.dom as HTMLInputElement
-							checkboxOpacity(this.checkboxDom, false)
+							this.avatarToggleDom = vnode.dom as HTMLElement
 						},
-					}),
-					m(".dot.bg-accent-fg.hidden", {
-						"data-testid": "unread-indicator",
-						style: {
-							marginTop: px(MAIL_ROW_V_MARGIN),
-						},
-						oncreate: (vnode) => (this.unreadDom = vnode.dom as HTMLElement),
+					},
+					renderSenderAvatar(undefined, (dom) => {
+						this.avatarDom = new SenderAvatarDom(dom)
 					}),
 				),
 				m(
 					".flex-grow.min-width-0",
 					{
 						"aria-hidden": "true",
-						style: {
-							marginLeft: px(component_size.checkbox_size + size.spacing_4),
-						},
 					},
 					[
 						m(".flex.badge-line-height", [
@@ -458,4 +376,12 @@ export class MailRow implements VirtualRow<Mail> {
 	private folderIcon(type: MailSetKind): string {
 		return iconMap[type] ?? FontIcons.FolderFilled
 	}
+}
+
+/** The person the avatar stands for: the sender of received mails, otherwise the (first) recipient, matching {@link getSenderOrRecipientHeading}. */
+function getAvatarSender(mail: Mail): AvatarSender {
+	if (mail.state !== MailState.RECEIVED && mail.firstRecipient != null && parseInt(mail.recipientCount) > 0) {
+		return mail.firstRecipient
+	}
+	return mail.sender
 }

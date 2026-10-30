@@ -1,7 +1,7 @@
 import m, { ClassComponent, Vnode } from "mithril"
 import { theme } from "./theme.js"
 import { Styles } from "./styles.js"
-import { px, size } from "./size.js"
+import { px, shape, size } from "./size.js"
 import { DefaultAnimationTime } from "./animation/Animations.js"
 import { currentNavigationType, PrimaryNavigationType } from "./base/RootView.js"
 
@@ -22,10 +22,12 @@ export class SelectableRowContainer implements ClassComponent<SelectableRowConta
 
 	view({ attrs, children }: Vnode<SelectableRowContainerAttrs>) {
 		return m(
-			".flex.border-radius.ml-8.mb-4",
+			".flex.ml-8.mb-4",
 			{
 				class: attrs.class,
 				style: {
+					// M3 Expressive: the selected/open row is an inset, rounded, tinted container rather than a full-width strip
+					borderRadius: px(shape.large),
 					...attrs.style,
 					// this is an adjustment to keep tha columns aligned, space between columns is too big otherwise.
 					// this is an obscure place to put it and ideally should not be done here or should be passed down here.
@@ -52,7 +54,7 @@ export class SelectableRowContainer implements ClassComponent<SelectableRowConta
 				onblur: () => {
 					if (SelectableRowContainer.isUsingKeyboard()) {
 						if (this.selected && !Styles.get().isSingleColumnLayout()) {
-							this.setBackground(theme.state_bg_hover)
+							this.setBackground(theme.secondary_container)
 						} else {
 							this.setBackground(theme.surface)
 						}
@@ -80,7 +82,7 @@ export class SelectableRowContainer implements ClassComponent<SelectableRowConta
 		// In the single column view, a row may be 'selected' by the URL still linking to a specific mail
 		// So do not highlight in that case but in just multiselect mode and keyboard navigation
 		const highlight = Styles.get().isSingleColumnLayout() ? (this.isInMultiselect || isUsingKeyboard) && this.selected : this.selected
-		this.setBackground(highlight ? theme.state_bg_hover : theme.surface)
+		this.setBackground(highlight ? theme.secondary_container : theme.surface)
 	}
 }
 
