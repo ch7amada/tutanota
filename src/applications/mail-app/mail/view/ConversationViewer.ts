@@ -18,6 +18,7 @@ import { MailViewerMoreActions } from "./MailViewerUtils"
 import { MailTypeRef } from "@tutao/entities/tutanota"
 import { elementIdPart, isSameId, isSameTypeRef } from "../../../../platform-kit/meta"
 import { Keys } from "../../../../ui/utils/KeyboardKeys"
+import { floatingToolbarClearance } from "../../../../ui/FloatingToolbar"
 
 export interface ConversationViewerAttrs {
 	viewModel: ConversationViewModel
@@ -142,10 +143,13 @@ export class ConversationViewer implements Component<ConversationViewerAttrs> {
 	private renderFooter() {
 		// Having more room at the bottom allows the last email so it is (almost) always in the same place on the screen.
 		// We reduce space by 100 for the header of the viewer and a bit more
-		const height =
+		// It must stay at least as high as the floating toolbar on mobile, so that the content can be scrolled past it.
+		const height = Math.max(
 			document.body.offsetHeight -
-			(Styles.get().isUsingBottomNavigation() ? component_size.navbar_height_mobile + component_size.bottom_nav_bar : component_size.navbar_height) -
-			300
+				(Styles.get().isUsingBottomNavigation() ? component_size.navbar_height_mobile + component_size.bottom_nav_bar : component_size.navbar_height) -
+				300,
+			floatingToolbarClearance(),
+		)
 		return m(".mt-32.noprint", {
 			style: {
 				height: px(height),

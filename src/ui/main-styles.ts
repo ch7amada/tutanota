@@ -1853,6 +1853,37 @@ export class MainStyles {
 					"padding-bottom": "var(--safe-area-inset-bottom)",
 					"z-index": 2,
 				},
+				// M3 Expressive floating toolbar (FloatingToolbar): vibrant colors, elevation level 3, floats above the content
+				".floating-toolbar": {
+					position: "absolute",
+					left: 0,
+					right: 0,
+					bottom: `calc(${px(size.spacing_16)} + var(--safe-area-inset-bottom))`,
+					margin: "0 auto",
+					width: "fit-content",
+					"max-width": `calc(100% - ${px(size.spacing_16 * 2)})`,
+					height: px(component_size.floating_toolbar_height),
+					"box-sizing": "border-box",
+					padding: `0 ${px(size.spacing_8)}`,
+					gap: px(size.spacing_4),
+					"border-radius": px(component_shape.floating_toolbar),
+					"background-color": theme.primary_container,
+					"box-shadow": `0 1px 3px 0 ${hexToRGBAString(theme.shadow, 0.3)}, 0 4px 8px 3px ${hexToRGBAString(theme.shadow, 0.15)}`,
+					"z-index": 2,
+				},
+				".floating-toolbar .icon-button": {
+					width: px(component_size.button_height_md),
+					height: px(component_size.button_height_md),
+					"max-width": px(component_size.button_height_md),
+					"max-height": px(component_size.button_height_md),
+				},
+				// state layers in the toolbar's content color, the default state-bg colors are made for surfaces
+				":where(.mouse-nav) .floating-toolbar .state-bg:hover, :where(.keyboard-nav) .floating-toolbar .state-bg:hover": {
+					background: hexToRGBAString(theme.on_primary_container, 0.08),
+				},
+				":where(.keyboard-nav) .floating-toolbar .state-bg:focus, .floating-toolbar .state-bg:active, .floating-toolbar .state-bg[pressed=true]": {
+					background: hexToRGBAString(theme.on_primary_container, 0.1),
+				},
 				".notification-overlay-content": {
 					"margin-left": px(size.spacing_16),
 					"margin-right": px(size.spacing_16),

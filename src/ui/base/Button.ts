@@ -23,6 +23,7 @@ export const enum ButtonColor {
 	Dialog = "dialog",
 	Primary = "primary",
 	MailTextEditor = "mailtexteditor",
+	FloatingToolbar = "floatingtoolbar",
 }
 
 export function getColors(buttonColors: ButtonColor | null | undefined): {
@@ -68,6 +69,11 @@ export function getColors(buttonColors: ButtonColor | null | undefined): {
 			return {
 				button: theme.outline,
 				border: theme.outline,
+			}
+		case ButtonColor.FloatingToolbar:
+			return {
+				button: theme.on_primary_container,
+				border: theme.primary_container,
 			}
 		case ButtonColor.Content:
 		default:
