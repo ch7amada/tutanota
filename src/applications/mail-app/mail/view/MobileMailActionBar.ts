@@ -1,12 +1,11 @@
 import m, { Children, Component, Vnode } from "mithril"
-import { IconButton } from "../../../../ui/base/IconButton.js"
 import { createDropdown, Dropdown, DROPDOWN_MARGIN, DropdownButtonAttrs } from "../../../../ui/base/Dropdown.js"
 import { Icons } from "../../../../ui/base/icons/Icons.js"
 import { LabelsPopupOpts, ShowMoveMailsDropdownOpts } from "./MailGuiUtils.js"
 import { modal } from "../../../../ui/base/Modal.js"
 import type { MailViewerMoreActions } from "./MailViewerUtils.js"
 import { multipleMailViewerMoreActions } from "./MailViewerUtils.js"
-import { component_size, px } from "../../../../ui/size.js"
+import { FloatingToolbar, FloatingToolbarAction } from "../../../../ui/FloatingToolbar.js"
 
 import { PosRect } from "../../../../ui/utils/PosRect"
 
@@ -32,47 +31,34 @@ export class MobileMailActionBar implements Component<MobileMailActionBarAttrs> 
 	view(vnode: Vnode<MobileMailActionBarAttrs>): Children {
 		const { attrs } = vnode
 
-		const isReportNotSpamButton = this.reportNotSpamButton(attrs) != null
-		return m(
-			".bottom-nav.bottom-action-bar.flex.items-center.plr-24.justify-between",
-			{
-				oncreate: (vnode) => {
-					this.dom = vnode.dom as HTMLElement
-				},
+		const reportNotSpamButton = this.reportNotSpamButton(attrs)
+		return m(FloatingToolbar, {
+			oncreate: (vnode) => {
+				this.dom = vnode.dom as HTMLElement
 			},
-			[
-				this.reportNotSpamButton(attrs) ?? this.unscheduleButton(attrs) ?? this.editButton(attrs) ?? this.replyButton(attrs) ?? this.placeholder(),
-				isReportNotSpamButton ? this.placeholder() : (this.forwardButton(attrs) ?? this.placeholder()),
-				this.deleteButton(attrs) ?? this.trashButton(attrs) ?? this.placeholder(),
-				this.moveButton(attrs) ?? this.placeholder(),
+			actions: [
+				reportNotSpamButton ?? this.unscheduleButton(attrs) ?? this.editButton(attrs) ?? this.replyButton(attrs),
+				reportNotSpamButton ? null : this.forwardButton(attrs),
+				this.deleteButton(attrs) ?? this.trashButton(attrs),
+				this.moveButton(attrs),
 				this.moreButton(attrs),
 			],
-		)
-	}
-
-	private placeholder() {
-		return m("", {
-			style: {
-				width: px(component_size.button_height),
-			},
 		})
 	}
 
-	private reportNotSpamButton({ reportNotSpamAction }: MobileMailActionBarAttrs) {
+	private reportNotSpamButton({ reportNotSpamAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			reportNotSpamAction &&
-			m(IconButton, {
+			reportNotSpamAction && {
 				label: "reportNotSpam_action",
 				click: reportNotSpamAction,
 				icon: Icons.BugCrossedFilled,
-			})
+			}
 		)
 	}
 
-	private moveButton({ moveMailsAction }: MobileMailActionBarAttrs) {
+	private moveButton({ moveMailsAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			moveMailsAction &&
-			m(IconButton, {
+			moveMailsAction && {
 				label: "move_action",
 				click: (e, dom) =>
 					moveMailsAction(dom.getBoundingClientRect(), {
@@ -80,16 +66,24 @@ export class MobileMailActionBar implements Component<MobileMailActionBarAttrs> 
 						withBackground: true,
 					}),
 				icon: Icons.FolderFilled,
-			})
+			}
 		)
 	}
 
 	private dropdownWidth() {
-		return this.dom?.offsetWidth ? this.dom.offsetWidth - DROPDOWN_MARGIN * 2 : undefined
+		// the floating toolbar only hugs its buttons, menus keep the width of the view like with the former full-width bar
+		const viewWidth = (this.dom?.offsetParent as HTMLElement | null)?.offsetWidth
+		return viewWidth ? viewWidth - DROPDOWN_MARGIN * 2 : undefined
 	}
 
-	private moreButton({ applyLabelsAction, setUnreadStateAction, isUnread, mailViewerMoreActions, reportNotSpamAction }: MobileMailActionBarAttrs) {
-		return m(IconButton, {
+	private moreButton({
+		applyLabelsAction,
+		setUnreadStateAction,
+		isUnread,
+		mailViewerMoreActions,
+		reportNotSpamAction,
+	}: MobileMailActionBarAttrs): FloatingToolbarAction {
+		return {
 			label: "more_label",
 			click: createDropdown({
 				lazyButtons: () => {
@@ -137,46 +131,42 @@ export class MobileMailActionBar implements Component<MobileMailActionBarAttrs> 
 				withBackground: true,
 			}),
 			icon: Icons.More,
-		})
+		}
 	}
 
-	private deleteButton({ deleteMailsAction }: MobileMailActionBarAttrs): Children {
+	private deleteButton({ deleteMailsAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			deleteMailsAction &&
-			m(IconButton, {
+			deleteMailsAction && {
 				label: "delete_action",
 				click: deleteMailsAction,
 				icon: Icons.TrashCrossFilled,
-			})
+			}
 		)
 	}
 
-	private trashButton({ trashMailsAction }: MobileMailActionBarAttrs): Children {
+	private trashButton({ trashMailsAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			trashMailsAction &&
-			m(IconButton, {
+			trashMailsAction && {
 				label: "trash_action",
 				click: trashMailsAction,
 				icon: Icons.TrashFilled,
-			})
+			}
 		)
 	}
 
-	private forwardButton({ forwardAction }: MobileMailActionBarAttrs): Children {
+	private forwardButton({ forwardAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			forwardAction &&
-			m(IconButton, {
+			forwardAction && {
 				label: "forward_action",
 				click: forwardAction,
 				icon: Icons.ArrowForwardFilled,
-			})
+			}
 		)
 	}
 
-	private replyButton({ replyAction, replyAllAction }: MobileMailActionBarAttrs) {
+	private replyButton({ replyAction, replyAllAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			replyAction &&
-			m(IconButton, {
+			replyAction && {
 				label: "reply_action",
 				click:
 					replyAllAction != null
@@ -203,29 +193,27 @@ export class MobileMailActionBar implements Component<MobileMailActionBarAttrs> 
 							}
 						: replyAction,
 				icon: replyAllAction != null ? Icons.DoubleArrowBackFilled : Icons.ArrowBackFilled,
-			})
+			}
 		)
 	}
 
-	private editButton({ editDraftAction }: MobileMailActionBarAttrs) {
+	private editButton({ editDraftAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			editDraftAction &&
-			m(IconButton, {
+			editDraftAction && {
 				label: "edit_action",
 				icon: Icons.PenFilled,
 				click: editDraftAction,
-			})
+			}
 		)
 	}
 
-	private unscheduleButton({ unscheduleMailAction }: MobileMailActionBarAttrs) {
+	private unscheduleButton({ unscheduleMailAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
 		return (
-			unscheduleMailAction &&
-			m(IconButton, {
+			unscheduleMailAction && {
 				label: "cancelSend_action",
 				icon: Icons.X,
 				click: unscheduleMailAction,
-			})
+			}
 		)
 	}
 }

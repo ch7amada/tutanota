@@ -161,6 +161,10 @@ export const component_shape = {
 	get fab(): number {
 		return shape.large
 	},
+	/** Floating toolbars (M3 Expressive) */
+	get floating_toolbar(): number {
+		return shape.full
+	},
 	get card(): number {
 		return shape.extra_large
 	},
@@ -314,6 +318,7 @@ export const component_size = {
 	button_height_compact: 30,
 	button_icon_bg_size: 32,
 	button_floating_size: 56,
+	floating_toolbar_height: 64,
 	icon_segment_control_button_height: 36,
 	icon_segment_control_button_width: 48,
 

@@ -1,7 +1,7 @@
 import m, { Component, Vnode } from "mithril"
 import { layout_size, px, size } from "../size"
 import { DefaultAnimationTime } from "../animation/Animations"
-import { displayOverlay, PositionRect } from "./Overlay"
+import { displayOverlay, overlayBottomMargin, PositionRect } from "./Overlay"
 import type { ButtonAttrs } from "./Button.js"
 import { Button, ButtonType } from "./Button.js"
 import { lang, MaybeTranslation, TranslationKey } from "../utils/LanguageViewModel"
@@ -15,6 +15,7 @@ import { AllIcons, Icon, IconSize } from "./Icon"
 import { theme } from "../theme"
 import { Icons } from "./icons/Icons"
 import { fabBottomSpacing } from "./FloatingActionButton"
+import { shownFloatingToolbarClearance } from "../FloatingToolbar"
 
 EnvProvider.assertMainOrNode()
 
@@ -204,8 +205,10 @@ function getSnackBarPosition() {
 	const snackBarMargin = Styles.get().isUsingBottomNavigation() ? size.spacing_12 : size.spacing_24
 	const leftOffset = Styles.get().isDesktopLayout() ? layout_size.drawer_menu_width : 0
 	const snackBarWidth = Math.min(window.innerWidth - leftOffset - 2 * snackBarMargin, MAX_SNACKBAR_WIDTH)
+	// the overlay already keeps the bottom navigation clear, a floating toolbar can reach higher
+	const floatingToolbarSpacing = Math.max(0, shownFloatingToolbarClearance() - (overlayBottomMargin() ?? 0))
 	let result: PositionRect = {
-		bottom: px(snackBarMargin + fabBottomSpacing()),
+		bottom: px(snackBarMargin + Math.max(fabBottomSpacing(), floatingToolbarSpacing)),
 		"max-width": px(snackBarWidth),
 		zIndex: LayerType.Modal,
 	}
