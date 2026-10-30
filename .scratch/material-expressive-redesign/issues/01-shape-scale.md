@@ -23,3 +23,5 @@
 - FABs (`FloatingActionButton`, `FabMenu`, `MainCreateButton`) use M3 large (16) rather than a pill, as in M3/Gmail. Menus/dropdowns/popovers use 16.
 - Not changed / deferred: there is no bottom-sheet component yet (`.shape-bottom-sheet` is ready for it); folder rows (`SidebarSectionRow`) left at 4 for the folder-drawer ticket; `CircleLoadingBar` left for ticket 15; mail/calendar/drive/settings screens still use the old numeric classes (values from the scale, not changed).
 - Proof: `node make prod` OK; `mail:types`, `calendar:types`, `drive:types`, `test:types` 0 errors; eslint/prettier clean on changed files. Checked login page, a dialog (phone, light + dark, and desktop) and a dropdown in headless Firefox. `npm test` could not run on this machine: the test build compiles the native `@signalapp/sqlcipher` addon and `g++` is not installed (unrelated to this change; no test references the changed modules).
+
+**Decision (2026-10-30):** FABs keep the M3 Expressive 16px corner shape (`component_shape.fab`), not pills. User wants the redesign as close to M3 Expressive as possible.
