@@ -3,6 +3,7 @@ import type { ModalComponent } from "./Modal"
 import { modal } from "./Modal"
 import { alpha, AlphaEnum, AnimationPromise, animations, DefaultAnimationTime, opacity, transform, TransformEnum } from "../animation/Animations"
 import { ease } from "../animation/Easing"
+import { springAnimationOptions } from "../animation/Motion"
 import type { MaybeTranslation, Translation, TranslationKey } from "../utils/LanguageViewModel"
 import { lang } from "../utils/LanguageViewModel"
 import { focusNext, focusPrevious, KeyManager, Shortcut } from "../utils/KeyManager"
@@ -83,6 +84,11 @@ export interface ChoiceCancellableResult<T> {
 	value: T | null
 	options: boolean[]
 }
+
+/** Scale a centred dialog grows from when it opens. */
+const DIALOG_ENTER_SCALE = 0.9
+/** M3 short exit duration; stays below {@link DefaultAnimationTime}, which callers wait for after closing. */
+const DIALOG_EXIT_DURATION = 150
 
 export class Dialog implements ModalComponent {
 	private static keyboardHeight: number = 0
@@ -170,7 +176,12 @@ export class Dialog implements ModalComponent {
 
 									if (isEditLarge) {
 										this.domDialog.style.transform = `translateY(${window.innerHeight}px)`
-										animation = animations.add(this.domDialog, transform(TransformEnum.TranslateY, window.innerHeight, 0))
+										// M3 Expressive: sheets and full-screen dialogs slide up on a spatial spring
+										animation = animations.add(
+											this.domDialog,
+											transform(TransformEnum.TranslateY, window.innerHeight, 0),
+											springAnimationOptions("default_spatial"),
+										)
 									} else {
 										const bgcolor = getElevatedBackground()
 										const children = Array.from(this.domDialog.children) as Array<HTMLElement>
@@ -178,10 +189,19 @@ export class Dialog implements ModalComponent {
 											child.style.opacity = "0"
 										}
 										this.domDialog.style.backgroundColor = `rgba(0, 0, 0, 0)`
+										this.domDialog.style.transform = `scale(${DIALOG_ENTER_SCALE})`
+										// M3 Expressive: centred dialogs grow on a spatial spring and fade in on an effects spring (no overshoot)
+										const fadeOptions = springAnimationOptions("default_effects")
 										animation = Promise.all([
-											animations.add(this.domDialog, alpha(AlphaEnum.BackgroundColor, bgcolor, 0, 1)),
+											animations.add(
+												this.domDialog,
+												transform(TransformEnum.Scale, DIALOG_ENTER_SCALE, 1),
+												springAnimationOptions("default_spatial"),
+											),
+											animations.add(this.domDialog, alpha(AlphaEnum.BackgroundColor, bgcolor, 0, 1), fadeOptions),
 											animations.add(children, opacity(0, 1, true), {
-												delay: DefaultAnimationTime / 2,
+												...fadeOptions,
+												delay: fadeOptions.duration / 4,
 											}),
 										])
 									}
@@ -202,6 +222,8 @@ export class Dialog implements ModalComponent {
 										// Because `bgcolor` is only calculated on create and not on theme change.
 										if (this.domDialog != null && !isEditLarge) {
 											this.domDialog.style.removeProperty("background-color")
+											// a leftover transform would become the containing block of fixed-position descendants
+											this.domDialog.style.removeProperty("transform")
 										}
 									})
 								},
@@ -356,11 +378,13 @@ export class Dialog implements ModalComponent {
 		let bgcolor = getElevatedBackground()
 
 		if (this.domDialog) {
+			// M3: exits are quick and use an accelerating easing, no spring
 			return Promise.all([
-				animations.add(this.domDialog.children, opacity(1, 0, true)),
+				animations.add(this.domDialog.children, opacity(1, 0, true), { duration: DIALOG_EXIT_DURATION, easing: ease.in }),
 				animations.add(this.domDialog, alpha(AlphaEnum.BackgroundColor, bgcolor, 1, 0), {
-					delay: DefaultAnimationTime / 2,
-					easing: ease.linear,
+					delay: DIALOG_EXIT_DURATION / 2,
+					duration: DIALOG_EXIT_DURATION / 2,
+					easing: ease.in,
 				}),
 			]).then(noOp)
 		} else {
