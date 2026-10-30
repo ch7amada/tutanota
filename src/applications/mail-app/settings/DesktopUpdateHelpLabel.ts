@@ -1,9 +1,8 @@
 import m, { Child, Children, Vnode } from "mithril"
-import { Icon } from "../../../ui/base/Icon"
+import { LoadingIndicator } from "../../../ui/base/LoadingIndicator"
 import { lang } from "../../../ui/utils/LanguageViewModel"
 import { delay } from "../../../platform-kit/utils"
 import Stream from "mithril/stream"
-import { Icons } from "../../../ui/base/icons/Icons"
 
 export type UpdateHelpLabelAttrs = {
 	updateAvailable: Stream<boolean>
@@ -69,9 +68,8 @@ export class DesktopUpdateHelpLabel {
 
 	getIcon(): Child {
 		return this._waiting && !this._error
-			? m(Icon, {
-					icon: Icons.Sync,
-					class: "flex-center items-center icon-progress-tiny icon-progress",
+			? m(LoadingIndicator, {
+					class: "flex-center items-center icon-progress-tiny",
 				})
 			: null
 	}

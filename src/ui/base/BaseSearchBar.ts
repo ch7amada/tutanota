@@ -7,6 +7,7 @@ import { DefaultAnimationTime } from "../animation/Animations.js"
 import { Icons } from "./icons/Icons.js"
 import { LegacyTextFieldType } from "./LegacyTextField.js"
 import { Icon, IconAttrs, IconSize } from "./Icon.js"
+import { LoadingIndicator } from "./LoadingIndicator.js"
 import { theme } from "../theme.js"
 import { BaseButton, BaseButtonAttrs } from "./buttons/BaseButton.js"
 import { getOperatingClasses } from "./GuiUtils.js"
@@ -79,15 +80,20 @@ export class BaseSearchBar implements ClassComponent<BaseSearchBarAttrs> {
 				attrs.busy || attrs.text
 					? m(BaseButton, {
 							label: attrs.busy ? "loading_msg" : "close_alt",
-							icon: m(Icon, {
-								container: "div",
-								size: IconSize.PX24,
-								icon: attrs.busy ? Icons.Sync : Icons.X,
-								class: "center-h  " + (attrs.busy ? "icon-progress-search icon-progress" : ""),
-								style: {
-									fill: theme.on_surface_variant,
-								},
-							}),
+							icon: attrs.busy
+								? m(LoadingIndicator, {
+										container: "div",
+										class: "icon-24 center-h icon-progress-search",
+									})
+								: m(Icon, {
+										container: "div",
+										size: IconSize.PX24,
+										icon: Icons.X,
+										class: "center-h",
+										style: {
+											fill: theme.on_surface_variant,
+										},
+									}),
 							onclick: () => {
 								if (!attrs.disabled) attrs.onClear?.()
 							},

@@ -5,6 +5,7 @@ import { memoized } from "../../platform-kit/utils"
 import { EnvProvider } from "../../platform-kit/app-env"
 import { Icons } from "./icons/Icons"
 import { px, size } from "../size.js"
+import { LoadingIndicator, LoadingIndicatorAttrs } from "./LoadingIndicator.js"
 
 EnvProvider.assertMainOrNode()
 
@@ -161,9 +162,9 @@ export class Icon implements Component<IconAttrs> {
 	}
 }
 
-export function progressIcon(): Vnode<IconAttrs> {
-	return m(Icon, {
-		icon: Icons.Sync,
-		class: "icon-24 icon-progress",
+/** The standard 24px loading indicator, see {@link LoadingIndicator}. */
+export function progressIcon(): Vnode<LoadingIndicatorAttrs> {
+	return m(LoadingIndicator, {
+		class: "icon-24",
 	})
 }

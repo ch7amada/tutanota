@@ -11,6 +11,7 @@ import { lang } from "../../../../ui/utils/LanguageViewModel.js"
 import { EntityUpdateData, isUpdateForTypeRef } from "../../../../platform-kit/instance-pipeline/utils/EntityUpdateUtils"
 import { ImapAccountSyncStateTypeRef, ImapFolderSyncStateTypeRef } from "@tutao/entities/tutanota"
 import { Icon, IconAttrs, IconSize } from "../../../../ui/base/Icon"
+import { LoadingIndicator } from "../../../../ui/base/LoadingIndicator"
 import { Card } from "../../../../ui/base/Card"
 import { getMailboxName } from "../../../common/mailFunctionality/SharedMailUtils"
 import { lazy } from "@tutao/utils"
@@ -232,7 +233,6 @@ class ImapImportSettingsViewer implements UpdatableSettingsViewer {
 							: theme.on_surface
 			const statusIconParameters: Partial<IconAttrs> = {
 				icon: statusIcon,
-				class: statusIcon === Icons.Sync ? "icon-progress" : "",
 				style: {
 					fill: iconFill,
 				},
@@ -242,10 +242,12 @@ class ImapImportSettingsViewer implements UpdatableSettingsViewer {
 				Card,
 				m(".flex.items-center.justify-between", [
 					m(".flex.items-center.gap-16", [
-						m(Icon, {
-							...statusIconParameters,
-							size: IconSize.PX32,
-						} as IconAttrs),
+						statusIcon === Icons.Sync
+							? m(LoadingIndicator, { class: "icon-32" })
+							: m(Icon, {
+									...statusIconParameters,
+									size: IconSize.PX32,
+								} as IconAttrs),
 						m(".items-base.flex-column", [m(".text-preline", syncSourceAndDestinationMessage.text), m(".text-preline.small", syncMessage.text)]),
 					]),
 					m(".flex.ml-16.items-center", buttons),

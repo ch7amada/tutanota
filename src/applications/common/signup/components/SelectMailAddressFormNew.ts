@@ -9,7 +9,7 @@ import { font_size, px } from "../../../../ui/size"
 import { attachDropdown, DropdownButtonAttrs } from "../../../../ui/base/Dropdown"
 import { ButtonSize } from "../../../../ui/base/ButtonSize"
 import { formatMailAddressFromParts } from "../../../../ui/utils/Formatter"
-import { Icon } from "../../../../ui/base/Icon"
+import { LoadingIndicator } from "../../../../ui/base/LoadingIndicator"
 import { isMailAddress } from "../../../../platform-kit/utils/FormatUtils"
 import { isTutaMailAddress } from "../../mailFunctionality/SharedMailUtils"
 import { locator } from "../../api/main/CommonLocator"
@@ -142,9 +142,8 @@ export class SelectMailAddressFormNew implements Component<SelectMailAddressForm
 	}
 
 	private progressIcon(): Children {
-		return m(Icon, {
-			icon: Icons.Sync,
-			class: "icon-progress mr-8",
+		return m(LoadingIndicator, {
+			class: "mr-8",
 		})
 	}
 
