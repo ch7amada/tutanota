@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 07, 08, 09, 10, 11, 12, 13, 14, 15
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Android SDK/adb usable from the shell
 - [ ] Keystore stored outside the repository; passwords not committed
@@ -23,3 +23,5 @@ The early Android test build (old ticket 06) was dropped on 2026-10-30: the user
 - Build: `source ~/emsdk/emsdk_env.sh; export PATH="$HOME/emsdk/upstream/bin:$HOME/Android/Sdk/platform-tools:$PATH" ANDROID_HOME=$HOME/Android/Sdk JAVA_HOME=~/.jdks/jdk-21.0.13+9; export PATH="$JAVA_HOME/bin:$PATH"; source ~/.tuta-keystore/env.sh; node android prod -b release`
 - The dist web build runs a chunk dependency check that `node make` skips; `Motion.ts` and `FloatingToolbar.ts` had to be assigned to the `gui-base` chunk in `buildSrc/RollupConfig.js`.
 - Output: `artifacts/app-android/tutanota-app-tutao-release-<version>.apk`; install with `adb install` after uninstalling the official app (different signature).
+
+2026-10-30: the user installed the APK on their phone, tested it and reported it works. Closed.

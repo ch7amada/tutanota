@@ -4,7 +4,7 @@
 
 **Blocked by:** 05, 08
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Slim bar with pill indicator; indicator animates between items
 - [x] Search item removed; search still reachable from the mail list

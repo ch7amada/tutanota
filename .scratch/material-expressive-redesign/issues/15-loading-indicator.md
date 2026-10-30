@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] All spinner usages show the new indicator
 - [x] Respects reduced motion (static or gentle fallback)

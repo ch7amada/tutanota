@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] All previous actions available in the floating toolbar (overflow for extras)
 - [x] Content can scroll fully past the toolbar

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Search pill shown only on the mail list at mobile width
 - [x] Menu button opens the drawer; tapping the pill opens search

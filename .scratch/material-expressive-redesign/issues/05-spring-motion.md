@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Spring easing available to JS animations and CSS
 - [x] Pressing any standard button visibly morphs its shape and springs back

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Central type scale for display/headline/title/body/label roles
 - [x] View titles, dialog titles and section headers use the emphasized roles

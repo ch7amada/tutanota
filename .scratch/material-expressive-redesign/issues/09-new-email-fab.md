@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 05
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] FAB visible on the mail list at mobile width; opens the composer
 - [x] Collapses on scroll down, expands on scroll up, with spring motion

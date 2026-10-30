@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] One place defines the shape scale; shared components read from it
 - [x] All button variants render as pills; chips as pills

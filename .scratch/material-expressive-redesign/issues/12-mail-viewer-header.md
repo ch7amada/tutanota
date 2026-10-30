@@ -4,7 +4,7 @@
 
 **Blocked by:** 04, 07
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Subject uses the emphasized headline style
 - [x] Sender avatar matches the one in the mail list

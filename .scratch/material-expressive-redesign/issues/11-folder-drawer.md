@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Active folder shows a pill highlight
 - [x] Drawer has a rounded trailing edge on mobile

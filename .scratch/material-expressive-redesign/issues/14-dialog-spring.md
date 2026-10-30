@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 05
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Dialogs and bottom sheets use spring on open
 - [x] Reduced motion disables the spring

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Avatar with sender initial and stable colour per sender
 - [x] Tap avatar selects/deselects; ✓ shown when selected; keyboard and screen-reader selection still possible
