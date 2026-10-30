@@ -4,7 +4,6 @@ import { Mail } from "@tutao/entities/tutanota"
 import { MailSetKind, SystemFolderType } from "../../../../entities/tutanota/Utils"
 import { EnvProvider } from "../../../../platform-kit/app-env"
 import { getElementId, getLetId, haveSameId } from "../../../../platform-kit/meta"
-import { component_size } from "../../../../ui/size"
 import { Styles } from "../../../../ui/styles"
 import { Icon } from "../../../../ui/base/Icon"
 import { Icons } from "../../../../ui/base/icons/Icons"
@@ -14,7 +13,7 @@ import { Dialog } from "../../../../ui/base/Dialog"
 import { assertNotNull, AsyncResult, downcast, neverNull, newPromise, promiseMap } from "../../../../platform-kit/utils"
 import { locator } from "../../../common/api/main/CommonLocator"
 import { promptAndDeleteMails } from "./MailGuiUtils"
-import { MailRow } from "./MailRow"
+import { MAIL_ROW_HEIGHT, MailRow } from "./MailRow"
 import { generateMailFile, getMailExportMode } from "../export/Exporter"
 import { deduplicateFilenames } from "../../../../ui/utils/FileUtils"
 import { downloadMailBundle } from "../export/Bundler"
@@ -71,7 +70,7 @@ export class MailListView implements Component<MailListViewAttrs> {
 	showingArchive: boolean = false
 	private attrs: MailListViewAttrs
 	private readonly renderConfig: RenderConfig<Mail, MailRow> = {
-		itemHeight: component_size.list_row_height,
+		itemHeight: MAIL_ROW_HEIGHT,
 		multiselectionAllowed: MultiselectMode.Enabled,
 		createElement: (dom: HTMLElement) => {
 			const mailRow = new MailRow(

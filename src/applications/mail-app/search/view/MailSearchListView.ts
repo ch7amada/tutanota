@@ -12,7 +12,7 @@ import { EnvProvider, FULL_INDEXED_TIMESTAMP } from "@tutao/app-env"
 import { formatDate } from "../../../../ui/utils/Formatter"
 import { component_size, px, size } from "../../../../ui/size"
 import { Icons } from "../../../../ui/base/icons/Icons"
-import { MailRow } from "../../mail/view/MailRow"
+import { MAIL_ROW_HEIGHT, MailRow } from "../../mail/view/MailRow"
 import { CommonSearchListViewAttrs, renderListColumnWrapper } from "../../../common/search/SearchUtils"
 
 export interface MailSearchListViewAttrs extends CommonSearchListViewAttrs<Mail> {
@@ -126,7 +126,7 @@ export class MailSearchListView implements Component<MailSearchListViewAttrs> {
 	}
 
 	private readonly mailRenderConfig: RenderConfig<Mail, MailRow> = {
-		itemHeight: component_size.list_row_height,
+		itemHeight: MAIL_ROW_HEIGHT,
 		multiselectionAllowed: MultiselectMode.Enabled,
 		swipe: null,
 		createElement: (dom) => {

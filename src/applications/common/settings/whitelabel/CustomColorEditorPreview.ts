@@ -1,9 +1,9 @@
 import { createMail, createMailAddress, Mail } from "@tutao/entities/tutanota"
 import { ProcessingState } from "../../../../entities/tutanota/Utils"
 import m, { Children, Component } from "mithril"
-import { component_size, layout_size, px } from "../../../../ui/size"
+import { layout_size, px } from "../../../../ui/size"
 import { Button, ButtonType } from "../../../../ui/base/Button.js"
-import { MailRow } from "../../../mail-app/mail/view/MailRow"
+import { MAIL_ROW_HEIGHT, MailRow } from "../../../mail-app/mail/view/MailRow"
 import { noOp } from "@tutao/utils"
 import { IconButton } from "../../../../ui/base/IconButton.js"
 import { Icons } from "../../../../ui/base/icons/Icons.js"
@@ -130,7 +130,7 @@ export class CustomColorEditorPreview implements Component {
 			{
 				style: {
 					width: px(layout_size.second_col_max_width),
-					height: px(component_size.list_row_height * 2),
+					height: px(MAIL_ROW_HEIGHT * 2),
 				},
 			},
 			[
@@ -150,7 +150,7 @@ export class CustomColorEditorPreview implements Component {
 							requestAnimationFrame(() => this._mailRow2.update(mail2, true, false))
 						},
 						style: {
-							top: px(component_size.list_row_height),
+							top: px(MAIL_ROW_HEIGHT),
 						},
 					},
 					this._mailRow2.render(),
