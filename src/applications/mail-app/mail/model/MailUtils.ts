@@ -1,8 +1,8 @@
 import { FolderSystem, IndentedMailSet } from "../../../common/api/common/mail/FolderSystem.js"
-import { assertNotNull, first } from "../../../../platform-kit/utils"
+import { assertNotNull, first, getFirstOrThrow } from "../../../../platform-kit/utils"
 import { MailModel } from "./MailModel.js"
 import { lang } from "../../../../ui/utils/LanguageViewModel.js"
-import { Header, InboxRule, Mail, MailDetails, MailSet, TutanotaProperties } from "@tutao/entities/tutanota"
+import { ExpandedInboxRule, Header, InboxRule, Mail, MailDetails, MailSet, TutanotaProperties } from "@tutao/entities/tutanota"
 import { MailSetKind, ReplyType, SystemFolderType } from "../../../../entities/tutanota/Utils"
 import { EntityIdEncoding, isSameId, isSameSingleId, sortCompareByReverseId } from "../../../../platform-kit/meta"
 import { isFolderReadOnly, MOVE_SYSTEM_FOLDERS } from "../MailUtils"
@@ -41,22 +41,22 @@ export function getMailSetName(mailSet: MailSet): string {
 export function getSystemFolderName(folderType: MailSetKind): string {
 	switch (folderType) {
 		case MailSetKind.INBOX:
-			return lang.getTranslationText("received_action")
+			return lang.getTranslationText("received_label")
 
 		case MailSetKind.SENT:
-			return lang.getTranslationText("sent_action")
+			return lang.getTranslationText("sent_label")
 
 		case MailSetKind.TRASH:
-			return lang.getTranslationText("trash_action")
+			return lang.getTranslationText("trash_label")
 
 		case MailSetKind.ARCHIVE:
 			return lang.getTranslationText("archive_label")
 
 		case MailSetKind.SPAM:
-			return lang.getTranslationText("spam_action")
+			return lang.getTranslationText("spam_label")
 
 		case MailSetKind.DRAFT:
-			return lang.getTranslationText("draft_action")
+			return lang.getTranslationText("drafts_label")
 
 		case MailSetKind.SCHEDULED:
 			return lang.getTranslationText("scheduled_label")
@@ -165,7 +165,20 @@ export function loadMailHeaders(mailDetails: MailDetails): string | null {
 	return mailDetails.headers != null ? getMailHeaders(mailDetails.headers) : null
 }
 
-export function getExistingRuleForType(props: TutanotaProperties, cleanValue: string, type: string): InboxRule | null {
+export function getExistingInboxRuleForType(inboxRules: ExpandedInboxRule[], cleanValue: string, type: string): ExpandedInboxRule | null {
+	return (
+		inboxRules.find((rule) => {
+			if (rule.conditions.length !== 1) {
+				return false
+			}
+
+			const condition = getFirstOrThrow(rule.conditions)
+			return type === condition.type && cleanValue === condition.value
+		}) ?? null
+	)
+}
+
+export function getExistingLegacyInboxRuleForType(props: TutanotaProperties, cleanValue: string, type: string): InboxRule | null {
 	return props.inboxRules.find((rule) => type === rule.type && cleanValue === rule.value) ?? null
 }
 

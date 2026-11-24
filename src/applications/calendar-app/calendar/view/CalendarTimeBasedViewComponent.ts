@@ -6,7 +6,14 @@ import { WeekDaysComponent, WeekDaysComponentAttrs } from "./WeekDaysComponent"
 import { CalendarTimeColumn, CalendarTimeColumnAttrs, getTimeColumnWidth } from "../../../common/calendar/gui/CalendarTimeColumn"
 import { Time } from "../../../common/calendar/Time"
 import { px } from "../../../../ui/size"
-import { CalendarTimeGrid, CalendarTimeGridAttributes, SUBROWS_PER_INTERVAL, TimeRange, TimeScale } from "../../../common/calendar/gui/CalendarTimeGrid"
+import {
+	CalendarTimeGrid,
+	CalendarTimeGridAttributes,
+	SUBROWS_PER_INTERVAL,
+	TIME_GRID_ROW_HEIGHT,
+	TimeRange,
+	TimeScale,
+} from "../../../common/calendar/gui/CalendarTimeGrid"
 import { EventWrapper, ScrollByListener } from "./CalendarViewModel"
 import { EventBubbleInteractions } from "../../../common/calendar/gui/CalendarEventBubble"
 import { EventDragHandler, type EventDragHandlerCallbacks, type MousePos } from "./EventDragHandler"
@@ -88,12 +95,10 @@ export class CalendarTimeBasedViewComponent implements ClassComponent<CalendarTi
 		dayHeight: number | null
 		pageViewWidth: number | null
 		rowCountPerDay: number
-		gridRowHeight: number
 	} = {
 		dayHeight: null,
 		pageViewWidth: null,
 		rowCountPerDay: 0,
-		gridRowHeight: 6,
 	}
 
 	private dragState: {
@@ -253,7 +258,7 @@ export class CalendarTimeBasedViewComponent implements ClassComponent<CalendarTi
 							width: timeColumnWidth,
 							subColumnCount: 1,
 							rowCount: this.layoutState.rowCountPerDay,
-							gridRowHeight: this.layoutState.gridRowHeight,
+							gridRowHeight: TIME_GRID_ROW_HEIGHT,
 						},
 						currentTime: shouldRenderTimeIndicator ? currentTime : undefined,
 						amPm: attrs.bodyComponentAttrs.amPm,
@@ -377,7 +382,6 @@ export class CalendarTimeBasedViewComponent implements ClassComponent<CalendarTi
 			timeRange,
 			layout: {
 				rowCountForRange: this.layoutState.rowCountPerDay,
-				gridRowHeight: this.layoutState.gridRowHeight,
 				hideRightBorder,
 				showLeftBorderAtFirstColumn,
 			},

@@ -1,21 +1,22 @@
 import {
 	FIXED_INITIALIZATION_VECTOR,
-	generateInitializationVector,
 	InitializationVector,
 	KdfNonce,
 	keyToUint8Array,
+	SymmetricCipherUtils,
 	uint8ArrayToKey,
 } from "../encryption/symmetric/SymmetricCipherUtils.js"
-import { AES_CBC_FACADE, AesCbcFacade, AuthenticationEnforcement, PaddingStandard } from "../encryption/symmetric/AesCbcFacade.js"
+import { AesCbcFacade, AuthenticationEnforcement, PaddingStandard } from "../encryption/symmetric/AesCbcFacade.js"
 import { SymmetricCipherVersion } from "../encryption/symmetric/SymmetricCipherVersion.js"
 import { Nullable } from "@tutao/utils"
 import { Aes128Key, Aes256Key, AesKey, AesKeyLength, AesKeyOrSubKeys } from "../encryption/symmetric/AesKey"
-import { AEAD_FACADE, AeadFacade } from "../encryption/symmetric/AeadFacade.js"
-import { AeadSubKeys, AesCbcSubKeys, InstanceTypeId, SYMMETRIC_KEY_DERIVER, SymmetricKeyDeriver } from "../encryption/symmetric/SymmetricKeyDeriver.js"
+import { AeadFacade } from "../encryption/symmetric/AeadFacade.js"
+import { AeadSubKeys, AesCbcSubKeys, SymmetricKeyDeriver } from "../encryption/symmetric/SymmetricKeyDeriver.js"
 import { SubKeyInfo, SubKeyProvider } from "./encryption/SubKeyProvider"
-import { InstanceDecryptor } from "./decryption/InstanceDecryptor"
+import { InstanceDecryptor, InstanceKeyProvider, OwnerKeyProvider } from "./decryption/InstanceDecryptor"
 import { InitializationVectorVariant, ParsedCiphertextAesCbc, parseVersionedCiphertext } from "../encryption/symmetric/ParsedCiphertext"
 import { ProgrammingError } from "@tutao/app-env"
+import { AssociatedData, KeyDerivationContext } from "../encryption/symmetric/AssociatedData"
 
 export enum SymmetricEncryptionScheme {
 	AesCbc,
@@ -34,9 +35,10 @@ export class SymmetricCipherFacade {
 	/** whether we can use SubtleCrypto for big chunks of data (we use JS impl for most encryption) */
 	readonly subtleCryptoAvailable: boolean
 	constructor(
-		readonly aesCbcFacade: AesCbcFacade,
-		readonly aeadFacade: AeadFacade,
-		readonly symmetricKeyDeriver: SymmetricKeyDeriver,
+		private readonly aesCbcFacade: AesCbcFacade,
+		private readonly aeadFacade: AeadFacade,
+		private readonly symmetricKeyDeriver: SymmetricKeyDeriver,
+		private readonly symmetricCipherUtils: SymmetricCipherUtils,
 	) {
 		this.subtleCryptoAvailable = crypto.subtle != null
 		if (!this.subtleCryptoAvailable) {
@@ -47,13 +49,30 @@ export class SymmetricCipherFacade {
 	/**
 	 * Gets an instance decryptor which provides value decryptors to decrypt the values of a given instance.
 	 *
-	 * @param sessionKey		The session key of the instance. It can be null if no value is encrypted using it.
-	 * @param kdfNonce			The KDF nonce of the instance. It can be null if no value is encrypted using the group key.
-	 * @param instanceTypeId	The instance type ID of the instance being decrypted.
-	 * @return					The instance decryptor.
+	 * @param keyDerivationContext	The context of the instance being decrypted used to derive sub-keys.
+	 * @param sessionKey		    The session key of the instance. It can be null if no value is encrypted using it.
+	 * @param kdfNonce				The KDF nonce of the instance. It can be null if no value is encrypted using the group key.
+	 * @param ownerKeyProvider		Must be set iff kdfNonce is set.
+	 * @param instanceKeyProvider	The instance key provider for the instance.
+	 * @return						The instance decryptor.
 	 */
-	getInstanceDecryptor(sessionKey: Nullable<AesKey>, kdfNonce: Nullable<KdfNonce>, instanceTypeId: InstanceTypeId): InstanceDecryptor {
-		return new InstanceDecryptor(sessionKey, kdfNonce, instanceTypeId, this.aesCbcFacade, this.aeadFacade, this.symmetricKeyDeriver)
+	getInstanceDecryptor(
+		keyDerivationContext: KeyDerivationContext,
+		sessionKey: Nullable<AesKey>,
+		kdfNonce: Nullable<KdfNonce>,
+		ownerKeyProvider: Nullable<OwnerKeyProvider>,
+		instanceKeyProvider: Nullable<InstanceKeyProvider>,
+	): InstanceDecryptor {
+		return new InstanceDecryptor(
+			sessionKey,
+			kdfNonce,
+			instanceKeyProvider,
+			ownerKeyProvider,
+			keyDerivationContext,
+			this.aesCbcFacade,
+			this.aeadFacade,
+			this.symmetricKeyDeriver,
+		)
 	}
 
 	/**
@@ -75,7 +94,7 @@ export class SymmetricCipherFacade {
 	 * @param associatedData	The associated data to include in the authentication tag computation, to bind the ciphertext to its context.
 	 * @return					The encrypted bytes.
 	 */
-	encryptBytesWithAead(subKeys: AeadSubKeys, bytes: Uint8Array<ArrayBuffer>, associatedData: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
+	encryptBytesWithAead(subKeys: AeadSubKeys, bytes: Uint8Array<ArrayBuffer>, associatedData: AssociatedData): Uint8Array<ArrayBuffer> {
 		return this.encryptWithAead(subKeys, bytes, associatedData)
 	}
 
@@ -242,7 +261,7 @@ export class SymmetricCipherFacade {
 	): Uint8Array<ArrayBuffer> {
 		let initializationVector: InitializationVector
 		if (initializationVectorVariant === InitializationVectorVariant.Random) {
-			initializationVector = generateInitializationVector()
+			initializationVector = this.symmetricCipherUtils.generateInitializationVector()
 		} else {
 			initializationVector = FIXED_INITIALIZATION_VECTOR
 		}
@@ -257,7 +276,7 @@ export class SymmetricCipherFacade {
 		return this.aesCbcFacade.encrypt(subKeys, plaintext, initializationVector, paddingStandard, cipherVersion, authenticationEnforcement)
 	}
 
-	encryptWithAead(subKeys: AeadSubKeys, plaintext: Uint8Array<ArrayBuffer>, associatedData: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
+	encryptWithAead(subKeys: AeadSubKeys, plaintext: Uint8Array<ArrayBuffer>, associatedData: AssociatedData): Uint8Array<ArrayBuffer> {
 		return this.aeadFacade.encrypt(subKeys, plaintext, associatedData)
 	}
 
@@ -295,12 +314,11 @@ export class SymmetricCipherFacade {
 	/**
 	 * Gets a sub-key provider to be used for encryption.
 	 *
-	 * @param subKeyInfo		Necessary information to derive the sub-keys.
-	 * @param instanceTypeId	The type ID of the instance to be encrypted using the sub-keys.
-	 * @return 					The sub-key provider.
+	 * @param subKeyInfo			Necessary information to derive the sub-keys.
+	 * @param keyDerivationContext	The context of the instance to be encrypted to derive sub-keys.
+	 * @return 						The sub-key provider.
 	 */
-	getSubKeyProvider(subKeyInfo: SubKeyInfo, instanceTypeId: InstanceTypeId): SubKeyProvider {
-		return new SubKeyProvider(subKeyInfo, this.symmetricKeyDeriver, instanceTypeId)
+	getSubKeyProvider(subKeyInfo: SubKeyInfo, keyDerivationContext: KeyDerivationContext): SubKeyProvider {
+		return new SubKeyProvider(subKeyInfo, this.symmetricKeyDeriver, keyDerivationContext)
 	}
 }
-export const SYMMETRIC_CIPHER_FACADE = new SymmetricCipherFacade(AES_CBC_FACADE, AEAD_FACADE, SYMMETRIC_KEY_DERIVER)

@@ -4,13 +4,13 @@ import {
 	ColumnLayoutData,
 	EventGridData,
 	getSubRowAsMinutes,
+	MIN_ROW_SPAN_FOR_EVENT_BUBBLE,
 	RowBounds,
 	TimeRange,
 	TimeScale,
 } from "../../../src/applications/common/calendar/gui/CalendarTimeGrid"
 import { Time } from "../../../src/applications/common/calendar/Time"
 import { EventWrapper } from "../../../src/applications/calendar-app/calendar/view/CalendarViewModel"
-import { MIN_ROW_SPAN } from "../../../src/applications/common/calendar/gui/CalendarEventBubble"
 import { incrementDate } from "../../../src/platform-kit/utils"
 import { makeEvent } from "./CalendarTestUtils"
 import { createTestEntity } from "../TestUtils"
@@ -54,7 +54,7 @@ o.spec("CalendarTimeGrid", function () {
 			const bounds = CalendarTimeGrid.getRowBounds(eventBounds, TIME_RANGE_24_HRS, SUB_ROW_AS_MINUTES, TIME_SCALE, REFERENCE_DATE)
 
 			o.check(bounds.start).equals(1)
-			o.check(bounds.end).equals(1 + MIN_ROW_SPAN)
+			o.check(bounds.end).equals(1 + MIN_ROW_SPAN_FOR_EVENT_BUBBLE)
 		})
 
 		o.test("Event starts yesterday and ends today", function () {
@@ -174,7 +174,7 @@ o.spec("CalendarTimeGrid", function () {
 				const bounds = CalendarTimeGrid.getRowBounds(eventBounds, TIME_RANGE_24_HRS, SUB_ROW_AS_MINUTES, TIME_SCALE, REFERENCE_DATE)
 
 				o.check(bounds.start).equals(1)
-				o.check(bounds.end).equals(1 + MIN_ROW_SPAN)("Should enforce minimum size")
+				o.check(bounds.end).equals(1 + MIN_ROW_SPAN_FOR_EVENT_BUBBLE)("Should enforce minimum size")
 			})
 
 			o.test("Event end between intervals rounds to next boundary (normal event)", function () {

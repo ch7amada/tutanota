@@ -1,6 +1,5 @@
 import { Nullable } from "@tutao/utils"
-import { AesKey, VersionedKey } from "@tutao/crypto"
-import { OwnerKeyProvider } from "./index"
+import { AeadCipherVersion, AesKey, OwnerKeyProvider, SessionKeyDecryptor, VersionedKey } from "@tutao/crypto"
 import { RestClientOptions, SuspensionBehavior } from "@tutao/rest-client/types"
 
 export interface EntityRestClientSetupOptions {
@@ -75,6 +74,7 @@ export interface EntityRestClientLoadOptions {
 	extraHeaders: Nullable<Dict>
 	/** Use the key provided by this to decrypt the existing ownerEncSessionKey instead of trying to resolve the owner key based on the ownerGroup. */
 	ownerKeyProvider: Nullable<OwnerKeyProvider>
+	sessionKey: Nullable<AesKey>
 	/** Defaults to {@link CacheMode.ReadAndWrite }*/
 	cacheMode: Nullable<CacheMode>
 	baseUrl: Nullable<string>
@@ -97,7 +97,13 @@ export const DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS: EntityRestClientLoadOptions
 	...DEFAULT_REST_CLIENT_OPTIONS,
 	extraHeaders: null,
 	ownerKeyProvider: null,
+	sessionKey: null,
 	cacheMode: CacheMode.ReadAndWrite,
+}
+export interface ServiceEncryptionParams {
+	ownerKey: Nullable<VersionedKey>
+	sessionKeyDecryptor: SessionKeyDecryptor
+	aeadCipherVersion: AeadCipherVersion
 }
 
 export interface ExtraServiceParams {
@@ -107,6 +113,9 @@ export interface ExtraServiceParams {
 	suspensionBehavior: Nullable<SuspensionBehavior>
 	/** override origin for the request */
 	baseUrl: Nullable<string>
+	ownerKey: Nullable<VersionedKey>
+	aeadCipherVersion: Nullable<AeadCipherVersion>
+	sessionKeyDecryptor: Nullable<SessionKeyDecryptor>
 }
 
 export const DEFAULT_EXTRA_SERVICE_PARAMS: ExtraServiceParams = {
@@ -115,4 +124,7 @@ export const DEFAULT_EXTRA_SERVICE_PARAMS: ExtraServiceParams = {
 	extraHeaders: null,
 	suspensionBehavior: null,
 	baseUrl: null,
+	ownerKey: null,
+	aeadCipherVersion: null,
+	sessionKeyDecryptor: null,
 }

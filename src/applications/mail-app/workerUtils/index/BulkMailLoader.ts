@@ -4,6 +4,7 @@ import {
 	groupBy,
 	groupByAndMap,
 	isEmpty,
+	isNotNull,
 	last,
 	lastThrow,
 	neverNull,
@@ -25,7 +26,6 @@ import {
 import { cryptoUtils } from "../../../../platform-kit/crypto"
 import { ProgrammingError } from "../../../../platform-kit/app-env"
 import { MailFacade } from "../../../common/api/worker/facades/lazy/MailFacade"
-import { OwnerEncSessionKeyProvider } from "../../../../platform-kit/instance-pipeline"
 import {
 	File,
 	FileTypeRef,
@@ -38,6 +38,8 @@ import {
 	MailTypeRef,
 } from "@tutao/entities/tutanota"
 import { CacheMode, DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS, EntityRestClientLoadOptions } from "../../../../platform-kit/instance-pipeline/RestClientOptions"
+import { OwnerEncSessionKeyProvider } from "@tutao/instance-pipeline"
+import { isMailWithoutDetails } from "../../mail/model/MailChecks"
 
 export const ENTITY_INDEXER_CHUNK = 20
 export const MAIL_INDEXER_CHUNK = 100
@@ -49,9 +51,14 @@ export const MAIL_INDEXER_CHUNK = 100
  */
 export type TimeRange = [number, number]
 
-export interface MailWithMailDetails {
+export interface MailWithDetails {
 	mail: Mail
 	mailDetails: MailDetails
+}
+
+export interface MailsMaybeWithDetails {
+	mailsWithDetails: MailWithDetails[]
+	corruptMailsWithoutDetails: Mail[]
 }
 
 export class BulkMailLoader {
@@ -75,10 +82,10 @@ export class BulkMailLoader {
 	async loadMailDetails(
 		mails: readonly Mail[],
 		options: EntityRestClientLoadOptions = DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS,
-	): Promise<MailWithMailDetails[]> {
-		const result: Array<MailWithMailDetails> = []
+	): Promise<MailsMaybeWithDetails> {
+		const result: MailsMaybeWithDetails = { mailsWithDetails: [], corruptMailsWithoutDetails: mails.filter(isMailWithoutDetails) }
 		// mailDetails stored as blob
-		let mailDetailsBlobMails = mails.filter((m) => !m.mailDetailsDraft)
+		let mailDetailsBlobMails = mails.filter((m) => isNotNull(m.mailDetails))
 		const listIdToMailDetailsBlobIds: Map<Id, Array<Id>> = groupByAndMap(
 			mailDetailsBlobMails,
 			(m) => listIdPart(assertNotNull(m.mailDetails)),
@@ -93,15 +100,16 @@ export class BulkMailLoader {
 				}
 			}
 			const mailDetailsBlobs = await this.loadInChunks(MailDetailsBlobTypeRef, listId, ids, ownerEncSessionKeyProvider, options)
-			result.push(
+			result.mailsWithDetails.push(
 				...mailDetailsBlobs.map((mailDetailsBlob) => {
 					const mail = assertNotNull(mailDetailsBlobMails.find((m) => isSameId(m.mailDetails, mailDetailsBlob._id)))
 					return { mail, mailDetails: mailDetailsBlob.details }
 				}),
 			)
 		}
+
 		// mailDetails stored in db (draft)
-		let mailDetailsDraftMails = mails.filter((m) => m.mailDetailsDraft)
+		let mailDetailsDraftMails = mails.filter((m) => isNotNull(m.mailDetailsDraft))
 		const listIdToMailDetailsDraftIds: Map<Id, Array<Id>> = groupByAndMap(
 			mailDetailsDraftMails,
 			(m) => listIdPart(assertNotNull(m.mailDetailsDraft)),
@@ -118,13 +126,14 @@ export class BulkMailLoader {
 				}
 			}
 			const mailDetailsDrafts = await this.loadInChunks(MailDetailsDraftTypeRef, listId, ids, ownerEncSessionKeyProvider, options)
-			result.push(
+			result.mailsWithDetails.push(
 				...mailDetailsDrafts.map((draftDetails) => {
 					const mail = assertNotNull(mailDetailsDraftMails.find((m) => isSameId(m.mailDetailsDraft, draftDetails._id)))
 					return { mail, mailDetails: draftDetails.details }
 				}),
 			)
 		}
+
 		return result
 	}
 

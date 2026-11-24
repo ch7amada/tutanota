@@ -14,13 +14,23 @@ import { downcast, KeyVersion, lazyNumberRange } from "../../../../../src/platfo
 import { createTestEntity } from "../../../TestUtils.js"
 import { KeyLoaderFacade } from "../../../../../src/platform-kit/base/base-crypto/KeyLoaderFacade.js"
 import PublicEncryptionKeyProvider from "../../../../../src/platform-kit/base/base-crypto/PublicEncryptionKeyProvider.js"
-import { Aes128Key, AesKey, VersionedEncryptedKey } from "../../../../../src/platform-kit/crypto"
+import {
+	Aes,
+	Aes128Key,
+	AesCbcFacade,
+	AesKey,
+	Bcrypt,
+	KeyEncryption,
+	random,
+	SymmetricCipherFacade,
+	SymmetricCipherUtils,
+	VersionedEncryptedKey,
+} from "../../../../../src/platform-kit/crypto"
 import { RecipientsNotFoundError } from "../../../../../src/platform-kit/network/error/RecipientsNotFoundError"
 import { KeyVerificationMismatchError } from "../../../../../src/platform-kit/network/error/KeyVerificationMismatchError"
 import { SpamClassifier } from "../../../../../src/applications/mail-app/workerUtils/spamClassification/SpamClassifier"
 
 import { CacheStorage } from "../../../../../src/app-kit/local-store/CacheStorage"
-import { OwnerEncSessionKeyProvider } from "../../../../../src/platform-kit/instance-pipeline"
 import {
 	FileTypeRef,
 	InternalRecipientKeyDataTypeRef,
@@ -50,6 +60,11 @@ import { elementIdPart, getElementId } from "../../../../../src/platform-kit/met
 import { DataFile, MAX_NBR_OF_MAILS_SYNC_OPERATION, Recipient, ReportedMailFieldType } from "../../../../../src/entities/tutanota/Utils"
 import { GroupType } from "../../../../../src/entities/sys/Utils"
 import { CryptoWrapper } from "../../../../../src/platform-kit/crypto/instance-pipeline-crypto/CryptoWrapper"
+import { OwnerEncSessionKeyProvider } from "../../../../../src/platform-kit/instance-pipeline"
+import { InstanceKeyFacade } from "../../../../../src/platform-kit/base/base-crypto/InstanceKeyFacade"
+import { AeadFacade } from "@tutao/crypto/aead-facade"
+import { SymmetricKeyDeriver } from "@tutao/crypto/symmetric-key-deriver"
+import { InboxRuleModel } from "../../../../../src/applications/mail-app/mail/model/InboxRuleModel"
 
 o.spec("MailFacade test", function () {
 	let facade: MailFacade
@@ -63,8 +78,11 @@ o.spec("MailFacade test", function () {
 	let loginFacade: LoginFacade
 	let keyLoaderFacade: KeyLoaderFacade
 	let publicEncryptionKeyProvider: PublicEncryptionKeyProvider
+	let instanceKeyFacade: InstanceKeyFacade
+	let inboxRuleModel: InboxRuleModel
 	let cacheStorage: CacheStorage
 	let spamClassifier: SpamClassifier
+	let symmetricCipherUtils: SymmetricCipherUtils
 
 	o.beforeEach(function () {
 		userFacade = object()
@@ -77,6 +95,17 @@ o.spec("MailFacade test", function () {
 		loginFacade = object()
 		keyLoaderFacade = object()
 		publicEncryptionKeyProvider = object()
+		instanceKeyFacade = object()
+		symmetricCipherUtils = new SymmetricCipherUtils(random)
+		const symmetricCipherFacade = new SymmetricCipherFacade(
+			new AesCbcFacade(),
+			new AeadFacade(symmetricCipherUtils),
+			new SymmetricKeyDeriver(),
+			symmetricCipherUtils,
+		)
+		const aes = new Aes(symmetricCipherFacade)
+		const keyEncryption = new KeyEncryption(symmetricCipherFacade, aes)
+		inboxRuleModel = object()
 		facade = new MailFacade(
 			userFacade,
 			entityClient,
@@ -88,6 +117,13 @@ o.spec("MailFacade test", function () {
 			loginFacade,
 			keyLoaderFacade,
 			publicEncryptionKeyProvider,
+			instanceKeyFacade,
+			random,
+			symmetricCipherUtils,
+			aes,
+			keyEncryption,
+			new Bcrypt(random),
+			inboxRuleModel,
 		)
 	})
 
@@ -643,7 +679,7 @@ o.spec("MailFacade test", function () {
 
 			const captor = matchers.captor()
 			when(
-				cryptoFacade.encryptBucketKeyForInternalRecipient(
+				cryptoFacade.encryptBucketKeyForInternalRecipientMailAddress(
 					matchers.anything(),
 					matchers.anything(),
 					notFoundRecipient1.address,
@@ -656,7 +692,7 @@ o.spec("MailFacade test", function () {
 			})
 
 			when(
-				cryptoFacade.encryptBucketKeyForInternalRecipient(
+				cryptoFacade.encryptBucketKeyForInternalRecipientMailAddress(
 					matchers.anything(),
 					matchers.anything(),
 					notFoundRecipient2.address,
@@ -695,7 +731,7 @@ o.spec("MailFacade test", function () {
 
 			const captor = matchers.captor()
 			when(
-				cryptoFacade.encryptBucketKeyForInternalRecipient(
+				cryptoFacade.encryptBucketKeyForInternalRecipientMailAddress(
 					matchers.anything(),
 					matchers.anything(),
 					unverifiedRecipient1.address,
@@ -708,7 +744,7 @@ o.spec("MailFacade test", function () {
 			})
 
 			when(
-				cryptoFacade.encryptBucketKeyForInternalRecipient(
+				cryptoFacade.encryptBucketKeyForInternalRecipientMailAddress(
 					matchers.anything(),
 					matchers.anything(),
 					unverifiedRecipient2.address,

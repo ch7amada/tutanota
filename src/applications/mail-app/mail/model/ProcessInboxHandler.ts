@@ -1,21 +1,27 @@
-import { Mail, MailSet, ProcessInboxDatumParams } from "@tutao/entities/tutanota"
+import { ExpandedInboxRule, Mail, MailDetails, MailSet, ProcessInboxDatumParams } from "@tutao/entities/tutanota"
 import { MailSetKind } from "../../../../entities/tutanota/Utils"
 import { InstanceSessionKey } from "@tutao/entities/sys"
-import { SpamClassificationHandler } from "./SpamClassificationHandler"
-import { InboxRuleHandler } from "./InboxRuleHandler"
-import { isSameId } from "../../../../platform-kit/meta"
+import { SkipClientSpamClassificationReason, SpamClassificationHandler } from "./SpamClassificationHandler"
+import { getElementId, isSameId } from "../../../../platform-kit/meta"
 import { EnvProvider } from "../../../../platform-kit/app-env"
-import { assertNotNull, isEmpty, Nullable, throttle } from "../../../../platform-kit/utils"
+import { assertNotNull, isEmpty, lazyAsync, throttle } from "../../../../platform-kit/utils"
 import { MailFacade } from "../../../common/api/worker/facades/lazy/MailFacade"
 import { MailboxDetail } from "../../../common/mailFunctionality/MailboxModel"
 import { FolderSystem } from "../../../common/api/common/mail/FolderSystem"
 import { LoginController } from "../../../common/api/main/LoginController"
 import { CryptoFacade } from "../../../../platform-kit/base/base-crypto/CryptoFacade"
-import { LockedError } from "../../../../platform-kit/rest-client/error"
+import { LockedError, NotFoundError } from "../../../../platform-kit/rest-client/error"
+import { ClientClassifierType } from "../../../common/api/common/ClientClassifierType"
+import { InboxRuleHandler, SomeInboxRule } from "./InboxRuleHandler"
+import { extractServerClassifiers } from "../../../common/api/common/utils/spamClassificationUtils/SpamMailProcessor"
+import { ExpandedInboxRuleHandler } from "./ExpandedInboxRuleHandler"
 
 EnvProvider.assertMainOrNode()
 
-export type UnencryptedProcessInboxDatum = Omit<ProcessInboxDatumParams, "encVectorLegacy" | "encVectorWithServerClassifiers" | "ownerEncVectorSessionKey"> & {
+export type UnencryptedProcessInboxDatum = Omit<
+	ProcessInboxDatumParams,
+	"encVectorLegacy" | "encVectorWithServerClassifiers" | "ownerEncVectorSessionKey" | "ownerKeyVersion"
+> & {
 	vectorLegacy: Uint8Array<ArrayBuffer>
 	vectorWithServerClassifiers: Uint8Array<ArrayBuffer>
 }
@@ -28,8 +34,10 @@ export class ProcessInboxHandler {
 		private readonly mailFacade: MailFacade,
 		private readonly cryptoFacade: CryptoFacade,
 		private spamHandler: () => SpamClassificationHandler,
-		private readonly inboxRuleHandler: () => InboxRuleHandler,
+		private readonly inboxRuleHandler: lazyAsync<InboxRuleHandler>,
+		private readonly usingLegacyInboxRules: boolean,
 		private processedMailsByMailGroup: Map<Id, UnencryptedProcessInboxDatum[]> = new Map(),
+		private processedMailsAndInboxRules: Map<Id, { list: Array<{ mail: Mail; inboxRule: ExpandedInboxRule }>; mailboxDetail: MailboxDetail }> = new Map(),
 		private readonly throttleTimeout: number = DEFAULT_THROTTLE_PROCESS_INBOX_SERVICE_REQUESTS_MS,
 	) {
 		this.sendProcessInboxServiceRequest = throttle(this.throttleTimeout, async (mailFacade: MailFacade) => {
@@ -56,10 +64,19 @@ export class ProcessInboxHandler {
 					}
 				}
 			}
+
+			if (processedMailsAndInboxRules.size > 0) {
+				const listAndDetails = this.processedMailsAndInboxRules.values()
+				this.processedMailsAndInboxRules = new Map()
+				for (const { list, mailboxDetail } of listAndDetails) {
+					const inboxRuleHandler = <ExpandedInboxRuleHandler>await this.inboxRuleHandler()
+					await inboxRuleHandler.applyRules(list, mailboxDetail, true)
+				}
+			}
 		})
 	}
 
-	sendProcessInboxServiceRequest: (mailFacade: MailFacade) => Promise<void>
+	sendProcessInboxServiceRequest: (mailFacade: MailFacade) => void
 
 	public async handleIncomingMail(
 		mail: Mail,
@@ -82,78 +99,125 @@ export class ProcessInboxHandler {
 			instanceSessionKeys = resolvedSessionKeys.instanceSessionKeys
 		}
 
-		const mailDetails = await this.mailFacade.loadMailDetailsBlob(mail)
-
-		let finalProcessInboxDatum: Nullable<UnencryptedProcessInboxDatum> = null
-		let moveToFolder: MailSet = sourceFolder
-
-		const matchingInboxRule = await this.inboxRuleHandler()?.findMatchingInboxRule(mailboxDetail, mail, sourceFolder)
-		if (!matchingInboxRule || !matchingInboxRule.excludeFromSpamFilter) {
-			// In this case there is no matching inbox rule or it is not excluded from the spam, so we to use the spam classifier
-
-			const { targetFolder, processInboxDatum } = await this.spamHandler().predictSpamForNewMail(mail, mailDetails, sourceFolder, folderSystem)
-
-			if (targetFolder.folderType === MailSetKind.INBOX && matchingInboxRule) {
-				// The mail has been classified as HAM and inbox rule (if there is one) should be applied
-				moveToFolder = matchingInboxRule.targetFolder
-				finalProcessInboxDatum = matchingInboxRule.processInboxDatum
+		let mailDetails: MailDetails
+		try {
+			mailDetails = await this.mailFacade.loadMailDetailsBlob(mail)
+		} catch (e) {
+			if (e instanceof NotFoundError) {
+				console.error("Could not process incoming e-mail, no mail details blob found")
+				return sourceFolder
 			} else {
-				moveToFolder = targetFolder
-				finalProcessInboxDatum = processInboxDatum
+				throw e
 			}
+		}
+		const { modelInput, uploadableVectorLegacy, uploadableVector, skipPredictionReason } = await this.spamHandler().preparePredictSpamForNewMail(
+			mail,
+			mailDetails,
+		)
+
+		let targetFolder = sourceFolder
+		let applyInboxRuleActions = false
+		let matchingInboxRule: SomeInboxRule | null = null
+		const processInboxDatum: UnencryptedProcessInboxDatum = {
+			mailId: mail._id,
+			targetMoveFolder: sourceFolder._id,
+			classifierType: null,
+			vectorLegacy: uploadableVectorLegacy,
+			vectorWithServerClassifiers: uploadableVector,
+			ownerEncMailSessionKeys: [],
+		}
+
+		if (skipPredictionReason === SkipClientSpamClassificationReason.None) {
+			const isSpam = await this.spamHandler().predictSpamForNewMail(modelInput, assertNotNull(mail._ownerGroup))
+			if (isSpam && targetFolder.folderType === MailSetKind.INBOX) {
+				// The mail has been classified as SPAM
+				targetFolder = assertNotNull(folderSystem.getSystemFolderByType(MailSetKind.SPAM))
+			} else if (!isSpam && targetFolder.folderType === MailSetKind.SPAM) {
+				// The mail has been classified as HAM (not SPAM)
+				targetFolder = assertNotNull(folderSystem.getSystemFolderByType(MailSetKind.INBOX))
+			}
+
+			processInboxDatum.classifierType = ClientClassifierType.CLIENT_CLASSIFICATION
 		} else {
-			// In this case there is a matching inbox rule and it is excluded from the spam, so we take the inbox rule
-			const { targetFolder, processInboxDatum } = matchingInboxRule
-			finalProcessInboxDatum = processInboxDatum
-			moveToFolder = targetFolder
+			const serverClassifiers = mail.serverClassificationData != null ? extractServerClassifiers(mail.serverClassificationData) : null
+			console.log(
+				`skipped spam classification for new mail ${mail._id.join("/")}. reason: ${skipPredictionReason} , serverClassifiers: ${serverClassifiers}`,
+			)
 		}
 
-		// set processInboxDatum if the spam classification is disabled and no inbox rule applies to the mail
-		if (finalProcessInboxDatum === null) {
-			const { uploadableVector, uploadableVectorLegacy } = await this.mailFacade.createModelInputAndUploadableVectors(mail, mailDetails, sourceFolder)
-			finalProcessInboxDatum = {
-				mailId: mail._id,
-				targetMoveFolder: moveToFolder._id,
-				classifierType: null,
-				vectorLegacy: uploadableVectorLegacy,
-				vectorWithServerClassifiers: uploadableVector,
-				ownerEncMailSessionKeys: [],
+		if (targetFolder.folderType === MailSetKind.INBOX || skipPredictionReason === SkipClientSpamClassificationReason.None) {
+			// mail landed in Inbox or was moved to Spam folder by client side classification
+			const inboxRuleHandler = await this.inboxRuleHandler()
+			matchingInboxRule = await inboxRuleHandler.findMatchingInboxRule(mail, targetFolder)
+
+			if (matchingInboxRule != null) {
+				const excludeFromSpam = inboxRuleHandler.getExcludeSpamActionValue(matchingInboxRule)
+				const ruleMoveTarget =
+					(await inboxRuleHandler.getMoveActionValue(matchingInboxRule, mailboxDetail)) ??
+					assertNotNull(folderSystem.getSystemFolderByType(MailSetKind.INBOX))
+
+				// We only apply actions if: excludedFromSpam, marked as HAM, or marked as SPAM but inbox rule also moves to Spam
+				applyInboxRuleActions = excludeFromSpam || targetFolder.folderType === MailSetKind.INBOX || ruleMoveTarget.folderType === MailSetKind.SPAM
+				if (applyInboxRuleActions) {
+					if (!isSameId(targetFolder._id, ruleMoveTarget._id)) {
+						// only set classifierType to CUSTOMER_INBOX_RULES when mail is moved by inbox rule
+						processInboxDatum.classifierType = ClientClassifierType.CUSTOMER_INBOX_RULES
+						targetFolder = ruleMoveTarget
+					}
+
+					if (!this.usingLegacyInboxRules) {
+						const id = getElementId(mailboxDetail.mailGroupInfo)
+						if (this.processedMailsAndInboxRules.has(id)) {
+							this.processedMailsAndInboxRules.get(id)!.list.push({ mail, inboxRule: matchingInboxRule as ExpandedInboxRule })
+						} else {
+							this.processedMailsAndInboxRules.set(id, { list: [{ mail, inboxRule: matchingInboxRule as ExpandedInboxRule }], mailboxDetail })
+						}
+					}
+				}
 			}
 		}
 
-		// the ProcessInboxService is updating sessionKeys for mail and files on the server by calling UpdateSessionKeyService
-		finalProcessInboxDatum.ownerEncMailSessionKeys = instanceSessionKeys
+		if (!isLeaderClient) {
+			// For non-leader clients, we don't apply the inbox rule actions, but we process to find the target folder
+			// in order to hide mails that will be moved once processed from the list when loading it.
+			return targetFolder
+		}
+
+		// Update targetMoveFolder after client spam classification and inbox rule handling
+		processInboxDatum.targetMoveFolder = targetFolder._id
+		// The ProcessInboxService is updating sessionKeys for mail and files on the server by caling UpdateSessionKeyService
+		processInboxDatum.ownerEncMailSessionKeys = instanceSessionKeys
 
 		const mailGroupId = assertNotNull(mail._ownerGroup)
 		if (this.processedMailsByMailGroup.has(mailGroupId)) {
 			const existingData = assertNotNull(this.processedMailsByMailGroup.get(mailGroupId))
-			const datumIsAlreadyAdded = existingData.some((existingDatum) => isSameId(existingDatum.mailId, finalProcessInboxDatum?.mailId ?? null))
+			const datumIsAlreadyAdded = existingData.some((existingDatum) => isSameId(existingDatum.mailId, processInboxDatum.mailId))
 			if (!datumIsAlreadyAdded) {
-				this.processedMailsByMailGroup.get(mailGroupId)?.push(finalProcessInboxDatum)
+				this.processedMailsByMailGroup.get(mailGroupId)?.push(processInboxDatum)
 			}
 		} else {
-			this.processedMailsByMailGroup.set(mailGroupId, [finalProcessInboxDatum])
+			this.processedMailsByMailGroup.set(mailGroupId, [processInboxDatum])
 		}
 
-		if (isLeaderClient) {
-			// noinspection ES6MissingAwait
-			this.sendProcessInboxServiceRequest(this.mailFacade)
-		}
-		return moveToFolder
+		void this.sendProcessInboxServiceRequest(this.mailFacade)
+
+		return targetFolder
 	}
 
-	public async processInboxRulesOnly(mail: Mail, sourceFolder: MailSet, mailboxDetail: MailboxDetail): Promise<MailSet> {
-		// These should be in process by the regular handler and be eventually processed
-		if (mail.processNeeded) {
-			return sourceFolder
-		}
-		let moveToFolder: MailSet = sourceFolder
+	/**
+	 * Get move target folder of matching inbox rule for mail
+	 * @returns {sourceFolder} if: mail.processNeeded, no matching rule is found, or matching rule doesn't move the mail
+	 */
+	public async getInboxRuleMoveTarget(mail: Mail, sourceFolder: MailSet, mailboxDetail: MailboxDetail): Promise<MailSet> {
+		let moveToFolder = sourceFolder
 
-		// process excluded rules first and then regular ones.
-		const result = await this.inboxRuleHandler()?.findMatchingInboxRule(mailboxDetail, mail, sourceFolder, true)
-		if (result) {
-			const { targetFolder, processInboxDatum: _ } = result
-			moveToFolder = targetFolder
+		// when processNeeded, the mail should be in process by the regular handler and be eventually processed
+		if (!mail.processNeeded) {
+			const inboxRuleHandler = await this.inboxRuleHandler()
+			const matchingRule = await inboxRuleHandler.findMatchingInboxRule(mail, sourceFolder, true)
+			if (matchingRule) {
+				moveToFolder = (await inboxRuleHandler.getMoveActionValue(matchingRule, mailboxDetail)) ?? sourceFolder
+			}
 		}
 
 		return moveToFolder

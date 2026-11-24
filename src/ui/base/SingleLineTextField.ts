@@ -1,7 +1,7 @@
 import m, { Children, ClassComponent, Component, Vnode, VnodeDOM } from "mithril"
 import { LegacyTextFieldType } from "./LegacyTextField.js"
 import { AllIcons, Icon, IconSize } from "./Icon.js"
-import { px, size } from "../size.js"
+import { font_size, getBaseFontSizePX, px, size } from "../size.js"
 import { filterInt } from "@tutao/utils"
 import { lang, Translation } from "../utils/LanguageViewModel"
 
@@ -30,10 +30,13 @@ export interface SingleLineTextFieldAttrs<T extends LegacyTextFieldType> extends
 	 * @param {string} newValue - String value typed on the input field
 	 * @returns {unknown} Return type depends on the callback provided
 	 */
+	// TODO: Misleading. Looks like Mithril's oninput but does not call with arguments fn(ev.target, ev)
 	oninput?: (newValue: string) => unknown
 	placeholder?: string
 	classes?: Array<string>
 	style?: Partial<Pick<CSSStyleDeclaration, "padding" | "fontSize" | "textAlign" | "borderWidth">>
+	// // TODO: It'd be nicer to support any/all Mithril component lifecycle methods on all components automatically.
+	// oncreate?: Component['oncreate']
 	onclick?: (...args: unknown[]) => unknown
 	onfocus?: (...args: unknown[]) => unknown
 	onblur?: (...args: unknown[]) => unknown
@@ -68,7 +71,7 @@ export type InputAttrs<T extends LegacyTextFieldType> = T extends LegacyTextFiel
  *     disabled: model.isReadonly,
  *     classes: ["custom-text-color"], // Adding new styles
  *     style: {
- *         "font-size": px(font_size.base * 1.25) // Overriding the component style
+ *         "font-size": em(1.25) // Overriding the component style
  *     }
  * }),
  */
@@ -85,24 +88,24 @@ export class SingleLineTextField<T extends LegacyTextFieldType> implements Class
 		}
 
 		const fontSizeString = attrs.style?.fontSize
-		const fontSizeNumber = fontSizeString ? filterInt(fontSizeString.replace("px", "")) : 16
+		const fontSizeNumber = fontSizeString ? filterInt(fontSizeString.replace("px", "")) : font_size.base
 
 		const iconLeftPadding = 12
 
 		let iconSize
-		let iconSizeValue
+		let iconSizeEm
 		if (fontSizeNumber > 16 && fontSizeNumber < 32) {
 			iconSize = IconSize.PX20
-			iconSizeValue = size.icon_20
+			iconSizeEm = size.core_20_em
 		} else if (fontSizeNumber > 32) {
 			iconSize = IconSize.PX32
-			iconSizeValue = size.icon_32
+			iconSizeEm = size.core_32_em
 		} else {
 			iconSize = IconSize.PX24
-			iconSizeValue = size.icon_24
+			iconSizeEm = size.core_24_em
 		}
 
-		const iconLeftPaddingAndIconSize = iconLeftPadding + iconSizeValue
+		const iconLeftPaddingAndIconSize = iconLeftPadding + iconSizeEm * getBaseFontSizePX()
 		const spacingBetweenIconAndText = size.spacing_16
 
 		return m(".rel.flex.flex-grow", [

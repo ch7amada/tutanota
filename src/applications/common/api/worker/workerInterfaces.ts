@@ -38,6 +38,9 @@ import { EnvProvider } from "@tutao/app-env"
 import { WebsocketConnectivityListener } from "../../../../platform-kit/network/WebsocketConnectivityListener"
 import { EntityRestInterface } from "../../../../platform-kit/network/EntityRestCacheInterface"
 import { AlarmFacade } from "./facades/lazy/AlarmFacade"
+import { InboxRuleModel } from "../../../mail-app/mail/model/InboxRuleModel"
+import { Nullable } from "@tutao/utils"
+import { DriveFileSharingFacade } from "./facades/lazy/DriveFileSharingFacade"
 
 EnvProvider.assertMainOrNode()
 
@@ -60,6 +63,7 @@ export interface MainInterface {
 	readonly infoMessageHandler: InfoMessageHandler
 	readonly syncTracker: SyncTracker
 	readonly uploadProgressListener: TransferProgressDispatcher
+	readonly inboxRuleModel: Nullable<InboxRuleModel>
 }
 
 /** Interface of the facades exposed by the worker, basically interface for the worker itself */
@@ -96,5 +100,6 @@ export interface CommonWorkerInterface {
 	readonly applicationTypesFacade: ApplicationTypesFacade
 	readonly identityKeyCreator: IdentityKeyCreator
 	readonly driveFacade: DriveFacade
+	readonly driveFileSharingFacade: DriveFileSharingFacade
 	readonly alarmFacade: AlarmFacade
 }

@@ -2,13 +2,13 @@ import o, { assertThrows } from "@tutao/otest"
 import {
 	BLOCK_SIZE_BYTES,
 	FIXED_INITIALIZATION_VECTOR,
-	generateInitializationVector,
 	INITIALIZATION_VECTOR_LENGTH_BYTES,
 	SYMMETRIC_AUTHENTICATION_TAG_LENGTH_BYTES,
+	SymmetricCipherUtils,
 } from "@tutao/crypto/symmetric-cipher-utils"
 import {
 	InitializationVectorVariant,
-	ParsedCiphertextAeadWithGroupKey,
+	ParsedCiphertextAeadWithInstanceKey,
 	ParsedCiphertextAeadWithSessionKey,
 	ParsedCiphertextAesCbcThenHmac,
 	ParsedCiphertextUnusedReservedUnauthenticated,
@@ -21,6 +21,12 @@ import { MacTag, random } from "../../../src/platform-kit/crypto"
 
 o.spec("ParsedCiphertextTest", () => {
 	o.spec("happy path", () => {
+		let symmetricCipherUtils: SymmetricCipherUtils
+
+		o.beforeEach(() => {
+			symmetricCipherUtils = new SymmetricCipherUtils(random)
+		})
+
 		o.test("can parse UnusedReservedUnauthenticated with fixed initialization vector", async () => {
 			const symmetricCipherVersion = SymmetricCipherVersion.UnusedReservedUnauthenticated
 			const ciphertext = random.generateRandomData(BLOCK_SIZE_BYTES)
@@ -42,7 +48,7 @@ o.spec("ParsedCiphertextTest", () => {
 
 		o.test("can parse UnusedReservedUnauthenticated with random initialization vector", async () => {
 			const symmetricCipherVersion = SymmetricCipherVersion.UnusedReservedUnauthenticated
-			const initializationVector = generateInitializationVector()
+			const initializationVector = symmetricCipherUtils.generateInitializationVector()
 			const ciphertext = random.generateRandomData(BLOCK_SIZE_BYTES)
 
 			const versionedCiphertext = concat(Uint8Array.of(symmetricCipherVersion), initializationVector.bytes, ciphertext)
@@ -71,7 +77,7 @@ o.spec("ParsedCiphertextTest", () => {
 
 		o.test("can parse AesCbcThenHmac with random initialization vector", async () => {
 			const symmetricCipherVersion = SymmetricCipherVersion.AesCbcThenHmac
-			const initializationVector = generateInitializationVector()
+			const initializationVector = symmetricCipherUtils.generateInitializationVector()
 			const ciphertext = random.generateRandomData(BLOCK_SIZE_BYTES)
 			const macTag = random.generateRandomData(SYMMETRIC_AUTHENTICATION_TAG_LENGTH_BYTES) as MacTag
 
@@ -85,7 +91,7 @@ o.spec("ParsedCiphertextTest", () => {
 
 		o.test("can parse AEAD with session key", async () => {
 			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithSessionKey
-			const initializationVector = generateInitializationVector()
+			const initializationVector = symmetricCipherUtils.generateInitializationVector()
 			const ciphertext = Uint8Array.of(0, 1, 2, 3)
 			const macTag = random.generateRandomData(SYMMETRIC_AUTHENTICATION_TAG_LENGTH_BYTES) as MacTag
 
@@ -99,11 +105,11 @@ o.spec("ParsedCiphertextTest", () => {
 			o.check(parsedCiphertext.macTag).deepEquals(macTag)
 		})
 
-		o.test("can parse AEAD with group key", async () => {
-			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithGroupKey
+		o.test("can parse AEAD with instance key", async () => {
+			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithInstanceKey
 			const groupKeyVersionLength = 0
 			const groupKeyVersion: KeyVersion = 42
-			const initializationVector = generateInitializationVector()
+			const initializationVector = symmetricCipherUtils.generateInitializationVector()
 			const ciphertext = Uint8Array.of(0, 1, 2, 3)
 			const macTag = random.generateRandomData(SYMMETRIC_AUTHENTICATION_TAG_LENGTH_BYTES) as MacTag
 
@@ -115,7 +121,7 @@ o.spec("ParsedCiphertextTest", () => {
 			)
 			const e = await assertThrows(CryptoError, async () => parseVersionedCiphertext(versionedCiphertext, InitializationVectorVariant.Fixed))
 			o.check(e.message).equals("AEAD requires a random initialization vector")
-			const parsedCiphertext = parseVersionedCiphertext(versionedCiphertext) as ParsedCiphertextAeadWithGroupKey
+			const parsedCiphertext = parseVersionedCiphertext(versionedCiphertext) as ParsedCiphertextAeadWithInstanceKey
 			o.check(parsedCiphertext.cipherVersion).equals(symmetricCipherVersion)
 			o.check(parsedCiphertext.groupKeyVersion).equals(groupKeyVersion)
 			o.check(parsedCiphertext.initializationVector).deepEquals(initializationVector)
@@ -145,7 +151,7 @@ o.spec("ParsedCiphertextTest", () => {
 		})
 
 		o.test("ensures there are enough bytes for the group key version", async () => {
-			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithGroupKey
+			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithInstanceKey
 			// empty initialization vector, ciphertext and mac tag
 			const versionedCiphertext = Uint8Array.of(symmetricCipherVersion)
 			const e = await assertThrows(CryptoError, async () => parseVersionedCiphertext(versionedCiphertext))
@@ -153,7 +159,7 @@ o.spec("ParsedCiphertextTest", () => {
 		})
 
 		o.test("only supports 0-byte for key version length", async () => {
-			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithGroupKey
+			const symmetricCipherVersion = SymmetricCipherVersion.AeadWithInstanceKey
 			const groupKeyVersionLength = 1
 			const groupKeyVersion = 42
 			// empty initialization vector, ciphertext and mac tag

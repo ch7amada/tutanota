@@ -40,6 +40,9 @@ import { GroupKeyRotationPostIn, GroupKeyRotationPostInTypeRef } from "./TypeRef
 import { IdentityKeyGetIn, IdentityKeyGetInTypeRef } from "./TypeRefs.js"
 import { IdentityKeyGetOut, IdentityKeyGetOutTypeRef } from "./TypeRefs.js"
 import { IdentityKeyPostIn, IdentityKeyPostInTypeRef } from "./TypeRefs.js"
+import { InstanceKeyPermissionServiceGetIn, InstanceKeyPermissionServiceGetInTypeRef } from "./TypeRefs.js"
+import { InstanceKeyPermissionServiceGetOut, InstanceKeyPermissionServiceGetOutTypeRef } from "./TypeRefs.js"
+import { InstanceKeyPermissionServicePostIn, InstanceKeyPermissionServicePostInTypeRef } from "./TypeRefs.js"
 import { InvoiceDataGetIn, InvoiceDataGetInTypeRef } from "./TypeRefs.js"
 import { InvoiceDataGetOut, InvoiceDataGetOutTypeRef } from "./TypeRefs.js"
 import { LocationServiceGetReturn, LocationServiceGetReturnTypeRef } from "./TypeRefs.js"
@@ -98,6 +101,8 @@ import { UpdateSessionKeysPostIn, UpdateSessionKeysPostInTypeRef } from "./TypeR
 import { UpgradePriceServiceData, UpgradePriceServiceDataTypeRef } from "./TypeRefs.js"
 import { UpgradePriceServiceReturn, UpgradePriceServiceReturnTypeRef } from "./TypeRefs.js"
 import { UserGroupKeyRotationPostIn, UserGroupKeyRotationPostInTypeRef } from "./TypeRefs.js"
+import { UserMigrationServicePostIn, UserMigrationServicePostInTypeRef } from "./TypeRefs.js"
+import { UserMigrationServicePostOut, UserMigrationServicePostOutTypeRef } from "./TypeRefs.js"
 import { UserDataDelete, UserDataDeleteTypeRef } from "./TypeRefs.js"
 import { VerifierTokenServiceIn, VerifierTokenServiceInTypeRef } from "./TypeRefs.js"
 import { VerifierTokenServiceOut, VerifierTokenServiceOutTypeRef } from "./TypeRefs.js"
@@ -303,6 +308,19 @@ export const IdentityKeyService_GET = new GetService<IdentityKeyGetIn, IdentityK
 	IdentityKeyGetOutTypeRef,
 )
 export const IdentityKeyService_POST = new PostService<IdentityKeyPostIn, NullEntity>("sys", "IdentityKeyService", IdentityKeyPostInTypeRef, NullEntityTypeRef)
+
+export const InstanceKeyPermissionService_GET = new GetService<InstanceKeyPermissionServiceGetIn, InstanceKeyPermissionServiceGetOut>(
+	"sys",
+	"InstanceKeyPermissionService",
+	InstanceKeyPermissionServiceGetInTypeRef,
+	InstanceKeyPermissionServiceGetOutTypeRef,
+)
+export const InstanceKeyPermissionService_POST = new PostService<InstanceKeyPermissionServicePostIn, NullEntity>(
+	"sys",
+	"InstanceKeyPermissionService",
+	InstanceKeyPermissionServicePostInTypeRef,
+	NullEntityTypeRef,
+)
 
 export const InvoiceDataService_GET = new GetService<InvoiceDataGetIn, InvoiceDataGetOut>(
 	"sys",
@@ -543,6 +561,13 @@ export const UserGroupKeyRotationService_POST = new PostService<UserGroupKeyRota
 	"UserGroupKeyRotationService",
 	UserGroupKeyRotationPostInTypeRef,
 	NullEntityTypeRef,
+)
+
+export const UserMigrationService_POST = new PostService<UserMigrationServicePostIn, UserMigrationServicePostOut>(
+	"sys",
+	"UserMigrationService",
+	UserMigrationServicePostInTypeRef,
+	UserMigrationServicePostOutTypeRef,
 )
 
 export const UserService_DELETE = new DeleteService<UserDataDelete, NullEntity>("sys", "UserService", UserDataDeleteTypeRef, NullEntityTypeRef)

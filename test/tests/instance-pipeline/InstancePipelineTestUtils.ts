@@ -25,7 +25,7 @@ export const testTypeModel: TypeModel = {
 	encrypted: true,
 	id: 42,
 	name: "TestType",
-	rootId: "SoMeId",
+	rootId: "someId",
 	since: 41,
 	type: EntityTypeEnum.ListElement,
 	isPublic: true,
@@ -38,6 +38,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: true,
 			encrypted: true,
+			transferredAttributeId: null,
 		},
 		"2": {
 			id: 2,
@@ -46,6 +47,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.ZeroOrOne,
 			final: false,
 			encrypted: true,
+			transferredAttributeId: null,
 		},
 		"5": {
 			id: 5,
@@ -54,6 +56,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: false,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"7": {
 			id: 7,
@@ -62,6 +65,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.ZeroOrOne,
 			final: false,
 			encrypted: true,
+			transferredAttributeId: null,
 		},
 		"12": {
 			id: 12,
@@ -70,6 +74,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: false,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"13": {
 			id: 13,
@@ -78,6 +83,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: false,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"14": {
 			id: 14,
@@ -86,6 +92,16 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.ZeroOrOne,
 			final: true,
 			encrypted: false,
+			transferredAttributeId: null,
+		},
+		"21": {
+			id: 21,
+			name: "_ownerKeyVersion",
+			type: ValueTypeEnum.Number,
+			cardinality: CardinalityEnum.ZeroOrOne,
+			final: true,
+			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"15": {
 			id: 15,
@@ -94,6 +110,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: true,
 			encrypted: true,
+			transferredAttributeId: null,
 		},
 		"16": {
 			id: 16,
@@ -102,6 +119,7 @@ export const testTypeModel: TypeModel = {
 			cardinality: CardinalityEnum.ZeroOrOne,
 			final: true,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 	},
 	associations: {
@@ -113,6 +131,7 @@ export const testTypeModel: TypeModel = {
 			refTypeId: 43,
 			final: false,
 			dependency: "tutanota",
+			transferredAttributeId: null,
 		},
 		"4": {
 			id: 4,
@@ -122,6 +141,7 @@ export const testTypeModel: TypeModel = {
 			refTypeId: 44,
 			final: false,
 			dependency: null,
+			transferredAttributeId: null,
 		},
 		"8": {
 			id: 8,
@@ -131,6 +151,7 @@ export const testTypeModel: TypeModel = {
 			refTypeId: 44,
 			final: false,
 			dependency: null,
+			transferredAttributeId: null,
 		},
 		"17": {
 			id: 17,
@@ -140,10 +161,12 @@ export const testTypeModel: TypeModel = {
 			refTypeId: 44,
 			final: false,
 			dependency: null,
+			transferredAttributeId: null,
 		},
 	},
 	version: 0,
 	versioned: false,
+	targetTypeId: null,
 }
 
 export const testAggregateModel: TypeModel = {
@@ -151,7 +174,7 @@ export const testAggregateModel: TypeModel = {
 	encrypted: true,
 	id: 43,
 	name: "TestAggregate",
-	rootId: "SoMeId",
+	rootId: "someId",
 	since: 41,
 	type: EntityTypeEnum.Aggregated,
 	isPublic: true,
@@ -164,6 +187,7 @@ export const testAggregateModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: false,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"6": {
 			id: 6,
@@ -172,6 +196,7 @@ export const testAggregateModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: true,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 	},
 	associations: {
@@ -183,6 +208,7 @@ export const testAggregateModel: TypeModel = {
 			refTypeId: 44,
 			final: false,
 			dependency: "tutanota",
+			transferredAttributeId: null,
 		},
 		"10": {
 			id: 10,
@@ -192,10 +218,12 @@ export const testAggregateModel: TypeModel = {
 			refTypeId: 44,
 			final: false,
 			dependency: "tutanota",
+			transferredAttributeId: null,
 		},
 	},
 	version: 0,
 	versioned: false,
+	targetTypeId: null,
 }
 
 export const testAggregateOnAggregateModel: TypeModel = {
@@ -203,7 +231,7 @@ export const testAggregateOnAggregateModel: TypeModel = {
 	encrypted: true,
 	id: 44,
 	name: "TestAggregateOnAggregate",
-	rootId: "SoMeId",
+	rootId: "someId",
 	since: 41,
 	type: EntityTypeEnum.Aggregated,
 	isPublic: true,
@@ -216,6 +244,7 @@ export const testAggregateOnAggregateModel: TypeModel = {
 			cardinality: CardinalityEnum.ZeroOrOne,
 			final: false,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"11": {
 			id: 11,
@@ -224,6 +253,7 @@ export const testAggregateOnAggregateModel: TypeModel = {
 			cardinality: CardinalityEnum.One,
 			final: true,
 			encrypted: false,
+			transferredAttributeId: null,
 		},
 		"17": {
 			id: 17,
@@ -232,11 +262,67 @@ export const testAggregateOnAggregateModel: TypeModel = {
 			cardinality: CardinalityEnum.ZeroOrOne,
 			final: false,
 			encrypted: true,
+			transferredAttributeId: null,
 		},
 	},
 	associations: {},
 	version: 0,
 	versioned: false,
+	targetTypeId: null,
+}
+
+export const testTransferAggregatedTypeModel: TypeModel = {
+	app: "tutanota",
+	encrypted: true,
+	id: 45,
+	name: "TestTransferAggregatedType",
+	rootId: "someTransferId",
+	since: 41,
+	type: EntityTypeEnum.Aggregated,
+	isPublic: true,
+	values: {
+		"18": {
+			id: 18,
+			name: "_id",
+			type: ValueTypeEnum.CustomId,
+			cardinality: CardinalityEnum.One,
+			final: true,
+			encrypted: false,
+			transferredAttributeId: null,
+		},
+		"19": {
+			id: 19,
+			name: "testValue",
+			type: ValueTypeEnum.Number,
+			cardinality: CardinalityEnum.One,
+			final: true,
+			encrypted: true,
+			transferredAttributeId: 1,
+		},
+		"20": {
+			id: 20,
+			name: "_ownerEncSessionKey",
+			type: ValueTypeEnum.Bytes,
+			cardinality: CardinalityEnum.ZeroOrOne,
+			final: true,
+			encrypted: false,
+			transferredAttributeId: 14,
+		},
+		"22": {
+			id: 22,
+			name: "_ownerKeyVersion",
+			type: ValueTypeEnum.Number,
+			cardinality: CardinalityEnum.ZeroOrOne,
+			final: true,
+			encrypted: false,
+			transferredAttributeId: 21,
+		},
+	},
+	associations: {},
+	version: 0,
+	dependsOnVersion: null,
+	versioned: false,
+	targetTypeId: 42,
 }
 
 export const TestTypeRef = new TypeRef<TestEntity>("tutanota", 42)
@@ -245,7 +331,7 @@ export const TestAggregateOnAggregateRef = new TypeRef<TestAggregateOnAggregate>
 
 export type TestAggregateOnAggregate = Entity & {
 	_id: Id
-	testBytes: null | Uint8Array
+	testBytes: Uint8Array<ArrayBuffer> | null
 	testEncryptedBytes: Uint8Array<ArrayBuffer> | null
 }
 
@@ -280,6 +366,8 @@ export const dummyResolver = (tr: TypeRef<Entity>) => {
 			return Promise.resolve(testAggregateModel)
 		case testAggregateOnAggregateModel.id:
 			return Promise.resolve(testAggregateOnAggregateModel)
+		case testTransferAggregatedTypeModel.id:
+			return Promise.resolve(testTransferAggregatedTypeModel)
 	}
 	return Promise.resolve(testTypeModel)
 }
@@ -319,6 +407,7 @@ export function createEncryptedValueType(
 		cardinality: cardinality,
 		final: true,
 		encrypted: true,
+		transferredAttributeId: null,
 	} satisfies ModelValue
 }
 

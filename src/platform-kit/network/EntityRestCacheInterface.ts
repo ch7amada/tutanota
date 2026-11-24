@@ -1,5 +1,4 @@
 import { ListElementEntity, PersistentEntity, TypeRef } from "@tutao/meta"
-import { OwnerEncSessionKeyProvider } from "@tutao/instance-pipeline"
 import { CacheSyncStatus, EntityUpdateData } from "../instance-pipeline/utils/EntityUpdateUtils"
 import { Nullable } from "@tutao/utils"
 import {
@@ -8,6 +7,9 @@ import {
 	EntityRestClientSetupOptions,
 	EntityRestClientUpdateOptions,
 } from "../instance-pipeline/RestClientOptions"
+
+import { OwnerEncSessionKeyProvider } from "@tutao/instance-pipeline"
+import { KdfNonce } from "@tutao/crypto"
 
 /**
  * The EntityRestInterface provides a convenient interface for invoking server side REST services.
@@ -87,6 +89,8 @@ export interface EntityRestInterface {
 	 * @return Similar to the updates in the data parameter, but reduced by the updates which are obsolete.
 	 */
 	onEntityUpdatesReceived(updates: readonly EntityUpdateData[], batchId: Id, groupId: Id): Promise<readonly EntityUpdateData[]>
+
+	ensureKdfNonce(instance: PersistentEntity): Promise<KdfNonce>
 }
 
 export interface EntityRestCache extends EntityRestInterface {

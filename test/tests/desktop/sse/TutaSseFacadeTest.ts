@@ -17,7 +17,6 @@ import {
 } from "../../TestUtils.js"
 import { SseInfo } from "../../../../src/applications/common/desktop/sse/SseInfo.js"
 import { InstancePipeline, TypeModelResolver } from "../../../../src/platform-kit/instance-pipeline"
-import { aes256RandomKey, aesEncrypt } from "../../../../src/platform-kit/crypto"
 import { DesktopAlarmStorage } from "../../../../src/applications/common/desktop/sse/DesktopAlarmStorage"
 import { DesktopAlarmScheduler } from "../../../../src/applications/common/desktop/sse/DesktopAlarmScheduler"
 import { EncryptedMissedNotification } from "../../../../src/app-kit/native-bridge/common/EncryptedMissedNotification"
@@ -42,12 +41,18 @@ import {
 import { IncomingServerJson } from "../../../../src/platform-kit/instance-pipeline/TypeMapper"
 import { InstanceDirection, ParsedValue } from "../../../../src/platform-kit/instance-pipeline/ParsedValue"
 import { changeInstanceDirection } from "../../instance-pipeline/InstancePipelineTestUtils"
+import { SymmetricCipherUtils } from "@tutao/crypto/symmetric-cipher-utils"
+import { Aes, AesCbcFacade, random, SymmetricCipherFacade } from "../../../../src/platform-kit/crypto"
+import { AeadFacade } from "@tutao/crypto/aead-facade"
+import { SymmetricKeyDeriver } from "@tutao/crypto/symmetric-key-deriver"
 
 const APP_V = env.versionNumber
 
 const { anything } = matchers
 
 o.spec("TutaSseFacadeTest", () => {
+	let symmetricCipherUtils: SymmetricCipherUtils
+	let aes: Aes
 	let sseFacade: TutaSseFacade
 	let sseStorage: SseStorage
 	let notificationHandler: TutaNotificationHandler
@@ -60,6 +65,14 @@ o.spec("TutaSseFacadeTest", () => {
 	let typeModelResolver: TypeModelResolver
 
 	o.beforeEach(() => {
+		symmetricCipherUtils = new SymmetricCipherUtils(random)
+		const symmetricCipherFacade = new SymmetricCipherFacade(
+			new AesCbcFacade(),
+			new AeadFacade(symmetricCipherUtils),
+			new SymmetricKeyDeriver(),
+			symmetricCipherUtils,
+		)
+		aes = new Aes(symmetricCipherFacade)
 		sseStorage = object()
 		notificationHandler = object()
 		sseClient = object()
@@ -68,7 +81,7 @@ o.spec("TutaSseFacadeTest", () => {
 		fetch = func<typeof undiciFetch>()
 		date = object()
 		typeModelResolver = clientInitializedTypeModelResolver()
-		nativeInstancePipeline = instancePipelineFromTypeModelResolver(typeModelResolver)
+		nativeInstancePipeline = instancePipelineFromTypeModelResolver(random, symmetricCipherFacade, typeModelResolver)
 		sseFacade = new TutaSseFacade(sseStorage, notificationHandler, sseClient, alarmStorage, alarmScheduler, APP_V, fetch, date, nativeInstancePipeline)
 	})
 
@@ -185,7 +198,7 @@ o.spec("TutaSseFacadeTest", () => {
 				notificationInfos: [notificationInfo],
 			})
 
-			const sk = aes256RandomKey()
+			const sk = symmetricCipherUtils.aes256RandomKey()
 			const untypedInstance = (await nativeInstancePipeline.mapAndEncrypt(MissedNotificationTypeRef, missedNotification, sk)).getJsonRepresentation()
 			const jsonDefer = mockFetchRequest(fetch, "http://something.com/rest/sys/missednotification/aWQ", headers, 200, untypedInstance)
 
@@ -248,7 +261,7 @@ o.spec("TutaSseFacadeTest", () => {
 				],
 			})
 
-			const sk = aes256RandomKey()
+			const sk = symmetricCipherUtils.aes256RandomKey()
 			when(alarmStorage.getNotificationSessionKey(anything())).thenResolve({
 				sessionKey: sk,
 				notificationSessionKey: createTestEntity(NotificationSessionKeyTypeRef, {
@@ -263,7 +276,7 @@ o.spec("TutaSseFacadeTest", () => {
 			verify(alarmScheduler.handleDeleteAlarm("alarmId"))
 		})
 
-		o("alarmnotification with unavailable pushIdentifierSessionKey", async function () {
+		o("alarm notification with unavailable pushIdentifierSessionKey", async function () {
 			const missedNotification = createTestEntity(MissedNotificationTypeRef, {
 				_id: idToElementId("id"),
 				_permissions: "permissionsId",
@@ -287,7 +300,7 @@ o.spec("TutaSseFacadeTest", () => {
 				],
 			})
 
-			const sk = aes256RandomKey()
+			const sk = symmetricCipherUtils.aes256RandomKey()
 			when(alarmStorage.getNotificationSessionKey(anything())).thenResolve(null)
 			// casting here is fine, since we just want to mimic server response data
 			const untypedInstance = await nativeInstancePipeline.mapAndEncryptToParsedInstance(MissedNotificationTypeRef, missedNotification, sk)
@@ -297,7 +310,7 @@ o.spec("TutaSseFacadeTest", () => {
 			verify(alarmStorage.getNotificationSessionKey(anything()))
 		})
 
-		o("alarmnotification with corrupt fields", async function () {
+		o("alarm notification with corrupt fields", async function () {
 			const missedNotification = createTestEntity(MissedNotificationTypeRef, {
 				_id: idToElementId("id"),
 				_permissions: "permissionsId",
@@ -321,7 +334,7 @@ o.spec("TutaSseFacadeTest", () => {
 				],
 			})
 
-			const sk = aes256RandomKey()
+			const sk = symmetricCipherUtils.aes256RandomKey()
 			when(alarmStorage.getNotificationSessionKey(anything())).thenResolve({
 				sessionKey: sk,
 				notificationSessionKey: createTestEntity(NotificationSessionKeyTypeRef, {
@@ -338,7 +351,10 @@ o.spec("TutaSseFacadeTest", () => {
 				.getAttributeByName("alarmNotifications")
 				.asNestedObjList()[0]
 				// encrypt with another random sessionKey so that decrypt fails later
-				.addAttributeByName("eventStart", ParsedValue.fromByteArray(aesEncrypt(aes256RandomKey(), stringToUtf8Uint8Array("0"))))
+				.addAttributeByName(
+					"eventStart",
+					ParsedValue.fromByteArray(aes.aesEncrypt(symmetricCipherUtils.aes256RandomKey(), stringToUtf8Uint8Array("0"))),
+				)
 
 			// simulate notification is coming from server
 			changeInstanceDirection(encryptedNotificationInstance, InstanceDirection.IncomingFromServer)
@@ -347,7 +363,7 @@ o.spec("TutaSseFacadeTest", () => {
 
 			const err = await assertThrows(CryptoError, () => sseFacade.handleAlarmNotification(encryptedMissedNotification))
 			verify(alarmStorage.removePushIdentifierKey(anything()))
-			o(err.message).deepEquals("could not find session key to decrypt alarm notification")
+			o(err.message).deepEquals("an alarm notification could not be decrypted")
 		})
 
 		o.test("passes lastProcessedNotificationId if present", async () => {
@@ -373,7 +389,7 @@ o.spec("TutaSseFacadeTest", () => {
 				notificationInfos: [],
 			})
 
-			const sk = aes256RandomKey()
+			const sk = symmetricCipherUtils.aes256RandomKey()
 			const untypedInstance = await nativeInstancePipeline.mapAndEncrypt(MissedNotificationTypeRef, missedNotification, sk)
 
 			await sseFacade.connect()

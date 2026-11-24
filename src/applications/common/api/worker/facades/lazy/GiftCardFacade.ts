@@ -10,7 +10,7 @@ import {
 	uint8ArrayToBase64,
 } from "@tutao/utils"
 import { elementIdPart, GENERATED_MAX_ID } from "@tutao/meta"
-import { _encryptKeyWithVersionedKey, aes256RandomKey, base64ToKey, keyToUint8Array, sha256Hash } from "@tutao/crypto"
+import { AeadCipherVersion, base64ToKey, CryptoWrapper, keyToUint8Array, sha256Hash, SymmetricCipherUtils } from "@tutao/crypto"
 import { IServiceExecutor } from "../../../../../../platform-kit/network/ServiceRequest.js"
 import { CryptoFacade } from "../../../../../../platform-kit/base/base-crypto/CryptoFacade.js"
 import { UserFacade } from "../../../../../../platform-kit/base/facades/UserFacade.js"
@@ -20,6 +20,7 @@ import { KeyLoaderFacade } from "../../../../../../platform-kit/base/base-crypto
 import {
 	createGiftCardCreateData,
 	createGiftCardRedeemData,
+	createGiftCardTransferAggregatedType,
 	GiftCard,
 	GiftCardRedeemGetReturn,
 	GiftCardRedeemService_GET,
@@ -40,6 +41,8 @@ export class GiftCardFacade {
 		private readonly serviceExecutor: IServiceExecutor,
 		private readonly cryptoFacade: CryptoFacade,
 		private readonly keyLoaderFacade: KeyLoaderFacade,
+		private readonly cryptoWrapper: CryptoWrapper,
+		private readonly symmetricCipherUtils: SymmetricCipherUtils,
 	) {}
 
 	async generateGiftCard(message: string, value: NumberString): Promise<IdTuple> {
@@ -52,17 +55,31 @@ export class GiftCardFacade {
 		const adminGroupId = getFirstOrThrow(adminGroupIds)
 		const ownerKey = await this.keyLoaderFacade.getCurrentSymGroupKey(adminGroupId)
 
-		const sessionKey = aes256RandomKey()
-		const ownerEncSessionKey = _encryptKeyWithVersionedKey(ownerKey, sessionKey)
-		const data = createGiftCardCreateData({
-			message: message,
-			keyHash: sha256Hash(keyToUint8Array(sessionKey)),
+		const sessionKey = this.symmetricCipherUtils.aes256RandomKey()
+		const ownerEncSessionKey = this.cryptoWrapper.encryptKeyWithVersionedKey(ownerKey, sessionKey)
+		const giftCardTransferAggregatedType = createGiftCardTransferAggregatedType({
+			_ownerEncSessionKey: ownerEncSessionKey.key,
+			_ownerKeyVersion: ownerEncSessionKey.encryptingKeyVersion.toString(),
+			_kdfNonce: null,
+			message,
 			value,
 		})
-		data.ownerEncSessionKey = ownerEncSessionKey.key
-		data.ownerKeyVersion = ownerEncSessionKey.encryptingKeyVersion.toString()
-		const { giftCard } = await this.serviceExecutor.execute(GiftCardService_POST, data, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey })
+		const data = createGiftCardCreateData({
+			keyHash: sha256Hash(keyToUint8Array(sessionKey)),
+			giftCard: giftCardTransferAggregatedType,
 
+			// no longer used
+
+			ownerEncSessionKey: null,
+			ownerKeyVersion: null,
+			message: null,
+			value: null,
+		})
+
+		const { giftCard } = await this.serviceExecutor.execute(GiftCardService_POST, data, {
+			...DEFAULT_EXTRA_SERVICE_PARAMS,
+			...(await this.keyLoaderFacade.assembleServiceEncryptionParamsForPost(adminGroupId, AeadCipherVersion.WithSessionKey)),
+		})
 		return giftCard
 	}
 

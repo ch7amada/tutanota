@@ -4,6 +4,7 @@ import {
 	ClientTypeModel,
 	EntityTypeEnum,
 	expandId,
+	isCustomIdType,
 	LOAD_MULTIPLE_LIMIT,
 	POST_MULTIPLE_INDIVIDUAL_POST_FALLBACK_THRESHOLD,
 	POST_MULTIPLE_LIMIT,
@@ -35,9 +36,8 @@ import {
 	InstancePipeline,
 	LoggedInUserProvider,
 	OwnerEncSessionKeyProvider,
-	OwnerKeyProvider,
 	PatchGenerator,
-	SessionKeyResolver,
+	SessionAndInstanceKeyResolver,
 	TypeModelResolver,
 } from "@tutao/instance-pipeline"
 import { CryptoNetworkHelper } from "./CryptoNetworkHelper"
@@ -60,11 +60,13 @@ import {
 import {
 	AesKey,
 	cryptoUtils,
-	generateKdfNonce,
+	InstanceKeyProvider,
 	KdfNonce,
 	makeNullableSubKeyInfoWithSessionKeyCbcThenHmac,
+	OwnerKeyProvider,
 	SubKeyInfo,
-	SubKeyInfoWithGroupKeyAead,
+	SubKeyInfoAeadWithInstanceKeyFromGroupKey,
+	SymmetricCipherUtils,
 	SymmetricEncryptionScheme,
 	validateKdfNonceLength,
 	VersionedKey,
@@ -134,8 +136,9 @@ export class EntityRestClient implements EntityRestInterface {
 		public readonly instancePipeline: InstancePipeline,
 		private readonly blobAccessTokenFacade: BlobAccessTokenFacade,
 		private readonly typeModelResolver: TypeModelResolver,
-		private readonly sessionKeyResolver: lazy<SessionKeyResolver>,
+		private readonly sessionKeyResolver: lazy<SessionAndInstanceKeyResolver>,
 		private readonly entityMigrator: lazy<EntityMigrator>,
+		private readonly symmetricCipherUtils: SymmetricCipherUtils,
 	) {
 		this.patchGenerator = new PatchGenerator(instancePipeline)
 	}
@@ -155,6 +158,7 @@ export class EntityRestClient implements EntityRestInterface {
 			opts.extraHeaders,
 			opts.ownerKeyProvider,
 			null,
+			opts.sessionKey,
 		)
 		const json = await this.restClient.request(path, HttpMethod.GET, {
 			...DEFAULT_REST_CLIENT_OPTIONS,
@@ -173,12 +177,14 @@ export class EntityRestClient implements EntityRestInterface {
 			this.instancePipeline.cryptoMapper,
 		)
 		const migratedEntity = await this.entityMigrator().applyMigrations(typeRef, entityAdapter)
-		const sessionKey = await this.sessionKeyResolver().resolveSessionKeyWithOwnerKeyProvider(opts.ownerKeyProvider, migratedEntity)
+		const sessionKeyResolver = this.sessionKeyResolver()
+		const sessionKey = opts.sessionKey ?? (await sessionKeyResolver.resolveSessionKeyWithOwnerKeyProvider(opts.ownerKeyProvider, migratedEntity))
 		const decrypted = await this.instancePipeline.cryptoMapper.decryptParsedInstance(
 			migratedEntity.getWrappedEncryptedInstance(),
 			sessionKey,
 			validateKdfNonceLength(migratedEntity._kdfNonce),
 			opts.ownerKeyProvider ?? this.instancePipeline.cryptoMapper.makeOwnerKeyProvider(migratedEntity._ownerGroup),
+			await sessionKeyResolver.makeInstanceKeyProvider(migratedEntity),
 		)
 		tm?.endMeasurement()
 		return decrypted
@@ -230,6 +236,7 @@ export class EntityRestClient implements EntityRestInterface {
 			opts.extraHeaders,
 			opts.ownerKeyProvider,
 			null,
+			null,
 		)
 		// This should never happen if type checking is not bypassed with any
 		if (clientTypeModel.type !== EntityTypeEnum.ListElement) throw new Error("only ListElement types are permitted")
@@ -272,6 +279,7 @@ export class EntityRestClient implements EntityRestInterface {
 			opts.queryParams,
 			opts.extraHeaders,
 			opts.ownerKeyProvider,
+			null,
 			null,
 		)
 		const idChunks = splitInChunks(LOAD_MULTIPLE_LIMIT, elementIds)
@@ -388,6 +396,8 @@ export class EntityRestClient implements EntityRestInterface {
 					serverTypeModel,
 					entityAdapter,
 					ownerKeyProvider ?? this.instancePipeline.cryptoMapper.makeOwnerKeyProvider(entityAdapter._ownerGroup),
+					// if we already have a custom working ownerKeyProvider from EntityRestClientOptions we do not need an instanceKeyProvider
+					ownerKeyProvider == null ? await this.sessionKeyResolver().makeInstanceKeyProvider(entityAdapter) : null,
 					ownerEncSessionKeyProvider,
 				)
 			},
@@ -401,6 +411,7 @@ export class EntityRestClient implements EntityRestInterface {
 		serverTypeModel: ServerTypeModel,
 		entityAdapter: EntityAdapter,
 		ownerKeyProvider: Nullable<OwnerKeyProvider>,
+		instanceKeyProvider: Nullable<InstanceKeyProvider>,
 		ownerEncSessionKeyProvider: Nullable<OwnerEncSessionKeyProvider> = null,
 	): Promise<DecryptedParsedInstance> {
 		let sessionKey: AesKey | null
@@ -413,7 +424,9 @@ export class EntityRestClient implements EntityRestInterface {
 			sessionKey = await this._crypto.decryptSessionKey(ownerGroup, ownerEncSessionKey)
 		} else {
 			try {
-				sessionKey = await this.sessionKeyResolver().resolveSessionKey(entityAdapter)
+				sessionKey = serverTypeModel.encrypted
+					? await this.sessionKeyResolver().resolveSessionKeyWithOwnerKeyProvider(ownerKeyProvider, entityAdapter)
+					: null
 			} catch (e) {
 				if (e instanceof SessionKeyNotFoundError) {
 					console.log("could not resolve session key", e, e.message, e.stack)
@@ -428,6 +441,7 @@ export class EntityRestClient implements EntityRestInterface {
 			sessionKey,
 			validateKdfNonceLength(entityAdapter._kdfNonce),
 			ownerKeyProvider,
+			instanceKeyProvider,
 		)
 	}
 
@@ -446,6 +460,7 @@ export class EntityRestClient implements EntityRestInterface {
 			extraHeaders,
 			null,
 			options?.ownerKey ?? null,
+			null,
 		)
 
 		if (clientTypeModel.type === EntityTypeEnum.ListElement) {
@@ -456,7 +471,7 @@ export class EntityRestClient implements EntityRestInterface {
 			assert(false, `EntityRestClient should only be used for Elements or ListElements. Got: ${clientTypeModel.type}`)
 		}
 		const subKeyInfo = await this.getSubKeyInfoOnSetup(options?.ownerKey ?? null, instance, clientTypeModel)
-		const encryptedParsedInstance = await this.instancePipeline.mapAndEncryptWithSubKeyInfo(instance, subKeyInfo)
+		const encryptedParsedInstance = await this.instancePipeline.mapAndEncryptToParsedInstanceWithSubKeyInfo(instance, subKeyInfo)
 		const outgoingJson = await this.instancePipeline.typeMapper.makeServerJson(encryptedParsedInstance)
 		const persistencePostReturn: string = await this.restClient.request(path, HttpMethod.POST, {
 			...DEFAULT_REST_CLIENT_OPTIONS,
@@ -492,7 +507,7 @@ export class EntityRestClient implements EntityRestInterface {
 			return []
 		}
 
-		const { clientTypeModel, path, headers } = await this._validateAndPrepareRestRequest(instances[0]._type, listId, null, null, null, null, null)
+		const { clientTypeModel, path, headers } = await this._validateAndPrepareRestRequest(instances[0]._type, listId, null, null, null, null, null, null)
 		const persistencePostReturnTypeModel = await this.typeModelResolver.resolveServerTypeReference(PersistenceResourcePostReturnTypeRef)
 
 		if (clientTypeModel.type === EntityTypeEnum.ListElement) {
@@ -688,6 +703,7 @@ export class EntityRestClient implements EntityRestInterface {
 			null,
 			options?.ownerKeyProvider,
 			null,
+			null,
 		)
 		// map and encrypt instance._original and the instance
 		const originalParsedInstance = await this.instancePipeline.modelMapper.mapToDecryptedInstance(assertNotNull(instance._original))
@@ -731,9 +747,9 @@ export class EntityRestClient implements EntityRestInterface {
 				console.log(`overwriting KDF nonce previously found on instance of type ${instance._type} with ID ${instance._id}`)
 			}
 
-			const kdfNonce: KdfNonce = generateKdfNonce()
+			const kdfNonce: KdfNonce = this.symmetricCipherUtils.generateKdfNonce()
 			instance._kdfNonce = kdfNonce
-			return new SubKeyInfoWithGroupKeyAead(ownerKey, kdfNonce)
+			return new SubKeyInfoAeadWithInstanceKeyFromGroupKey(ownerKey, kdfNonce)
 		}
 	}
 
@@ -755,21 +771,8 @@ export class EntityRestClient implements EntityRestInterface {
 				}
 				ownerKey = await this._crypto.getCurrentSymGroupKey(instance._ownerGroup)
 			}
-			let kdfNonce: KdfNonce
-			if (instance._kdfNonce == null) {
-				const [instanceList, instanceId] = instance._id
-				const application = instance._type.app
-				const typeId = instance._type.typeId.toString()
-				const typeInfo = createTypeInfo({ application, typeId })
-				const out = await this._crypto.postUpdateKdfNonceService(
-					createInstanceKdfNonce({ kdfNonce: generateKdfNonce(), instanceId, instanceList, typeInfo }),
-				)
-				kdfNonce = validateKdfNonceLength(out.kdfNonce)
-				instance._kdfNonce = kdfNonce
-			} else {
-				kdfNonce = validateKdfNonceLength(instance._kdfNonce)
-			}
-			return new SubKeyInfoWithGroupKeyAead(ownerKey, kdfNonce)
+			const kdfNonce = await this.ensureKdfNonce(instance)
+			return new SubKeyInfoAeadWithInstanceKeyFromGroupKey(ownerKey, kdfNonce)
 		}
 	}
 
@@ -781,6 +784,7 @@ export class EntityRestClient implements EntityRestInterface {
 			elementId,
 			null,
 			options?.extraHeaders ?? null,
+			null,
 			null,
 			null,
 		)
@@ -811,6 +815,7 @@ export class EntityRestClient implements EntityRestInterface {
 			options?.extraHeaders ?? null,
 			null,
 			null,
+			null,
 		)
 
 		await this.restClient.request(path, HttpMethod.DELETE, {
@@ -828,12 +833,13 @@ export class EntityRestClient implements EntityRestInterface {
 		extraHeaders: Nullable<Dict>,
 		ownerKeyProvider: OwnerKeyProvider | null,
 		ownerKey: VersionedKey | null,
+		sessionKey: Nullable<AesKey>,
 	): Promise<PreparedRestRequestParams> {
 		const clientTypeModel = await this.typeModelResolver.resolveClientTypeReference(typeRef)
 
 		ensureIsPersistentType(clientTypeModel)
 
-		if (ownerKeyProvider == null && ownerKey == null && !this.authDataProvider.isFullyLoggedIn() && clientTypeModel.encrypted) {
+		if (ownerKeyProvider == null && ownerKey == null && sessionKey == null && !this.authDataProvider.isFullyLoggedIn() && clientTypeModel.encrypted) {
 			// Short-circuit before we do an actual request which we can't decrypt
 			throw new LoginIncompleteError(`Trying to do a network request with encrypted entity but is not fully logged in yet, type: ${clientTypeModel.name}`)
 		}
@@ -885,6 +891,31 @@ export class EntityRestClient implements EntityRestInterface {
 			})
 		} catch (e) {
 			throw new Error(`Invalid response: ${result}, ${e}`)
+		}
+	}
+
+	async ensureKdfNonce(instance: PersistentEntity): Promise<KdfNonce> {
+		if (instance._kdfNonce == null) {
+			const instanceList = instance._id[0]
+			let instanceId: Nullable<Id> = instance._id[1]
+			const clientTypeModel = await this.typeModelResolver.resolveClientTypeReference(instance._type)
+			let instanceCustomId: Nullable<Id> = null
+			if (isCustomIdType(clientTypeModel)) {
+				instanceCustomId = instanceId
+				instanceId = null
+			}
+
+			const application = instance._type.app
+			const typeId = instance._type.typeId.toString()
+			const typeInfo = createTypeInfo({ application, typeId })
+			const out = await this._crypto.postUpdateKdfNonceService(
+				createInstanceKdfNonce({ kdfNonce: this.symmetricCipherUtils.generateKdfNonce(), instanceId, instanceCustomId, instanceList, typeInfo }),
+			)
+			const kdfNonce = validateKdfNonceLength(out.kdfNonce)
+			instance._kdfNonce = kdfNonce
+			return kdfNonce
+		} else {
+			return validateKdfNonceLength(instance._kdfNonce)
 		}
 	}
 }

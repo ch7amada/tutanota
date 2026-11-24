@@ -16,7 +16,7 @@ import { CounterFacade } from "../../../../platform-kit/network/CounterFacade.js
 import { MailAddressFacade } from "../../../common/api/worker/facades/lazy/MailAddressFacade.js"
 import { UserManagementFacade } from "../../../common/api/worker/facades/lazy/UserManagementFacade.js"
 import { DelayedImpls, exposeLocalDelayed, exposeRemote } from "../../../common/api/common/WorkerProxy.js"
-import { CryptoWrapper, random } from "../../../../platform-kit/crypto"
+import { CryptoWrapper } from "../../../../platform-kit/crypto"
 import { NativeInterface } from "../../../../app-kit/native-bridge/common/NativeInterface.js"
 import { SqlCipherFacade } from "@tutao/native-bridge/generatedIpc/types"
 import { Commands, Request } from "../../../../app-kit/native-bridge/shared/MessageTypes"
@@ -54,7 +54,8 @@ import { BrowserData } from "../../../../platform-kit/app-env/boot/ClientConstan
 import { NamedClientModel } from "@tutao/instance-pipeline"
 import { NotAuthenticatedError } from "@tutao/rest-client/error"
 import { RestBinaryBody, RestBodyType, RestTextBody } from "@tutao/rest-client/types"
-import { ImapImporter } from "../imapimport/ImapImporter"
+import { MailboxImporter } from "../migration/MailboxImporter"
+import { DriveFileSharingFacade } from "../../../common/api/worker/facades/lazy/DriveFileSharingFacade"
 
 EnvProvider.assertWorkerOrNode()
 
@@ -102,7 +103,8 @@ export interface WorkerInterface {
 	readonly spamClassifier: SpamClassifier
 	readonly autosaveFacade: AutosaveFacade
 	readonly driveFacade: DriveFacade
-	readonly imapImporter: ImapImporter
+	readonly driveFileSharingFacade: DriveFileSharingFacade
+	readonly mailboxImporter: MailboxImporter
 }
 
 type WorkerRequest = Request<WorkerRequestType>
@@ -287,7 +289,7 @@ export class WorkerImpl implements NativeInterface {
 			async random() {
 				return {
 					async generateRandomNumber(nbrOfBytes: number) {
-						return random.generateRandomNumber(nbrOfBytes)
+						return locator.base.random.generateRandomNumber(nbrOfBytes)
 					},
 				}
 			},
@@ -325,8 +327,11 @@ export class WorkerImpl implements NativeInterface {
 			async driveFacade() {
 				return locator.driveFacade()
 			},
-			async imapImporter() {
-				return locator.imapImporter()
+			async mailboxImporter() {
+				return locator.mailboxImporter()
+			},
+			async driveFileSharingFacade() {
+				return locator.driveFileSharingFacade()
 			},
 		}
 	}

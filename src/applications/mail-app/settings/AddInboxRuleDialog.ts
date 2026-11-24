@@ -1,41 +1,85 @@
-import m from "mithril"
-import { Dialog } from "../../../ui/base/Dialog"
+import m, { Children } from "mithril"
+import { Dialog, DialogType } from "../../../ui/base/Dialog"
 import { lang, TranslationKey } from "../../../ui/utils/LanguageViewModel"
-import { EnvProvider, UpgradePromptType } from "../../../platform-kit/app-env"
-import { isDomainName, isMailAddress, isRegularExpression } from "../../../platform-kit/utils/FormatUtils"
-import { getInboxRuleTypeNameMapping } from "../mail/model/InboxRuleHandler"
-import { elementIdPart, isSameSingleId } from "../../../platform-kit/meta"
+import { EnvProvider, ProgrammingError, UpgradePromptType } from "@tutao/app-env"
+import { assertNotNull, isDomainName, isEmpty, isMailAddress, isNotNull, isRegularExpression } from "@tutao/utils"
+import { clone, elementIdPart, isSameId, isSameIdTuple } from "@tutao/meta"
 import type { MailboxDetail } from "../../common/mailFunctionality/MailboxModel.js"
 import stream from "mithril/stream"
-import { DropDownSelector } from "../../../ui/base/DropDownSelector.js"
-import { Autocapitalize, LegacyTextField } from "../../../ui/base/LegacyTextField.js"
-import { isOfflineError, LockedError } from "../../../platform-kit/rest-client/error"
+import Stream from "mithril/stream"
+import { Autocapitalize } from "../../../ui/base/LegacyTextField.js"
+import { isOfflineError, LockedError } from "@tutao/rest-client/error"
 import { showNotAvailableForFreeDialog } from "../../common/misc/SubscriptionDialogs"
 import { locator } from "../../common/api/main/CommonLocator"
 import { mailLocator } from "../mailLocator.js"
-import {
-	assertSystemFolderOfType,
-	getExistingRuleForType,
-	getIndentedFolderNameForDropdown,
-	getMailSetName,
-	getPathToFolderString,
-} from "../mail/model/MailUtils.js"
+import { assertSystemFolderOfType, getIndentedFolderNameForDropdown, getMailSetName } from "../mail/model/MailUtils.js"
 import type { IndentedMailSet } from "../../common/api/common/mail/FolderSystem.js"
-import { Checkbox } from "../../../ui/base/Checkbox"
-import { createInboxRule, InboxRule } from "@tutao/entities/tutanota"
-import { InboxRuleType, MailSetKind } from "../../../entities/tutanota/Utils"
+import {
+	createExpandedInboxRule,
+	createInboxRuleAction,
+	createInboxRuleCondition,
+	ExpandedInboxRule,
+	InboxRuleAction,
+	InboxRuleCondition,
+	MailSet,
+} from "@tutao/entities/tutanota"
+import { InboxRuleActionType, InboxRuleConditionType, MailSetKind } from "../../../entities/tutanota/Utils"
+import { Icons } from "../../../ui/base/icons/Icons"
+import { Card } from "../../../ui/base/Card"
+import { Icon, IconSize } from "../../../ui/base/Icon"
+import { PrimaryButton, SecondaryButton } from "../../../ui/base/buttons/VariantButtons"
+import { DropDownSelectorNew } from "../../../ui/base/DropDownSelectorNew"
+import { TextField } from "../../../ui/base/TextField"
+import { theme } from "../../../ui/theme"
+import { px, size } from "../../../ui/size"
+import { onbeforeremoveColapseAnimation, oncreateExpandAnimation } from "../../../ui/animation/Animations"
+import { IconButton } from "../../../ui/base/IconButton"
+import { ButtonSize } from "../../../ui/base/ButtonSize"
+import { SelectorItem, SelectorItemList } from "../../../ui/base/DropDownSelector"
+import { getInboxRuleActionTypeNameMapping, getInboxRuleConditionTypeNameMapping } from "../mail/model/InboxRuleHandler"
+import { InboxRuleModel } from "../mail/model/InboxRuleModel"
+import { applyRuleWithProgress } from "./InboxRuleSettingsViewer"
+import { LabelsDropDownSelector } from "../mail/view/LabelsDropDownSelector"
+import { Label } from "../../../ui/base/Label"
+import { prependParentLabelNamesToLabel } from "../mail/view/MailSetTreeUtils"
+import { ExpandedInboxRuleHandler } from "../mail/model/ExpandedInboxRuleHandler"
+import { isNull } from "../../../platform-kit/utils/Utils"
+import { showProgressDialog } from "../../../ui/dialogs/ProgressDialog"
 
 EnvProvider.assertMainOrNode()
 
-export type InboxRuleTemplate = Pick<InboxRule, "type" | "value"> & {
-	_id?: InboxRule["_id"]
-	targetFolder?: InboxRule["targetFolder"]
-	excludeFromSpamFilter?: InboxRule["excludeFromSpamFilter"]
+interface InboxRuleConditionField {
+	type: Stream<InboxRuleConditionType>
+	value: Stream<string>
+
+	// for keeping track in the dialog (not persisted on db)
+	key: number
+	valid: boolean | null
 }
 
-export async function show(mailBoxDetail: MailboxDetail, ruleOrTemplate: InboxRuleTemplate) {
+interface InboxRuleActionField {
+	type: Stream<InboxRuleActionType>
+	valueFolder: Stream<MailSet | null>
+	valueLabels: Stream<MailSet[] | null>
+
+	// for keeping track in the dialog (not persisted on db)
+	key: number
+	valid: boolean | null
+}
+
+interface TargetMailSet {
+	name: string
+	value: MailSet
+}
+
+export async function show(
+	mailBoxDetail: MailboxDetail,
+	inboxRuleModel: InboxRuleModel,
+	originalInboxRule: ExpandedInboxRule | null,
+	defaultConditions?: Pick<InboxRuleCondition, "type" | "value">[],
+) {
 	if (locator.logins.getUserController().isFreeAccount()) {
-		showNotAvailableForFreeDialog(UpgradePromptType.INBOX_RULES)
+		void showNotAvailableForFreeDialog(UpgradePromptType.INBOX_RULES)
 	} else if (mailBoxDetail) {
 		const folders = await mailLocator.mailModel.getMailboxFoldersForId(mailBoxDetail.mailbox.mailSets._id)
 		let targetFolders = folders.getIndentedList().map((folderInfo: IndentedMailSet) => {
@@ -44,138 +88,610 @@ export async function show(mailBoxDetail: MailboxDetail, ruleOrTemplate: InboxRu
 				value: folderInfo.mailSet,
 			}
 		})
-		const inboxRuleType = stream(ruleOrTemplate.type)
-		const inboxRuleValue = stream(ruleOrTemplate.value)
-		const selectedFolder = ruleOrTemplate.targetFolder == null ? null : folders.getFolderById(elementIdPart(ruleOrTemplate.targetFolder))
-		const inboxRuleTarget = stream(selectedFolder ?? assertSystemFolderOfType(folders, MailSetKind.ARCHIVE))
-		const isRuleExcludedFromSpamFilter = stream(ruleOrTemplate.excludeFromSpamFilter ?? false)
 
-		let form = () => {
+		const labels = mailLocator.mailModel.getLabelsByGroupId(assertNotNull(mailBoxDetail.mailbox._ownerGroup))
+		const targetLabels =
+			mailLocator.mailModel
+				.getLabelFolderSystemByGroupId(assertNotNull(mailBoxDetail.mailbox._ownerGroup))
+				?.getIndentedList()
+				.map((label) => ({
+					name: getIndentedFolderNameForDropdown(label),
+					value: label.mailSet,
+				})) ?? []
+
+		const inboxRuleName: stream<string> = stream(originalInboxRule?.name ?? "")
+
+		// Make onbeforeremove row removal animate the correct row (otherwise it will just think it's the last row)
+		let currentRowKey = 0
+
+		const inboxRuleConditions: InboxRuleConditionField[] = (
+			originalInboxRule?.conditions ??
+			defaultConditions ?? [{ type: InboxRuleConditionType.FROM_EQUALS, value: "" }]
+		).map((condition) => {
+			return { type: stream(condition.type as InboxRuleConditionType), value: stream(condition.value), key: currentRowKey++, valid: null }
+		})
+
+		const inboxRuleActions: InboxRuleActionField[] = originalInboxRule
+			? originalInboxRule.actions
+					.map((action): InboxRuleActionField => {
+						const value =
+							action.value == null
+								? null
+								: action.type === InboxRuleActionType.LABEL
+									? (labels.get(elementIdPart(action.value)) ?? null)
+									: folders.getFolderById(elementIdPart(action.value))
+						return {
+							type: stream(action.type as InboxRuleActionType),
+							valueFolder: stream(value),
+							valueLabels: stream([]),
+							key: currentRowKey++,
+							valid:
+								[InboxRuleActionType.MOVE, InboxRuleActionType.LABEL].includes(action.type as InboxRuleActionType) && value == null
+									? false
+									: null,
+						}
+					})
+					.reduce((actions, action) => {
+						// merge label actions so there's only one dropdown
+						if (action.type() === InboxRuleActionType.LABEL) {
+							const otherLabelAction = actions.find((r) => r.type() === InboxRuleActionType.LABEL)
+
+							const assignedLabel = action.valueFolder()
+							if (isNotNull(otherLabelAction)) {
+								// EITHER exactly one entry that's null, OR multiple or zero entries with a non-null value
+								// (value is null iff last label of this rule has been deleted)
+								otherLabelAction.valueLabels([
+									...assertNotNull(otherLabelAction.valueLabels(), "Invalid inbox rule: One label null, one present"),
+									assertNotNull(assignedLabel, "Invalid inbox rule: One label present, one null"),
+								])
+								if (action.valid === false) {
+									otherLabelAction.valid = false
+								}
+							} else {
+								// first label action clause, make it an array!
+								actions.push({
+									type: stream(InboxRuleActionType.LABEL),
+									valueLabels: stream(isNull(assignedLabel) ? null : [assignedLabel]),
+									valueFolder: stream(null),
+									key: action.key,
+									valid: action.valid,
+								})
+							}
+						} else {
+							// non-labels stay as they are
+							actions.push(action)
+						}
+						return actions
+					}, [] as InboxRuleActionField[])
+			: []
+
+		// HAS and HAS_NO Attachment are mutually exclusive and should only be selected once per inbox rule
+		// when HAS_(NO_)ATTACHMENT is selected, show both options in that dropdown and do not display them in other dropdowns
+		const selectableInboxRuleConditions = (currentConditionType: InboxRuleConditionType) => {
+			const attachmentConditions = [InboxRuleConditionType.HAS_ATTACHMENT, InboxRuleConditionType.HAS_NO_ATTACHMENT]
+			let selectableConditions = getInboxRuleConditionTypeNameMapping()
+			if (!attachmentConditions.includes(currentConditionType) && inboxRuleConditions.some(({ type }) => attachmentConditions.includes(type()))) {
+				selectableConditions = selectableConditions.filter(({ value }) => !attachmentConditions.includes(value as InboxRuleConditionType))
+			}
+			return selectableConditions
+		}
+
+		// Only allow one action of each type
+		const allRuleActions = getInboxRuleActionTypeNameMapping()
+		let availableRuleActions: Set<SelectorItem<InboxRuleActionType>>
+
+		if (isEmpty(inboxRuleActions)) {
+			// If there are no actions yet, add the default value of Move to Archive
+			inboxRuleActions.push({
+				type: stream(InboxRuleActionType.MOVE),
+				valueFolder: stream(assertSystemFolderOfType(folders, MailSetKind.ARCHIVE)),
+				valueLabels: stream([]),
+				key: currentRowKey++,
+				valid: null,
+			})
+		}
+
+		let nameValid = true
+		const renderName = () => {
+			return m(
+				".mt-16.max-width-m",
+				m(TextField, {
+					label: "name_label",
+					value: inboxRuleName(),
+					oninput: (val: string) => {
+						inboxRuleName(val)
+						nameValid = true
+					},
+					onblur: () => {
+						if (!nameValid) {
+							nameValid = !!inboxRuleName()
+						}
+					},
+					doShowBorder: nameValid,
+					class: nameValid ? "" : "error-text-field",
+					helpLabel: nameValid ? null : () => lang.getTranslationText("enterName_msg"),
+				}),
+			)
+		}
+
+		const renderRow = (
+			field: InboxRuleConditionField | InboxRuleActionField,
+			input: Children | null,
+			index: number,
+			renderRemove: boolean,
+			getSelectableFields: () => SelectorItemList<string>,
+			changeHandler: (field: InboxRuleConditionType | InboxRuleActionType) => unknown,
+			removeHandler: (index: number) => unknown,
+			additionalLine: Children | null = null,
+		): Children => {
+			const andLabel: Children = index === 0 ? null : m(".smaller.no-wrap.mr-16.ml-8", lang.getTranslationText("and_label"))
+
+			return m(
+				"",
+				{
+					oncreate: (vnode) => oncreateExpandAnimation(vnode.dom as HTMLElement),
+					onbeforeremove: (vnode) => onbeforeremoveColapseAnimation(vnode.dom as HTMLElement),
+					key: field.key,
+				},
+				[
+					m(
+						".flex.row-gap-8.mt-8",
+						{
+							style: {
+								"flex-flow": isNotNull(input) ? "row wrap" : undefined,
+							},
+						},
+						[
+							m(
+								".flex.center-vertically",
+								{
+									style: {
+										flex: "1 1 0",
+										"min-width": px(200),
+									},
+								},
+								[
+									andLabel,
+									m(DropDownSelectorNew, {
+										items: getSelectableFields(),
+										selectedValue: field.type(),
+										selectionChangedHandler: changeHandler,
+									}),
+								],
+							),
+							m(
+								".flex",
+								{ style: isNotNull(input) ? { flex: "2 1 0", "min-width": "fit-content" } : undefined },
+								isNotNull(input) ? m(".ml-8.flex-grow", input) : null,
+								renderRemove
+									? m(
+											".ml-4",
+											m(IconButton, {
+												icon: Icons.X,
+												size: ButtonSize.Large,
+												style: {
+													fill: theme.on_surface_variant,
+												},
+												label: "delete_action",
+												click: () => {
+													removeHandler(1)
+												},
+											}),
+										)
+									: null,
+							),
+						],
+					),
+					additionalLine,
+				],
+			)
+		}
+
+		const renderConditionRow = (condition: InboxRuleConditionField, conditionIndex: number, allConditions: InboxRuleConditionField[]) => {
+			const conditionInput = getRuleConditionValueInputByType(condition)
+			const selectionHandler = () => selectableInboxRuleConditions(condition.type())
+			const changeHandler = (newValue: InboxRuleConditionType) => {
+				condition.valid = null
+				condition.type(newValue)
+			}
+			const removeHandler = () => {
+				inboxRuleConditions.splice(conditionIndex, 1)
+			}
+			return renderRow(condition, conditionInput, conditionIndex, allConditions.length > 1, selectionHandler, changeHandler, removeHandler)
+		}
+
+		const renderAddConditionRow = (): Children => {
+			return m(
+				".flex.center-vertically.row-gap-8.mt-8",
+				{
+					oncreate: (vnode) => oncreateExpandAnimation(vnode.dom as HTMLElement),
+					onbeforeremove: (vnode) => onbeforeremoveColapseAnimation(vnode.dom as HTMLElement),
+				},
+				[
+					m(".flex.center-vertically.mr-16.ml-8.smaller", lang.getTranslationText("and_label")),
+					m(SecondaryButton, {
+						width: "flex",
+						icon: Icons.Plus,
+						label: "addCondition_action",
+						onclick: () => {
+							inboxRuleConditions.push({
+								type: stream(InboxRuleConditionType.FROM_EQUALS),
+								value: stream(""),
+								key: currentRowKey++,
+								valid: null,
+							})
+						},
+					}),
+				],
+			)
+		}
+
+		const defaultActionOfType = (type: InboxRuleActionType): MailSet | null => {
+			if (type === InboxRuleActionType.MOVE) {
+				// set to default folder of Archive
+				return assertSystemFolderOfType(folders, MailSetKind.ARCHIVE)
+			} else {
+				return null
+			}
+		}
+
+		const renderActionRow = (ruleAction: InboxRuleActionField, actionIndex: number, allActions: InboxRuleActionField[]) => {
+			const actionInput = getRuleActionValueInputByType(ruleAction, targetLabels, targetFolders)
+			const selectionHandler = () => {
+				return allRuleActions.filter((rule) => rule.value === ruleAction.type() || availableRuleActions.has(rule))
+			}
+			const changeHandler = (newValue: InboxRuleActionType) => {
+				ruleAction.type(newValue)
+				ruleAction.valueFolder(defaultActionOfType(newValue))
+			}
+			const removeHandler = () => {
+				inboxRuleActions.splice(actionIndex, 1)
+			}
+
+			const additionalLine =
+				ruleAction.type() === InboxRuleActionType.LABEL && (ruleAction.valueLabels()?.length ?? 0)
+					? m(
+							".flex.wrap.ml-48.mt-8.mr-between-8.row-gap-8",
+							assertNotNull(ruleAction.valueLabels()).map((value) =>
+								m(Label, {
+									text: prependParentLabelNamesToLabel(value, labels),
+									color: value.color ?? theme.primary,
+									cancelable: true,
+									cancelAction: () => {
+										const newValue = assertNotNull(ruleAction.valueLabels()).filter((label) => !isSameIdTuple(label._id, value._id))
+										ruleAction.valueLabels(newValue)
+									},
+								}),
+							),
+						)
+					: null
+
+			return renderRow(ruleAction, actionInput, actionIndex, allActions.length > 1, selectionHandler, changeHandler, removeHandler, additionalLine)
+		}
+
+		const renderAddActionRow = (): Children => {
+			if (availableRuleActions.size === 0) {
+				return null
+			}
+			return m(
+				".flex.center-vertically.row-gap-8.mt-8",
+				{
+					oncreate: (vnode) => oncreateExpandAnimation(vnode.dom as HTMLElement),
+					onbeforeremove: (vnode) => onbeforeremoveColapseAnimation(vnode.dom as HTMLElement),
+				},
+				[
+					m(".flex.center-vertically.mr-16.ml-8.smaller", lang.getTranslationText("and_label")),
+					m(SecondaryButton, {
+						width: "flex",
+						icon: Icons.Plus,
+						label: "addAction_action",
+						onclick: () => {
+							const firstAvailable: SelectorItem<InboxRuleActionType> = assertNotNull(availableRuleActions.values().next().value)
+
+							inboxRuleActions.push({
+								type: stream(firstAvailable.value),
+								valueFolder: stream(defaultActionOfType(firstAvailable.value)),
+								valueLabels: stream([]),
+								key: currentRowKey++,
+								valid: null,
+							})
+						},
+					}),
+				],
+			)
+		}
+
+		const form = () => {
+			availableRuleActions = new Set(allRuleActions.filter((rule) => !inboxRuleActions.some((action) => action.type() === rule.value)))
+
 			return [
-				m(DropDownSelector, {
-					items: getInboxRuleTypeNameMapping(),
-					label: "inboxRuleField_label",
-					selectedValue: inboxRuleType(),
-					selectionChangedHandler: inboxRuleType,
-				}),
-				m(LegacyTextField, {
-					label: "inboxRuleValue_label",
-					autocapitalize: Autocapitalize.none,
-					value: inboxRuleValue(),
-					oninput: inboxRuleValue,
-					helpLabel: () =>
-						inboxRuleType() !== InboxRuleType.SUBJECT_CONTAINS && inboxRuleType() !== InboxRuleType.MAIL_HEADER_CONTAINS
-							? lang.get("emailSenderPlaceholder_label")
-							: lang.get("emptyString_msg"),
-				}),
-				m(DropDownSelector, {
-					label: "inboxRuleTargetFolder_label",
-					items: targetFolders,
-					selectedValue: inboxRuleTarget(),
-					selectedValueDisplay: getMailSetName(inboxRuleTarget()),
-					selectionChangedHandler: inboxRuleTarget,
-					helpLabel: () => getPathToFolderString(folders, inboxRuleTarget(), true),
-				}),
-				inboxRuleTarget().folderType === MailSetKind.SPAM
-					? null
-					: m(
-							".pt-16",
-							m(Checkbox, {
-								label: () => lang.get("inboxRuleExcludedFromSpamFilter_msg"),
-								checked: isRuleExcludedFromSpamFilter(),
-								onChecked: (checked) => isRuleExcludedFromSpamFilter(checked),
-							}),
-						),
+				m(Card, { classes: ["mt-16 center"], style: { padding: px(size.spacing_16) } }, [
+					m(Icon, {
+						icon: Icons.FunnelFilled,
+						size: IconSize.PX32,
+						style: {
+							fill: theme.on_surface_variant,
+						},
+					}),
+					m(".smaller.mt-16", m.trust(lang.getTranslationText("inboxRuleExplainer_msg"))),
+				]),
+				renderName(),
+				m(".uppercase.b.mt-32.content-fg", lang.getTranslationText("inboxRuleConditions_label")),
+				m("", inboxRuleConditions.map(renderConditionRow)),
+				renderAddConditionRow(),
+				m(".uppercase.b.mt-32.content-fg", lang.getTranslationText("inboxRuleActions_label")),
+				m("", inboxRuleActions.map(renderActionRow)),
+				renderAddActionRow(),
+				m(
+					".flex-end.wrap.mt-24.gap-16",
+					m(SecondaryButton, {
+						width: "flex",
+						label: "saveAndApply_action",
+						onclick: () => inboxRuleOkAction(dialog, true),
+						disabled: isAlreadySaving, // prevent duplicating rule if saving is already in progress
+					}),
+					m(PrimaryButton, {
+						width: "flex",
+						label: "save_action",
+						onclick: () => inboxRuleOkAction(dialog, false),
+						disabled: isAlreadySaving, // prevent duplicating rule if saving is already in progress
+					}),
+				),
 			]
 		}
 
-		const addInboxRuleOkAction = (dialog: Dialog) => {
-			let rule = createInboxRule({
-				type: inboxRuleType(),
-				value: getCleanedValue(inboxRuleType(), inboxRuleValue()),
-				targetFolder: inboxRuleTarget()._id,
-				excludeFromSpamFilter: isRuleExcludedFromSpamFilter(),
-			})
-			const props = locator.logins.getUserController().props
-			const inboxRules = props.inboxRules
-			const ruleId = ruleOrTemplate._id
-			if (ruleId) {
-				rule._id = ruleId
+		const prepareRule = (validatedName: string, ruleConditions: InboxRuleCondition[], ruleActions: InboxRuleAction[]): ExpandedInboxRule => {
+			if (originalInboxRule) {
+				const rule = clone(originalInboxRule)
+				rule.name = validatedName
+				rule.conditions = ruleConditions
+				rule.actions = ruleActions
+				return rule
+			} else {
+				return createExpandedInboxRule({
+					name: validatedName,
+					conditions: ruleConditions,
+					actions: ruleActions,
+					enabled: true,
+				})
+			}
+		}
+
+		// are we already saving a valid inbox rule?
+		let isAlreadySaving = false
+		const inboxRuleOkAction = (dialog: Dialog, applyRule: boolean) => {
+			// did we already send a dialogue about an invalid field?
+			let alreadyMessaged = false
+			const validatedName = inboxRuleName().trim()
+
+			if (validatedName === "") {
+				nameValid = false
+				Dialog.message("enterName_msg")
+				alreadyMessaged = true
 			}
 
-			// When saving a rule that goes to spam, always set it to be excluded from the filter, so it always goes to spam
-			if (inboxRuleTarget().folderType === MailSetKind.SPAM) {
-				rule.excludeFromSpamFilter = true
-			}
-			props.inboxRules =
-				ruleId == null ? [...inboxRules, rule] : inboxRules.map((inboxRule) => (isSameSingleId(inboxRule._id, ruleId) ? rule : inboxRule))
+			const ruleConditions: InboxRuleCondition[] = []
 
-			locator.entityClient
-				.update(props)
+			for (const condition of inboxRuleConditions) {
+				const invalidInboxRuleMsg = validateInboxRuleCondition(condition)
+				if (invalidInboxRuleMsg !== null) {
+					condition.valid = false
+					if (!alreadyMessaged) {
+						Dialog.message(invalidInboxRuleMsg)
+						alreadyMessaged = true
+					}
+				}
+				ruleConditions.push(createInboxRuleCondition({ type: condition.type(), value: condition.value() }))
+			}
+
+			const ruleActions: InboxRuleAction[] = []
+
+			for (const action of inboxRuleActions) {
+				if (action.type() === InboxRuleActionType.LABEL) {
+					if (isNull(action.valueLabels()) || isEmpty(assertNotNull(action.valueLabels()))) {
+						action.valid = false
+						if (!alreadyMessaged) {
+							Dialog.message("labelMustBeSelected_msg")
+							alreadyMessaged = true
+						}
+					} else {
+						for (const label of assertNotNull(action.valueLabels())) {
+							const labelId = validateInboxRuleAction(action.type(), label)
+							ruleActions.push(createInboxRuleAction({ type: action.type(), value: labelId }))
+						}
+					}
+				} else if (action.type() === InboxRuleActionType.MOVE && action.valueFolder() == null) {
+					Dialog.message("pleaseSelectFolder_msg")
+					alreadyMessaged = true
+				} else {
+					const valueId = validateInboxRuleAction(action.type(), action.valueFolder())
+					ruleActions.push(createInboxRuleAction({ type: action.type(), value: valueId }))
+				}
+			}
+
+			if (alreadyMessaged) {
+				// only return here to give user all the feedback before exiting
+				return
+			}
+
+			isAlreadySaving = true
+			const rule = prepareRule(validatedName, ruleConditions, ruleActions)
+			const savePromise = isNewInboxRule ? inboxRuleModel.createInboxRule(rule) : inboxRuleModel.updateInboxRule(rule)
+
+			showProgressDialog("pleaseWait_msg", savePromise, { delayDisplayMillis: 200, minDialogVisibilityMillis: 0 })
+				.then(async () => {
+					if (applyRule) {
+						return applyRuleWithProgress([rule], <ExpandedInboxRuleHandler>await mailLocator.inboxRuleHandler())
+					}
+				})
 				.then(() => {
 					dialog.close()
 				})
 				.catch((error) => {
 					if (isOfflineError(error)) {
-						props.inboxRules = inboxRules
 						//do not close
 						throw error
 					} else if (error instanceof LockedError) {
 						dialog.close()
 					} else {
-						props.inboxRules = inboxRules
 						dialog.close()
 						throw error
 					}
 				})
+				.finally(() => {
+					isAlreadySaving = false
+				})
 		}
 
-		Dialog.showActionDialog({
-			title: "addInboxRule_action",
+		const isNewInboxRule = originalInboxRule == null
+		const dialog = Dialog.showActionDialog({
+			type: DialogType.InboxRule,
+			title: isNewInboxRule ? "addInboxRule_action" : "editInboxRule_action",
 			child: form,
-			validator: async () => validateInboxRuleInput(inboxRuleType(), inboxRuleValue(), ruleOrTemplate._id),
-			allowOkWithReturn: true,
-			okAction: addInboxRuleOkAction,
+			okAction: null,
 		})
 	}
 }
 
-export function createInboxRuleTemplate(ruleType: string | null, value: string): InboxRuleTemplate {
-	const type = ruleType ?? InboxRuleType.FROM_EQUALS
-	return {
-		type,
-		value: getCleanedValue(type, value),
+function getRuleConditionValueInputByType(ruleCondition: InboxRuleConditionField): Children {
+	const clearValidation = (val: string) => {
+		ruleCondition.value(val)
+
+		// don't be annoying!
+		if (ruleCondition.valid === false) {
+			const valid = validateInboxRuleCondition(ruleCondition) === null
+			if (valid) {
+				ruleCondition.valid = valid
+			}
+		}
+	}
+	const validate = () => {
+		if (ruleCondition.valid === false) {
+			ruleCondition.valid = validateInboxRuleCondition(ruleCondition) === null
+		}
+	}
+	const validatedTextFieldProps = {
+		oninput: clearValidation,
+		onblur: validate,
+		doShowBorder: ruleCondition.valid !== false,
+		class: ruleCondition.valid === false ? "error-text-field" : "",
+		helpLabel: ruleCondition.valid === false ? () => lang.getTranslationText(validateInboxRuleCondition(ruleCondition)!) : null,
+	}
+
+	switch (ruleCondition.type()) {
+		case InboxRuleConditionType.FROM_EQUALS:
+		case InboxRuleConditionType.RECIPIENT_TO_EQUALS:
+		case InboxRuleConditionType.RECIPIENT_CC_EQUALS:
+		case InboxRuleConditionType.RECIPIENT_BCC_EQUALS:
+		case InboxRuleConditionType.RECIPIENT_ANY_EQUALS:
+			return m(TextField, {
+				label: "emailSenderPlaceholder_label",
+				autocapitalize: Autocapitalize.none,
+				value: ruleCondition.value(),
+				...validatedTextFieldProps,
+			})
+		case InboxRuleConditionType.SUBJECT_CONTAINS:
+		case InboxRuleConditionType.MAIL_HEADER_CONTAINS:
+			return m(TextField, {
+				label: "value_label",
+				autocapitalize: Autocapitalize.none,
+				value: ruleCondition.value(),
+				...validatedTextFieldProps,
+			})
+		case InboxRuleConditionType.HAS_ATTACHMENT:
+		case InboxRuleConditionType.HAS_NO_ATTACHMENT:
+			ruleCondition.value("")
+			return null
+		default:
+			throw new ProgrammingError(`No Input specified for rule condition of type: ${ruleCondition.type()}`)
 	}
 }
 
-function validateInboxRuleInput(type: string, value: string, ruleId: Id | undefined): TranslationKey | null {
-	let currentCleanedValue = getCleanedValue(type, value)
+function getRuleActionValueInputByType(ruleAction: InboxRuleActionField, labels: TargetMailSet[], targetFolders: TargetMailSet[]) {
+	switch (ruleAction.type()) {
+		case InboxRuleActionType.MOVE:
+			return m(DropDownSelectorNew, {
+				items: targetFolders,
+				selectedValue: ruleAction.valueFolder(),
+				selectedValueDisplay:
+					ruleAction.valueFolder() == null ? lang.getTranslationText("deletedFolder_label") : getMailSetName(assertNotNull(ruleAction.valueFolder())),
+				selectionChangedHandler: (value: MailSet) => {
+					ruleAction.valid = true
+					ruleAction.valueFolder(value)
+				},
+				class: ruleAction.valid === false ? "error-text-field" : undefined,
+				helpLabel: ruleAction.valid === false ? () => lang.getTranslationText("pleaseSelectFolder_msg") : undefined,
+			})
+		case InboxRuleActionType.LABEL:
+			return m(LabelsDropDownSelector, {
+				label: "selectLabel_action",
+				items: labels.map((label) => ({
+					...label,
+					applied: isNotNull(ruleAction.valueLabels()) && assertNotNull(ruleAction.valueLabels()).some((l) => isSameId(l._id, label.value._id)),
+				})),
+				icon: {
+					icon: Icons.LabelFilled,
+					color: theme.on_surface_variant,
+				},
+				onLabelsApplied: ruleAction.valueLabels,
+				onModalClosed: () => {
+					if (ruleAction.valid === false) {
+						ruleAction.valid = !!ruleAction.valueLabels()?.length
+					}
+				},
+				class: ruleAction.valid === false ? "error-text-field" : undefined,
+				helpLabel: ruleAction.valid === false ? () => lang.getTranslationText("labelMustBeSelected_msg") : undefined,
+			})
+		case InboxRuleActionType.EXCLUDE_SPAM:
+		case InboxRuleActionType.READ:
+			return null
+		default:
+			throw new ProgrammingError(`No Input specified for rule action of type: ${ruleAction.type()}`)
+	}
+}
 
-	if (currentCleanedValue === "") {
+function validateInboxRuleCondition(condition: InboxRuleConditionField): TranslationKey | null {
+	const type = condition.type()
+	const value = condition.value()
+	const currentCleanedValue = getCleanedValue(type, value)
+
+	if (type !== InboxRuleConditionType.HAS_ATTACHMENT && type !== InboxRuleConditionType.HAS_NO_ATTACHMENT && currentCleanedValue === "") {
 		return "inboxRuleEnterValue_msg"
 	} else if (isInvalidRegex(currentCleanedValue)) {
 		return "invalidRegexSyntax_msg"
 	} else if (
-		type !== InboxRuleType.SUBJECT_CONTAINS &&
-		type !== InboxRuleType.MAIL_HEADER_CONTAINS &&
+		type !== InboxRuleConditionType.SUBJECT_CONTAINS &&
+		type !== InboxRuleConditionType.MAIL_HEADER_CONTAINS &&
+		type !== InboxRuleConditionType.HAS_ATTACHMENT &&
+		type !== InboxRuleConditionType.HAS_NO_ATTACHMENT &&
 		!isRegularExpression(currentCleanedValue) &&
 		!isDomainName(currentCleanedValue) &&
 		!isMailAddress(currentCleanedValue, false)
 	) {
 		return "inboxRuleInvalidEmailAddress_msg"
 	} else {
-		let existingRule = getExistingRuleForType(locator.logins.getUserController().props, currentCleanedValue, type)
-
-		if (existingRule && (!ruleId || (ruleId && !isSameSingleId(existingRule._id, ruleId)))) {
-			return "inboxRuleAlreadyExists_msg"
-		}
+		return null
 	}
-
-	return null
 }
 
-function getCleanedValue(type: string, value: string) {
-	if (type === InboxRuleType.SUBJECT_CONTAINS || type === InboxRuleType.MAIL_HEADER_CONTAINS) {
+function validateInboxRuleAction(type: InboxRuleActionType, value: MailSet | null): IdTuple | null {
+	if (type === InboxRuleActionType.EXCLUDE_SPAM || type === InboxRuleActionType.READ) {
+		if (isNotNull(value)) {
+			// throw an error instead of informing user, as the user should not be able to choose a value here
+			// if a value is here something else has gone wrong
+			throw new ProgrammingError("Boolean InboxRuleActionType has value!")
+		}
+		return null
+	} else {
+		if (isNull(value)) {
+			throw new ProgrammingError("When moving or labeling, a mail set must be there!")
+		}
+		return value._id
+	}
+}
+
+function getCleanedValue(type: string, value: string): string {
+	if (type === InboxRuleConditionType.SUBJECT_CONTAINS || type === InboxRuleConditionType.MAIL_HEADER_CONTAINS) {
 		return value
 	} else {
 		return value.trim().toLowerCase()

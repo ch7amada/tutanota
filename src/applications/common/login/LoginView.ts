@@ -23,7 +23,7 @@ import { renderInfoLinks } from "../gui/RenderLoginInfoLinks.js"
 import { showSnackBar } from "../../../ui/base/SnackBar.js"
 import { Icons } from "../../../ui/base/icons/Icons"
 import { px } from "../../../ui/size"
-import { isFreeSignupOnly } from "../misc/LoginUtils"
+import { Dialog } from "../../../ui/base/Dialog"
 
 EnvProvider.assertMainOrNode()
 
@@ -169,14 +169,7 @@ export class LoginView extends BaseTopLevelView implements TopLevelView<LoginVie
 				? m(Button, {
 						label: "register_label",
 						type: ButtonType.Secondary,
-						click: () => {
-							/* Temporarely restricting to free only to get accepted by Google Play Store */
-							if (isFreeSignupOnly()) {
-								m.route.set("/signup", { subscription: "free", type: "freeonly" })
-							} else {
-								m.route.set("/signup")
-							}
-						},
+						click: () => m.route.set("/signup"),
 					})
 				: null,
 			this._switchThemeLinkVisible()
@@ -213,6 +206,10 @@ export class LoginView extends BaseTopLevelView implements TopLevelView<LoginVie
 					{
 						label: "dark_label",
 						click: () => locator.themeController.setThemePreference("dark"),
+					},
+					{
+						label: "true_dark_label",
+						click: () => locator.themeController.setThemePreference("true_dark"),
 					},
 					{
 						label: ClientDetector.get().isCalendarApp() ? "light_red_label" : "light_blue_label",
@@ -281,6 +278,7 @@ export class LoginView extends BaseTopLevelView implements TopLevelView<LoginVie
 				invalidCredentials: this.viewModel.state === LoginState.InvalidCredentials,
 				showRecoveryOption: this._recoverLoginVisible(),
 				accessExpired: this.viewModel.state === LoginState.AccessExpired,
+				accessDeactivated: this.viewModel.state === LoginState.AccessDeactivated,
 			}),
 		])
 	}
@@ -292,6 +290,8 @@ export class LoginView extends BaseTopLevelView implements TopLevelView<LoginVie
 
 		if (this.viewModel.state === LoginState.LoggedIn) {
 			m.route.set(this.selectedRedirect)
+		} else if (this.viewModel.state === LoginState.AccessDeactivated) {
+			await Dialog.message("deactivatedAccessLogin_msg")
 		}
 	}
 

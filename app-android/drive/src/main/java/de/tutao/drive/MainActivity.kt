@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
@@ -31,8 +32,10 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.MainThread
+import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
@@ -41,7 +44,6 @@ import androidx.core.view.WindowInsetsCompat.Type.displayCutout
 import androidx.core.view.WindowInsetsCompat.Type.ime
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.core.view.doOnLayout
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import de.tutao.tutashared.ActivityResult
 import de.tutao.tutashared.ActivityUtils
@@ -55,9 +57,9 @@ import de.tutao.tutashared.AppType
 import de.tutao.tutashared.CancelledError
 import de.tutao.tutashared.NetworkUtils
 import de.tutao.tutashared.TempDir
-import de.tutao.tutashared.Theme
 import de.tutao.tutashared.WebViewReloader
 import de.tutao.tutashared.credentials.CredentialsEncryptionFactory
+import de.tutao.tutashared.data.AndroidArchiveDownloaderFacade
 import de.tutao.tutashared.data.AppDatabase
 import de.tutao.tutashared.file.AndroidFileFacade
 import de.tutao.tutashared.file.TempFs
@@ -100,7 +102,7 @@ interface WebauthnHandler {
 	fun onNoResult()
 }
 
-class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, WebauthnFlowRunner {
+class MainActivity : AppCompatActivity(), ActivityUtils, WebViewReloader, WebauthnFlowRunner {
 	private lateinit var webView: WebView
 	private lateinit var themeFacade: AndroidThemeFacade
 	private lateinit var remoteBridge: RemoteBridge
@@ -109,12 +111,14 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 	private lateinit var commonSystemFacade: AndroidCommonSystemFacade
 	private lateinit var sqlCipherFacade: SqlCipherFacade
 	private lateinit var paymentsFacade: AndroidMobilePaymentsFacade
+	private lateinit var archiveDownloaderFacade: AndroidArchiveDownloaderFacade
 
 	private val permissionsRequests: MutableMap<Int, Continuation<Unit>> = ConcurrentHashMap()
 	private val activityRequests: MutableMap<Int, Continuation<ActivityResult>> = ConcurrentHashMap()
 
 	private var firstLoaded = false
 	private var webauthnResultHandler: WebauthnHandler? = null
+	private lateinit var connectivityManager: ConnectivityManager
 
 	@SuppressLint("SetJavaScriptEnabled", "StaticFieldLeak")
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -162,16 +166,19 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		val ipcJson = Json { ignoreUnknownKeys = true }
 
 		themeFacade = AndroidThemeFacade(this, this)
+		connectivityManager = applicationContext.getSystemService<ConnectivityManager>()!!
 
 		sqlCipherFacade = AndroidSqlCipherFacade(this)
 		commonSystemFacade =
 			AndroidCommonSystemFacade(this, sqlCipherFacade, tempDir, NetworkUtils.defaultClient)
+		archiveDownloaderFacade = AndroidArchiveDownloaderFacade(sqlCipherFacade, connectivityManager)
 
 		val webauthnFacade = AndroidWebauthnFacade(this, ipcJson, "tutadrive", BuildConfig.APPLICATION_ID)
 
 		paymentsFacade = AndroidMobilePaymentsFacade(this, AppType.DRIVE)
 		val globalDispatcher = AndroidGlobalDispatcher(
 			ipcJson,
+			archiveDownloaderFacade,
 			commonSystemFacade,
 			calendarFacade,
 			fileFacade,
@@ -201,7 +208,7 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 			commonSystemFacade,
 		)
 
-		themeFacade.applyCurrentTheme()
+		themeFacade.applyTheme(resources.configuration)
 
 		installSplashScreen()
 
@@ -209,6 +216,7 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		actionBar?.hide()
 
 		mobileFacade = MobileFacadeSendDispatcher(ipcJson, remoteBridge)
+		archiveDownloaderFacade.setMobileFacade(mobileFacade)
 		commonNativeFacade = CommonNativeFacadeSendDispatcher(ipcJson, remoteBridge)
 
 		webView.setBackgroundColor(Color.TRANSPARENT)
@@ -388,12 +396,6 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 	override suspend fun startWebauthn(uri: Uri): String {
 		val customIntent = CustomTabsIntent.Builder()
 			.build()
-		val intent = customIntent.intent.apply {
-			data = uri
-			// close custom tabs activity as soon as user navigates away from it, otherwise it will linger as a separate
-			// task
-			addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-		}
 
 		return suspendCoroutine { cont ->
 			// if there was already a handler, finish it
@@ -408,7 +410,7 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 					cont.resumeWithException(CancelledError())
 				}
 			}
-			startActivity(intent)
+			customIntent.launchUrl(this, uri)
 		}
 	}
 
@@ -468,15 +470,15 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 	override fun onConfigurationChanged(newConfig: Configuration) {
 		super.onConfigurationChanged(newConfig)
 		// Since the activity is not being re-created we need to re-apply our theming manually.
-		themeFacade.applyCurrentTheme()
+		themeFacade.applyTheme(newConfig)
 		lifecycleScope.launch {
 			commonNativeFacade.updateTheme()
 		}
 	}
 
 	@MainThread
-	private fun startWebApp(parameters: MutableMap<String, String>) {
-		webView.loadUrl(getInitialUrl(parameters, themeFacade.currentThemeWithFallback))
+	private suspend fun startWebApp(parameters: MutableMap<String, String>) {
+		webView.loadUrl(getInitialUrl(parameters, themeFacade.getCurrentThemeOrFallback()))
 		remoteBridge.setup()
 	}
 
@@ -537,13 +539,18 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		}
 	}
 
-	private fun getInitialUrl(parameters: MutableMap<String, String>, theme: Theme?): String {
+	private suspend fun getInitialUrl(parameters: MutableMap<String, String>, theme: Map<String, String>?): String {
 		if (theme != null) {
 			parameters["theme"] = JSONObject.wrap(theme)!!.toString()
 		}
 		parameters["platformId"] = "android"
-		if (paymentsFacade.hasPlaystorePayment()) {
-			parameters["paymentSetup"] = "playstore"
+		try {
+			if (paymentsFacade.hasPlaystorePayment()) {
+				parameters["paymentSetup"] = "playstore"
+			}
+		} catch (e: Throwable) {
+			println("failed to set up mobile payment: $e")
+			parameters["paymentSetup"] = "none"
 		}
 		val queryBuilder = StringBuilder()
 		for ((key, value) in parameters) {
@@ -655,8 +662,8 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		moveTaskToBack(false)
 	}
 
-	override fun reload(query: Map<String, String>) {
-		runOnUiThread { startWebApp(query.toMutableMap()) }
+	override suspend fun reload(query: Map<String, String>) {
+		runOnUiThread { lifecycleScope.launch { startWebApp(query.toMutableMap()) } }
 	}
 
 	override fun onCreateContextMenu(menu: ContextMenu, v: View, menuInfo: ContextMenuInfo?) {

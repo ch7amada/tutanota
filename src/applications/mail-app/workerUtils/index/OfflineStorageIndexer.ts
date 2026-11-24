@@ -1,5 +1,5 @@
 import { UserFacade } from "../../../../platform-kit/base/facades/UserFacade"
-import { MailIndexer } from "./MailIndexer"
+import { MailIndexer, MailIndexingAbortReason } from "./MailIndexer"
 import { assertNotNull, difference } from "../../../../platform-kit/utils"
 import { filterIndexMemberships } from "../../../common/api/common/utils/IndexUtils"
 import { NOTHING_INDEXED_TIMESTAMP, ProgrammingError } from "../../../../platform-kit/app-env"
@@ -56,19 +56,23 @@ export class OfflineStorageIndexer implements Indexer {
 		await this.mailIndexer.onEntityUpdatesReceived(updates, groupId, batchId)
 	}
 
-	async extendMailIndex(aimedTimestamp: number) {
-		await this.mailIndexer.extendMailIndex(assertNotNull(this.userFacade.getUser()), aimedTimestamp)
+	async extendMailIndex() {
+		await this.mailIndexer.extendMailIndex(assertNotNull(this.userFacade.getUser()))
 	}
 
 	async deleteIndex() {
 		/* no-op */
 	}
 
-	cancelMailIndexing() {
-		this.mailIndexer.cancelMailIndexing()
+	cancelMailIndexing(abortReason: MailIndexingAbortReason) {
+		this.mailIndexer.cancelMailIndexing(abortReason)
 	}
 
 	async rebuildMailIndex() {
 		await this.mailIndexer.rebuildIndex(assertNotNull(this.userFacade.getUser()))
+	}
+
+	async remainingDataInBytes(): Promise<number> {
+		return await this.mailIndexer.remainingDataInBytes()
 	}
 }

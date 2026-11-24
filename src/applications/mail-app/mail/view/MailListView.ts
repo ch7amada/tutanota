@@ -13,7 +13,7 @@ import { Dialog } from "../../../../ui/base/Dialog"
 import { assertNotNull, AsyncResult, downcast, neverNull, newPromise, promiseMap } from "../../../../platform-kit/utils"
 import { locator } from "../../../common/api/main/CommonLocator"
 import { promptAndDeleteMails } from "./MailGuiUtils"
-import { MAIL_ROW_HEIGHT, MailRow } from "./MailRow"
+import { MailRow } from "./MailRow"
 import { generateMailFile, getMailExportMode } from "../export/Exporter"
 import { deduplicateFilenames } from "../../../../ui/utils/FileUtils"
 import { downloadMailBundle } from "../export/Bundler"
@@ -21,7 +21,7 @@ import { component_size, size } from "../../../../ui/size.js"
 import { isFabShown } from "../../../../ui/base/FloatingActionButton.js"
 import { ListColumnWrapper } from "../../../../ui/ListColumnWrapper"
 import { MailViewModel } from "./MailViewModel.js"
-import { List, ListAttrs, ListSwipeDecision, MultiselectMode, RenderConfig, SwipeConfiguration } from "../../../../ui/base/List.js"
+import { calculateRowHeight, List, ListAttrs, ListSwipeDecision, MultiselectMode, RenderConfig, SwipeConfiguration } from "../../../../ui/base/List.js"
 import ColumnEmptyMessageBox from "../../../../ui/base/ColumnEmptyMessageBox.js"
 import { theme } from "../../../../ui/theme.js"
 import { VirtualRow } from "../../../../ui/base/ListUtils.js"
@@ -72,7 +72,7 @@ export class MailListView implements Component<MailListViewAttrs> {
 	showingArchive: boolean = false
 	private attrs: MailListViewAttrs
 	private readonly renderConfig: RenderConfig<Mail, MailRow> = {
-		itemHeight: MAIL_ROW_HEIGHT,
+		itemHeight: calculateRowHeight(),
 		multiselectionAllowed: MultiselectMode.Enabled,
 		createElement: (dom: HTMLElement) => {
 			const mailRow = new MailRow(
@@ -483,7 +483,7 @@ export class MailListView implements Component<MailListViewAttrs> {
 						this.showingSpamOrTrash
 							? lang.get("recover_label") // show "recover" if this is the trash/spam folder
 							: this.showingArchive // otherwise show "inbox" or "archive" depending on the folder
-								? lang.get("received_action")
+								? lang.get("received_label")
 								: lang.get("archive_label"),
 					),
 				]

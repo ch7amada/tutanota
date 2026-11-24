@@ -1,12 +1,12 @@
 import { IndexedGroupData, OfflineStoragePersistence } from "./OfflineStoragePersistence"
 import { abortAware, MailIndexer, MailIndexerNewMailDownloader, MailIndexingAbortReason } from "./MailIndexer"
-import { CancelledError, EnvProvider, FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP } from "@tutao/app-env"
-import { BlobFacade } from "../../../common/api/worker/facades/lazy/BlobFacade"
+import { CancelledError, EnvProvider, FULL_INDEXED_TIMESTAMP, MAX_EXPECTED_ARCHIVE_SIZE_IN_BYTES, NOTHING_INDEXED_TIMESTAMP } from "@tutao/app-env"
+import { ArchiveDownloadResumeParams, BlobFacade } from "../../../common/api/worker/facades/lazy/BlobFacade"
 import {
 	assertNotNull,
 	collectToMap,
-	deduplicate,
 	difference,
+	filterInt,
 	getFirstOrThrow,
 	groupByAndMap,
 	isEmpty,
@@ -42,7 +42,7 @@ import {
 import {
 	FileTypeRef,
 	ImportedFileMailTypeRef,
-	ImportedImapMailTypeRef,
+	ImportedMigrationMailTypeRef,
 	Mail,
 	MailBox,
 	MailboxGroupRootTypeRef,
@@ -56,13 +56,14 @@ import {
 import { User } from "@tutao/entities/sys"
 import { ArchiveDataType, GroupType } from "../../../../entities/sys/Utils"
 import { CryptoFacade } from "../../../../platform-kit/base/base-crypto/CryptoFacade"
-import { ConnectionError, NotAuthorizedError } from "@tutao/rest-client/error"
+import { ConnectionError, NotAuthorizedError, NotFoundError } from "@tutao/rest-client/error"
 import { IncomingServerJson } from "../../../../platform-kit/instance-pipeline/TypeMapper"
 import { CommonImportedMail } from "./WebMailIndexer"
 import { MailImportType, MailSetKind } from "../../../../entities/tutanota/Utils"
-import { isDraft } from "../../mail/model/MailChecks"
+import { isDraft, isMailWithoutDetails } from "../../mail/model/MailChecks"
 import { CryptoError, SessionKeyNotFoundError } from "@tutao/crypto/error"
 import type { CacheStorage } from "../../../../app-kit/local-store/CacheStorage"
+import { ArchiveDownloaderFacade } from "@tutao/native-bridge/generatedIpc/types"
 
 EnvProvider.assertWorkerOrNode()
 
@@ -97,10 +98,12 @@ export class OfflineMailIndexer implements MailIndexer {
 		private readonly newMailDownloader: MailIndexerNewMailDownloader,
 		private readonly instancePipeline: InstancePipeline,
 		private readonly cacheStorage: CacheStorage,
+		private readonly archiveDownloader: ArchiveDownloaderFacade,
 		private readonly indexChunkSize: number = INDEX_CHUNK_SIZE,
 	) {}
 
 	private fullyIndexed: boolean = false
+	private remainingDataToDownloadInBytes: number = 0
 	private currentlyIndexingPromise: Promise<void> | null = null
 	private indexTasks: (() => Promise<unknown>)[] = []
 	private abortController: AbortController = new AbortController()
@@ -118,6 +121,7 @@ export class OfflineMailIndexer implements MailIndexer {
 		return {
 			initializing: false,
 			mailIndexEnabled: this.mailIndexingEnabled,
+			autoRestartEnabled: true,
 			progress,
 			currentMailIndexTimestamp: this.currentIndexTimestamp,
 			aimedMailIndexTimestamp: FULL_INDEXED_TIMESTAMP,
@@ -132,8 +136,8 @@ export class OfflineMailIndexer implements MailIndexer {
 		await this.infoMessageHandler.onSearchIndexStateUpdate(this.createSearchIndexStateInfo(0))
 	}
 
-	async afterMailCreated(mailid: IdTuple): Promise<void> {
-		const mail = await this.newMailDownloader(mailid)
+	async afterMailCreated(mailId: IdTuple): Promise<void> {
+		const mail = await this.newMailDownloader(mailId)
 		if (mail != null) {
 			await this.offlineStoragePersistence.storeMailData([mail])
 		}
@@ -143,31 +147,49 @@ export class OfflineMailIndexer implements MailIndexer {
 		// no-op
 	}
 
-	async afterMailUpdated(mailid: IdTuple): Promise<void> {
-		const mail = await this.entityClient.load(MailTypeRef, mailid)
+	async afterMailUpdated(mailId: IdTuple): Promise<void> {
+		const mail = await this.entityClient.load(MailTypeRef, mailId)
 		if (mail.mailDetailsDraft != null) {
 			// update the entire mail
-			await this.afterMailCreated(mailid)
+			await this.afterMailCreated(mailId)
 		} else {
 			// update just the mail's location in persistence (other indexed fields are immutable for non-draft mail)
 			await this.offlineStoragePersistence.updateMailLocation(mail)
 		}
 	}
 
-	async beforeMailDeleted(mailid: IdTuple): Promise<void> {
-		return await this.offlineStoragePersistence.deleteMailData(mailid)
+	async beforeMailDeleted(mailId: IdTuple): Promise<void> {
+		try {
+			const mail = await this.entityClient.load(MailTypeRef, mailId)
+			if (mail.mailDetails != null) {
+				// Drop deleted MailDetailsBlob so that archive download can be resumed (so Repr-Digest matches).
+				//
+				// MailDetailsBlob will not be dropped if its Mail isn't cached. We can ensure all mails are cached by
+				// preloading mails before starting archive download, but that would impact indexing time, so we don't.
+				const [archiveId, blobId] = mail.mailDetails
+				await this.offlineStoragePersistence.deleteEncryptedBlob(MailDetailsBlobTypeRef, archiveId, blobId)
+			}
+		} catch (e) {
+			if (!(e instanceof NotFoundError)) {
+				throw e
+			}
+		}
+
+		await this.offlineStoragePersistence.deleteMailData(mailId)
 	}
 
 	async extendMailIndex(user: User): Promise<void> {
 		if (this.currentlyIndexingPromise == null) {
 			this.abortController = new AbortController()
 
-			this.indexTasks.push(async () => this.fullyIndexUser(user))
+			this.indexTasks.push(() => this.fullyIndexUser(user))
 
 			const entries = await this.offlineStoragePersistence.getImportQueueEntries()
 			for (const entry of entries) {
 				this.indexTasks.push(() => this.processImport(entry.listId, entry.mailImportType))
 			}
+
+			this.indexTasks.push(() => this.cleanupAfterIndexing())
 
 			this.processIndexQueue()
 		}
@@ -216,6 +238,11 @@ export class OfflineMailIndexer implements MailIndexer {
 				await this.infoMessageHandler.onSearchIndexStateUpdate(update)
 			}
 
+			const resetProgress = async () => {
+				const update = this.createSearchIndexStateInfo(0)
+				await this.infoMessageHandler.onSearchIndexStateUpdate(update)
+			}
+
 			await updateProgress(0)
 
 			let indexedMailboxes = 0
@@ -225,11 +252,16 @@ export class OfflineMailIndexer implements MailIndexer {
 				const mailbox = await this.entityClient.load(MailBoxTypeRef, idToElementId(mailboxGroupRoot.mailbox))
 				const data = assertNotNull(mailGroupData.get(group))
 
-				await this.indexMailbox(data, mailbox, async (fraction: number, newMailsIndexed: number) => {
-					indexedMailCount += newMailsIndexed
-					const progress = baseProgress + fraction / totalMailboxes
-					await updateProgress(progress)
-				})
+				await this.indexMailbox(
+					data,
+					mailbox,
+					async (fraction: number, newMailsIndexed: number) => {
+						indexedMailCount += newMailsIndexed
+						const progress = baseProgress + fraction / totalMailboxes
+						await updateProgress(progress)
+					},
+					resetProgress,
+				)
 
 				await this.offlineStoragePersistence.updateIndexingTimestamp(group, FULL_INDEXED_TIMESTAMP)
 
@@ -245,55 +277,58 @@ export class OfflineMailIndexer implements MailIndexer {
 		this.fullyIndexed = true
 		await this.infoMessageHandler.onSearchIndexStateUpdate(this.createSearchIndexStateInfo(0, indexedMailCount))
 		const end = performance.now()
-		console.log(TAG, `Fully indexed (took ${end - start} ms). Cleaning up...`)
-		await this.offlineStoragePersistence.clearEncryptedMailDetailsBlobs()
-		const cleanupEnd = performance.now()
-		console.log(TAG, `Cleaned up and fully indexed (took ${cleanupEnd - end} ms)`)
+		console.log(TAG, `Fully indexed (took ${end - start} ms)`)
 	}
 
-	private async indexMailbox(groupData: IndexedGroupData, mailbox: MailBox, mailboxProgress: (fraction: number, indexedMails: number) => Promise<unknown>) {
+	private async indexMailbox(
+		groupData: IndexedGroupData,
+		mailbox: MailBox,
+		mailboxProgress: (fraction: number, indexedMails: number) => Promise<unknown>,
+		abortProgress: () => Promise<unknown>,
+	) {
 		console.log(TAG, `Began indexing mail group ${mailbox._id}`)
-
 		const indexStart = performance.now()
 
-		const allArchives = await this.preloadEncryptedArchivesForGroup(assertNotNull(mailbox._ownerGroup), (fraction: number) =>
-			mailboxProgress(PRELOAD_PROGRESS_PORTION * fraction, 0),
-		)
+		// Sort in reverse order to keep a consistent list
+		const mailBagsToLoad = [assertNotNull(mailbox.currentMailBag), ...mailbox.archivedMailBags]
+			.filter((mailBag) => mailBag.mails <= groupData.lastIndexedEntityListId)
+			.map((mailBag) => mailBag.mails)
+			.sort((a, b) => compareNewestFirst(a, b, EntityIdEncoding.Base64Ext))
 
+		const allArchives = await this.preloadEncryptedArchivesForGroup(assertNotNull(mailbox._ownerGroup))
 		let estimatedMailsWithBlobs = await this.offlineStoragePersistence.estimateTotalBlobCountForArchives(groupData.groupId, allArchives)
 		let totalMailsIndexedWithBlobs = 0
 		let totalMailsIndexed = 0
 
 		console.log(TAG, `Estimated remaining number of mails with blobs for mail group ${mailbox._ownerGroup}:`, estimatedMailsWithBlobs)
 
-		// Sort in reverse order to keep a consistent list
-		const allMailBags = [assertNotNull(mailbox.currentMailBag), ...mailbox.archivedMailBags]
-			.map((a) => a.mails)
-			.sort((a, b) => compareNewestFirst(a, b, EntityIdEncoding.Base64Ext))
+		for (const mailList of mailBagsToLoad) {
+			const startingId = groupData.lastIndexedEntityListId === mailList ? groupData.lastIndexedEntityElementId : GENERATED_MAX_ID
+			console.log(TAG, `Indexing mailbag with mail list ${mailList}`)
+			const indexMailbagStart = performance.now()
+			await this.indexMailbag(groupData.groupId, mailList, startingId, async (newMailsWithBlobsIndexed, newMailsIndexed) => {
+				if (this.abortController.signal.aborted) {
+					await abortProgress()
+					return
+				}
 
-		for (const mailList of allMailBags) {
-			if (groupData.lastIndexedEntityListId === mailList || !firstBiggerThanSecondBase64Ext(mailList, groupData.lastIndexedEntityListId)) {
-				const startingId = groupData.lastIndexedEntityListId === mailList ? groupData.lastIndexedEntityElementId : GENERATED_MAX_ID
-				console.log(TAG, `Indexing mailbag with mail list ${mailList}`)
-				const indexMailbagStart = performance.now()
-				await this.indexMailbag(groupData.groupId, mailList, startingId, async (newMailsWithBlobsIndexed, newMailsIndexed) => {
-					totalMailsIndexedWithBlobs = totalMailsIndexedWithBlobs + newMailsWithBlobsIndexed
-					newMailsIndexed += newMailsIndexed
+				totalMailsIndexedWithBlobs += newMailsWithBlobsIndexed
+				totalMailsIndexed += newMailsIndexed
 
-					// We may be slightly off on our estimate (such as when resuming, especially if drafts were already indexed)
-					const totalCapped = Math.min(totalMailsIndexedWithBlobs, estimatedMailsWithBlobs)
-					if (totalCapped === 0) {
-						await mailboxProgress(PRELOAD_PROGRESS_PORTION, newMailsIndexed)
-					} else {
-						await mailboxProgress(
-							PRELOAD_PROGRESS_PORTION + (totalCapped / estimatedMailsWithBlobs) * (1 - PRELOAD_PROGRESS_PORTION),
-							newMailsIndexed,
-						)
-					}
-				})
-				const indexMailbagEnd = performance.now()
-				console.log(TAG, `Finished indexing mail list ${mailList} (took ${indexMailbagEnd - indexMailbagStart} ms)`)
-			}
+				// We may be slightly off on our estimate (such as when resuming, especially if drafts were already indexed)
+				const totalCapped = Math.min(totalMailsIndexedWithBlobs, estimatedMailsWithBlobs)
+				if (totalCapped === 0) {
+					await mailboxProgress(PRELOAD_PROGRESS_PORTION, newMailsIndexed)
+				} else {
+					await mailboxProgress(PRELOAD_PROGRESS_PORTION + (totalCapped / estimatedMailsWithBlobs) * (1 - PRELOAD_PROGRESS_PORTION), newMailsIndexed)
+				}
+
+				if (this.abortController.signal.aborted) {
+					await abortProgress()
+				}
+			})
+			const indexMailbagEnd = performance.now()
+			console.log(TAG, `Finished indexing mail list ${mailList} (took ${indexMailbagEnd - indexMailbagStart} ms)`)
 		}
 
 		const indexEnd = performance.now() - indexStart
@@ -303,69 +338,89 @@ export class OfflineMailIndexer implements MailIndexer {
 		)
 	}
 
-	/**
-	 * @return a list of all archives
-	 */
-	private async preloadEncryptedArchivesForGroup(mailGroupId: Id, onArchivePreloaded?: (partialProgressFraction: number) => Promise<unknown>): Promise<Id[]> {
-		const allArchives = await this.blobFacade.enumerateArchivesForGroup(mailGroupId, ArchiveDataType.MailDetails)
+	private async preparePreloadArchives(archiveIds: Id[]): Promise<{ archiveId: Id; resumeParams: ArchiveDownloadResumeParams | null }[]> {
+		// sort so we load oldest archive first
+		const mappedAndSorted = archiveIds
+			.map((archiveId) => ({ archiveId, resumeParams: null }))
+			.sort((a, b) => compareOldestFirst(a.archiveId, b.archiveId, EntityIdEncoding.Base64Ext))
 
-		// if the user simply hits the reindex button, we don't want to go and redownload archives...
-		const archivesAlreadyStored = await this.offlineStoragePersistence.getDownloadedArchives()
-		let totalArchivesPreloaded = archivesAlreadyStored.length
-
-		const remainder = difference(allArchives, archivesAlreadyStored)
-		if (isEmpty(remainder)) {
-			await onArchivePreloaded?.(1)
-		} else {
-			await this.preloadArchives(remainder, async () => {
-				if (++totalArchivesPreloaded >= allArchives.length) {
-					await onArchivePreloaded?.(1)
-				} else {
-					await onArchivePreloaded?.(totalArchivesPreloaded / allArchives.length)
-				}
-			})
+		const lastLoadedArchive = await this.offlineStoragePersistence.getLastLoadedArchiveForType(MailDetailsBlobTypeRef)
+		// in case we either have not yet started loading any archive, or the archive belongs to a different mailbox
+		if (lastLoadedArchive == null || !archiveIds.includes(lastLoadedArchive.archiveId)) {
+			return mappedAndSorted
 		}
 
-		return allArchives
+		const mailDetailsBlobTypeModel = await this.mailDetailsBlobTypeModel.getAsync()
+		const rangeHeaders = await this.offlineStoragePersistence.getArchiveDownloadRangeHeaders(
+			lastLoadedArchive.archiveId,
+			MailDetailsBlobTypeRef,
+			mailDetailsBlobTypeModel.version,
+		)
+
+		const resumeParams: ArchiveDownloadResumeParams | null =
+			rangeHeaders != null
+				? {
+						serverHostname: lastLoadedArchive.serverHostname,
+						rangeHeaders,
+					}
+				: null
+
+		return [
+			{
+				archiveId: lastLoadedArchive.archiveId,
+				resumeParams,
+			},
+			...mappedAndSorted.filter(({ archiveId }) => firstBiggerThanSecondBase64Ext(archiveId, lastLoadedArchive.archiveId)),
+		]
 	}
 
 	/**
-	 * @return total blob count
-	 * @private
+	 * @return a list of all archives
 	 */
-	private async preloadArchives(archivesNeeded: readonly Id[], onArchivePreloaded?: () => Promise<unknown>): Promise<void> {
-		const mailDetailsBlobTypeModel = await this.mailDetailsBlobTypeModel.getAsync()
-		const archivesToLoad = deduplicate(archivesNeeded)
+	private async preloadEncryptedArchivesForGroup(mailGroupId: Id): Promise<Id[]> {
+		const allArchives = await this.blobFacade.enumerateArchivesForGroup(mailGroupId, ArchiveDataType.MailDetails)
+		const allArchiveIds = allArchives.map((a) => a.archiveId)
+		const archivesToLoad = await this.preparePreloadArchives(allArchiveIds)
+		const archiveSizes = new Map(
+			allArchives
+				.filter(({ archiveId }) => archivesToLoad.some((a) => a.archiveId === archiveId))
+				.map((metadata) => [
+					metadata.archiveId,
+					isNotNull(metadata.calculatedSize) && Number.isFinite(filterInt(metadata.calculatedSize))
+						? Math.ceil(filterInt(metadata.calculatedSize))
+						: MAX_EXPECTED_ARCHIVE_SIZE_IN_BYTES,
+				]),
+		)
 
-		if (isEmpty(archivesToLoad)) {
-			console.log(TAG, "No archives to preload")
-		} else {
-			console.log(TAG, `Preloading ${archivesToLoad.length} archive(s)`)
-			const everythingStart = performance.now()
-			for (const archiveId of archivesToLoad) {
-				console.log(TAG, `Downloading archive ${archiveId}...`)
+		const remainingSize = archivesToLoad.reduce((sum, { archiveId }) => sum + assertNotNull(archiveSizes.get(archiveId)), 0)
+		console.log(TAG, `Preloading ${archivesToLoad.length} archive(s), about ${remainingSize} Bytes remaining`)
+		this.remainingDataToDownloadInBytes = remainingSize
+		const preloadStart = performance.now()
+
+		for (const { archiveId, resumeParams } of archivesToLoad) {
+			console.log(TAG, `Downloading archive ${archiveId} starting from row ${resumeParams?.rangeHeaders.rangeStart ?? 0}`)
+			try {
 				await abortAware(this.abortController, async () => {
-					const downloadStart = performance.now()
-					const blobs = await this.blobFacade.downloadFullEncryptedBlobElementEntityArchive(MailDetailsBlobTypeRef, archiveId)
-					const downloadEnd = performance.now()
-					console.log(
-						TAG,
-						`Finished downloading archive ${archiveId} (${blobs.length} blob(s), took ${downloadEnd - downloadStart} ms), storing in offline db...`,
-					)
-					await this.offlineStoragePersistence.storeEncryptedMailDetailsBlobs(mailDetailsBlobTypeModel, blobs)
+					const downloadAndStoreBlobsStart = performance.now()
+					await this.blobFacade.downloadAndStoreEncryptedBlobArchive(MailDetailsBlobTypeRef, archiveId, this.archiveDownloader, resumeParams)
+					const downloadAndStoreBlobsEnd = performance.now()
+					console.log(TAG, `Finished storing archive ${archiveId} in offline db (took ${downloadAndStoreBlobsEnd - downloadAndStoreBlobsStart} ms)`)
 
-					// we know for sure we have the full archive now, so we do not want to redownload it even if we cancel right now
-					await this.offlineStoragePersistence.markArchiveAsDownloaded(archiveId)
-					const storeEnd = performance.now()
-					console.log(TAG, `Finished storing archive ${archiveId} in offline db (took ${storeEnd - downloadEnd} ms)`)
+					// subtract archive's size from remaining data to download
+					this.remainingDataToDownloadInBytes -= assertNotNull(archiveSizes.get(archiveId))
+					archiveSizes.delete(archiveId)
 				})
-				await onArchivePreloaded?.()
+			} catch (e) {
+				await this.archiveDownloader.abortDownloadAndStoreArchive(archiveId)
+				throw e
 			}
-
-			const everythingEnd = performance.now()
-			console.log(TAG, `Preloaded ${archivesToLoad.length} archive(s) (took ${everythingEnd - everythingStart} ms)`)
 		}
-		console.log("Preloading complete")
+
+		this.remainingDataToDownloadInBytes = 0
+		const preloadEnd = performance.now()
+		console.log(TAG, `Finished preloading ${archivesToLoad.length} archive(s) (took ${preloadEnd - preloadStart} ms)`)
+
+		return allArchiveIds
 	}
 
 	private async indexMailbag(
@@ -461,7 +516,10 @@ export class OfflineMailIndexer implements MailIndexer {
 		mailDetailsBlobTypeModel: ServerTypeModel,
 		cachedMailDetailsBlobs: Map<Id, MailDetailsBlob>,
 	): Promise<MailWithDetailsAndAttachmentsBlob | null> {
-		if (isDraft(mail)) {
+		if (isMailWithoutDetails(mail)) {
+			// do not index corrupted mail
+			return null
+		} else if (isDraft(mail)) {
 			return await this.newMailDownloader(mail._id)
 		}
 
@@ -486,6 +544,7 @@ export class OfflineMailIndexer implements MailIndexer {
 
 		// Fallback if somehow we didn't archive this mail
 		if (storedBlobJson == null) {
+			console.log(TAG, `mailDetails ${mailDetailsBlobId} not cached. Loading with fallback...`)
 			return await this.newMailDownloader(mail._id)
 		}
 
@@ -528,6 +587,10 @@ export class OfflineMailIndexer implements MailIndexer {
 				this.indexTasks = []
 
 				const update = this.createSearchIndexStateInfo(0)
+
+				// only auto restart if it was cancelled automatically (e.g. network changed to metered)
+				update.autoRestartEnabled = e.reason !== MailIndexingAbortReason.UserCancelled
+
 				if (e instanceof CancelledError) {
 					console.log("Mail indexing cancelled finally!")
 					update.error = null
@@ -536,6 +599,7 @@ export class OfflineMailIndexer implements MailIndexer {
 					update.error = e instanceof ConnectionError ? IndexingErrorReason.ConnectionLost : IndexingErrorReason.Unknown
 					update.failedIndexingUpTo = e instanceof ConnectionError ? this.currentIndexTimestamp : null
 				}
+
 				await this.infoMessageHandler.onSearchIndexStateUpdate(update)
 			} finally {
 				this.currentlyIndexingPromise = null
@@ -553,7 +617,7 @@ export class OfflineMailIndexer implements MailIndexer {
 		if (latestCommonImportedMailElementId == null) {
 			return
 		}
-		const typeRef = (mailImportType === MailImportType.FileImport ? ImportedFileMailTypeRef : ImportedImapMailTypeRef) as TypeRef<CommonImportedMail>
+		const typeRef = (mailImportType === MailImportType.FileImport ? ImportedFileMailTypeRef : ImportedMigrationMailTypeRef) as TypeRef<CommonImportedMail>
 		const importedMails = await this.entityClient.loadAll(typeRef, importList, latestCommonImportedMailElementId)
 		console.log(TAG, `Processing import of ${importedMails.length} new ${mailImportType} mails...`)
 		if (isEmpty(importedMails)) {
@@ -571,6 +635,8 @@ export class OfflineMailIndexer implements MailIndexer {
 		const mailbox = await this.entityClient.load(MailBoxTypeRef, idToElementId(mailboxGroupRoot.mailbox))
 		const mailSets = await this.entityClient.loadAll(MailSetTypeRef, mailbox.mailSets.mailSets)
 		const importedMailSet = assertNotNull(mailSets.find((mailSet) => mailSet.folderType === MailSetKind.IMPORTED))
+
+		await this.preloadEncryptedArchivesForGroup(assertNotNull(mailbox._ownerGroup))
 
 		// Only mailSetEntry guaranteed to be there as long as the mail is there is the one on the entries list of the IMPORTED mail set,
 		// the mailSetEntry referenced by the ImportedMail could already be deleted from our database if the user already moved the mail.
@@ -599,13 +665,6 @@ export class OfflineMailIndexer implements MailIndexer {
 			})
 			const mailsFlat = mails.flat()
 
-			const allArchivesForThisChunk = mailsFlat
-				.map((mail: Mail) => mail.mailDetails)
-				.filter(isNotNull)
-				.map(listIdPart)
-
-			await this.preloadArchives(allArchivesForThisChunk)
-
 			const { mailsIndexed } = await this.indexNonRecentMails(mailsFlat, new Map())
 			indexedMailCount += mailsIndexed
 
@@ -622,7 +681,6 @@ export class OfflineMailIndexer implements MailIndexer {
 		}
 
 		await this.infoMessageHandler.onSearchIndexStateUpdate(this.createSearchIndexStateInfo(0, indexedMailCount))
-		await this.offlineStoragePersistence.clearEncryptedMailDetailsBlobs()
 	}
 
 	async rebuildIndex(user: User): Promise<void> {
@@ -640,21 +698,28 @@ export class OfflineMailIndexer implements MailIndexer {
 
 		// append to current index queue (unless the user cancelled indexing)
 		if (!this.abortController.signal.aborted) {
-			this.indexTasks.push(() => this.processImport(importedMailsList, mailImportType))
+			this.indexTasks.push(
+				() => this.processImport(importedMailsList, mailImportType),
+				() => this.cleanupAfterIndexing(),
+			)
+
 			this.processIndexQueue()
 		}
 	}
 
-	cancelMailIndexing(): void {
-		this.abortController.abort(MailIndexingAbortReason.Cancelled)
+	cancelMailIndexing(abortReason: MailIndexingAbortReason = MailIndexingAbortReason.Cancelled): void {
+		this.abortController.abort(abortReason)
 	}
 
-	async doInitialMailIndexing() {
-		// no-op, initial indexing for sqlite search is done in MailIndexerPostLoginAction
+	async cleanupAfterIndexing(): Promise<void> {
+		const start = performance.now()
+		console.log(TAG, "Cleaning up after indexing...")
+		await this.offlineStoragePersistence.clearEncryptedBlobsForType(MailDetailsBlobTypeRef)
+		const end = performance.now()
+		console.log(TAG, `Cleanup after indexing done (took ${end - start} ms)`)
 	}
 
-	async enableMailIndexing(): Promise<boolean> {
-		// no-op, mail indexing is always enabled for sqlite search
-		return true
+	async remainingDataInBytes(): Promise<number> {
+		return this.remainingDataToDownloadInBytes
 	}
 }

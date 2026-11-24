@@ -11,6 +11,8 @@ export const enum HkdfKeyDerivationDomains {
 	NewUserGroupKeyAuthKeyForRotationAsNonAdminUser = "newUserGroupKeyAuthKeyForRotationAsNonAdminUser",
 	VersionedUserGroupKeyDistributionKey = "versionedUserGroupKeyDistributionKey",
 	PublicIdentityKey = "publicIdentityKey",
+	DriveFileShareKey = "driveFileShareKey",
+	DriveFileSharePassword = "driveFileSharePassword",
 }
 class MacTagBrand extends TsBrand {
 	protected __brand: Nullable<never> = null
@@ -19,10 +21,11 @@ export type MacTag = BrandedType<Uint8Array<ArrayBuffer>, MacTagBrand>
 
 export const UNIT_SEPARATOR_CHAR = "" as const
 export type DomainSeparator = `${string}`
-export const AEAD_ATTRIBUTE_ON_UNAUTHENTICATED_INSTANCE_GROUP_KEY_DOMAIN: DomainSeparator = `attributeEncGK${UNIT_SEPARATOR_CHAR}`
+export const AEAD_ATTRIBUTE_ON_UNAUTHENTICATED_INSTANCE_INSTANCE_KEY_DOMAIN: DomainSeparator = `attributeEncIK${UNIT_SEPARATOR_CHAR}`
 export const AEAD_ATTRIBUTE_ON_UNAUTHENTICATED_INSTANCE_SESSION_KEY_DOMAIN: DomainSeparator = `attributeEncSK${UNIT_SEPARATOR_CHAR}`
-export const AEAD_GROUP_KEY_NONCE_DERIVATION: DomainSeparator = `GK and nonce instanceMessageKey${UNIT_SEPARATOR_CHAR}`
-export const AEAD_SESSION_KEY_DERIVATION: DomainSeparator = `SK instanceSessionKey${UNIT_SEPARATOR_CHAR}`
+export const AEAD_FROM_GROUP_KEY_AND_NONCE_DERIVATION_OF_INSTANCE_KEY: DomainSeparator = `GK and nonce instanceKey${UNIT_SEPARATOR_CHAR}`
+export const AEAD_FROM_SESSION_KEY_DERIVATION: DomainSeparator = `SK instanceSessionKey${UNIT_SEPARATOR_CHAR}`
+export const AEAD_FROM_INSTANCE_KEY_DERIVATION: DomainSeparator = `IK instanceInstanceKey${UNIT_SEPARATOR_CHAR}`
 export const enum EntropySource {
 	Mouse = "mouse",
 	Touch = "touch",
@@ -63,4 +66,17 @@ export type VersionedAes256Key = Versioned<Aes256Key>
 export type VersionedEncryptedKey = {
 	encryptingKeyVersion: KeyVersion // the version of the encryption key NOT the encrypted key
 	key: Uint8Array<ArrayBuffer> // encrypted key
+}
+
+/**
+ * An encrypted key and the versions of the encrypted key and the encrypting key.
+ *
+ * @param bytes                encrypted key bytes
+ * @param encryptingKeyVersion version of the key used to encrypt the bytes
+ * @param encryptedKeyVersion  version of the encrypted key
+ */
+export type EncryptedKeyWithVersions = {
+	bytes: Uint8Array<ArrayBuffer>
+	encryptingKeyVersion: KeyVersion
+	encryptedKeyVersion: KeyVersion
 }

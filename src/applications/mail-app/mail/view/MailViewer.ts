@@ -27,15 +27,16 @@ import { PinchZoom } from "../../../../ui/PinchZoom.js"
 import { responsiveCardHMargin, responsiveCardHPadding } from "../../../../ui/cards.js"
 import { Dialog } from "../../../../ui/base/Dialog.js"
 import { createNewContact, isTutaTeamMail } from "../../../common/mailFunctionality/SharedMailUtils.js"
-import { getExistingRuleForType } from "../model/MailUtils.js"
+import { getExistingInboxRuleForType, getExistingLegacyInboxRuleForType } from "../model/MailUtils.js"
 import { SearchToken } from "../../../../ui/utils/QueryTokenUtils"
 import { highlightTextInQueryAsChildren } from "../../../../ui/TextHighlightViewUtils"
 import { WindowSizeListener } from "../../../../ui/utils/WindowUtils"
 import { File, Mail } from "@tutao/entities/tutanota"
-import { InboxRuleType, MailSetKind, SpamRuleFieldType, SpamRuleType } from "../../../../entities/tutanota/Utils"
+import { InboxRuleConditionType, MailSetKind, SpamRuleFieldType, SpamRuleType } from "../../../../entities/tutanota/Utils"
 import { createEmailSenderListElement } from "@tutao/entities/sys"
 import { DownloadPostProcessing } from "../../../common/file/FileController"
 import { Keys } from "../../../../ui/utils/KeyboardKeys"
+import { getElementId } from "@tutao/meta"
 
 EnvProvider.assertMainOrNode()
 
@@ -308,9 +309,9 @@ export class MailViewer implements Component<MailViewerAttrs> {
 	}
 
 	private renderMailBody(sanitizedMailBody: DocumentFragment, attrs: MailViewerAttrs): Children {
-		return m("#mail-body", {
+		return m(".mail-body", {
 			// key to avoid mithril reusing the dom element when it should switch the rendering the loading spinner
-			key: "mailBody",
+			key: `mailBody-${getElementId(attrs.mailViewerViewModel.mail)}`,
 			oncreate: (vnode) => {
 				const dom = vnode.dom as HTMLElement
 				this.setDomBody(dom)
@@ -605,7 +606,7 @@ export class MailViewer implements Component<MailViewerAttrs> {
 
 	private async createMailAddressContextButtons(args: {
 		mailAddress: MailAddressAndName
-		defaultInboxRuleField: InboxRuleType | null
+		defaultInboxRuleField: InboxRuleConditionType | null
 		createContact?: boolean
 	}): Promise<Array<DropdownButtonAttrs>> {
 		const { mailAddress, defaultInboxRuleField, createContact = true } = args
@@ -650,24 +651,43 @@ export class MailViewer implements Component<MailViewerAttrs> {
 				// Only allow the addition of inbox and spam rules if it is not a shared mailbox
 				// Shared mailboxes currently do not support inbox rules
 				if (defaultInboxRuleField && !locator.logins.isEnabled(FeatureType.InternalCommunication)) {
-					const rule = getExistingRuleForType(
-						locator.logins.getUserController().props,
-						mailAddress.address.trim().toLowerCase(),
-						defaultInboxRuleField,
-					)
-					buttons.push({
-						label: rule ? "editInboxRule_action" : "addInboxRule_action",
-						click: async () => {
-							const mailboxDetails = await this.viewModel.mailModel.getMailboxDetailsForMail(this.viewModel.mail)
-							if (mailboxDetails == null) {
-								return
-							}
-							const { show, createInboxRuleTemplate } = await import("../../settings/AddInboxRuleDialog")
-							const newRule = rule ?? createInboxRuleTemplate(defaultInboxRuleField, mailAddress.address)
+					if (this.viewModel.inboxRuleModel.isUsingLegacyInboxRules()) {
+						const rule = getExistingLegacyInboxRuleForType(
+							locator.logins.getUserController().props,
+							mailAddress.address.trim().toLowerCase(),
+							defaultInboxRuleField,
+						)
+						buttons.push({
+							label: rule ? "editInboxRule_action" : "addInboxRule_action",
+							click: async () => {
+								const mailboxDetails = await this.viewModel.mailModel.getMailboxDetailsForMail(this.viewModel.mail)
+								if (mailboxDetails == null) {
+									return
+								}
+								const { show, createLegacyInboxRuleTemplate } = await import("../../settings/AddLegacyInboxRuleDialog")
 
-							show(mailboxDetails, newRule)
-						},
-					})
+								show(mailboxDetails, rule ?? createLegacyInboxRuleTemplate(defaultInboxRuleField, mailAddress.address))
+							},
+						})
+					} else {
+						const rule = getExistingInboxRuleForType(
+							await this.viewModel.inboxRuleModel.getOrderedInboxRules(),
+							mailAddress.address.trim().toLowerCase(),
+							defaultInboxRuleField,
+						)
+						buttons.push({
+							label: rule ? "editInboxRule_action" : "addInboxRule_action",
+							click: async () => {
+								const mailboxDetails = await this.viewModel.mailModel.getMailboxDetailsForMail(this.viewModel.mail)
+								if (mailboxDetails == null) {
+									return
+								}
+								const { show } = await import("../../settings/AddInboxRuleDialog")
+
+								show(mailboxDetails, this.viewModel.inboxRuleModel, rule, [{ type: defaultInboxRuleField, value: mailAddress.address }])
+							},
+						})
+					}
 				}
 
 				if (this.viewModel.canCreateSpamRule()) {
@@ -682,23 +702,27 @@ export class MailViewer implements Component<MailViewerAttrs> {
 		return buttons
 	}
 
-	private addSpamRule(defaultInboxRuleField: InboxRuleType | null, address: string) {
+	private addSpamRule(defaultInboxRuleField: InboxRuleConditionType | null, address: string) {
 		const folder = this.viewModel.mailModel.getMailFolderForMail(this.viewModel.mail)
 
 		const spamRuleType = folder && folder.folderType === MailSetKind.SPAM ? SpamRuleType.WHITELIST : SpamRuleType.BLACKLIST
 
 		let spamRuleField: SpamRuleFieldType
 		switch (defaultInboxRuleField) {
-			case InboxRuleType.RECIPIENT_TO_EQUALS:
+			case InboxRuleConditionType.RECIPIENT_TO_EQUALS:
 				spamRuleField = SpamRuleFieldType.TO
 				break
 
-			case InboxRuleType.RECIPIENT_CC_EQUALS:
+			case InboxRuleConditionType.RECIPIENT_CC_EQUALS:
 				spamRuleField = SpamRuleFieldType.CC
 				break
 
-			case InboxRuleType.RECIPIENT_BCC_EQUALS:
+			case InboxRuleConditionType.RECIPIENT_BCC_EQUALS:
 				spamRuleField = SpamRuleFieldType.BCC
+				break
+
+			case InboxRuleConditionType.RECIPIENT_ANY_EQUALS:
+				spamRuleField = SpamRuleFieldType.TO_ANY
 				break
 
 			default:

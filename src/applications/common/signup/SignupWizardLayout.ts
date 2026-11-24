@@ -3,7 +3,7 @@ import { WizardProgress } from "../../../ui/base/wizard/WizardProgress"
 import { WizardLayoutAttrs } from "../../../ui/base/wizard/Wizard"
 import { Styles } from "../../../ui/styles"
 import { component_size, layout_size, px, size } from "../../../ui/size"
-import { SignupViewModel } from "./SignupView"
+import { SignupViewModel } from "./models/SignupViewModel"
 import { DynamicColorSvg } from "../../../ui/base/DynamicColorSvg"
 import { InfoBoxItem, SignupWizardInfoBoxController, SignupWizardInfoList } from "./components/SignupWizardInfoList"
 import { Icons } from "../../../ui/base/icons/Icons"
@@ -11,7 +11,7 @@ import { lang } from "../../../ui/utils/LanguageViewModel"
 import { SignupInlinePlanSelector } from "./components/SignupInlinePlanSelector"
 import { DefaultAnimationTime } from "../../../ui/animation/Animations"
 import { WizardProgressCircular } from "../../../ui/base/wizard/WizardProgressCircular"
-import { getTutaLogo, getTutaLogoSignetSvg } from "../../../ui/base/Logo"
+import { getTutaLogoSignetSvg, getTutaLogoSvg } from "../../../ui/base/Logo"
 import { LanguageDropdown } from "../gui/LanguageDropdown"
 import { theme } from "../../../ui/theme"
 import { getSafeAreaInsetTop } from "../../../ui/HtmlUtils"
@@ -28,7 +28,7 @@ const SIGNUP_PROGRESS_LABEL_MAX_LENGTH = 24
 const CHECK_INFO_ICON = { icon: Icons.Checkmark, color: theme.success }
 const CROSS_INFO_ICON = { icon: Icons.X, color: theme.error }
 
-class SignupWizardLayout<TViewModel> implements Component<WizardLayoutAttrs<TViewModel>> {
+export class SignupWizardLayout implements Component<WizardLayoutAttrs<SignupViewModel>> {
 	private lastSeenTransitionSeq = 0
 	readonly infoBox = new SignupWizardInfoBoxController()
 
@@ -112,20 +112,20 @@ class SignupWizardLayout<TViewModel> implements Component<WizardLayoutAttrs<TVie
 		this.updateInfoItems(viewModel, to)
 	}
 
-	onbeforeupdate(vnode: Vnode<WizardLayoutAttrs<TViewModel>>) {
+	onbeforeupdate(vnode: Vnode<WizardLayoutAttrs<SignupViewModel>>) {
 		const { transitionSeq, transitionFrom, transitionTo } = vnode.attrs
 
 		if (transitionSeq !== this.lastSeenTransitionSeq && transitionSeq > 0) {
 			this.lastSeenTransitionSeq = transitionSeq
-			const viewModel = vnode.attrs.ctx.viewModel as SignupViewModel
+			const viewModel = vnode.attrs.ctx.viewModel
 			this.onTransition(viewModel, transitionFrom, transitionTo)
 		}
 
 		return true
 	}
 
-	oncreate(vnode: Vnode<WizardLayoutAttrs<TViewModel>>) {
-		const campaignName = (vnode.attrs.ctx.viewModel as SignupViewModel).globalCampaignName
+	oncreate(vnode: Vnode<WizardLayoutAttrs<SignupViewModel>>) {
+		const campaignName = vnode.attrs.ctx.viewModel.globalCampaignName
 		if (campaignName && campaignName === CAMPAIGN_NAME.BIRTHDAY_12_CAMPAIGN) {
 			this.stepIllustrations = [
 				"signup-before-click-birthday.svg",
@@ -145,10 +145,10 @@ class SignupWizardLayout<TViewModel> implements Component<WizardLayoutAttrs<TVie
 		this.transitionIllustrationName = null
 	}
 
-	view(vnode: Vnode<WizardLayoutAttrs<TViewModel>>) {
+	view(vnode: Vnode<WizardLayoutAttrs<SignupViewModel>>) {
 		const { showProgress, progressState, backButton, ctx } = vnode.attrs
 		const { controller, index } = ctx
-		const viewModel = ctx.viewModel as SignupViewModel
+		const viewModel = ctx.viewModel
 		const illustrationName = this.transitionIllustrationName ?? this.getStepIllustrationName(index, viewModel.globalCampaignName)
 		const showIllustration = Styles.get().bodyWidth >= layout_size.wizard_show_illustration_min_width && !viewModel.options.businessUse()
 		const canTogglePlanSelector = showIllustration && this.isInlinePlanSelectorToggleEnabled(viewModel, index)
@@ -168,7 +168,6 @@ class SignupWizardLayout<TViewModel> implements Component<WizardLayoutAttrs<TVie
 			opacity: showPlanSelector ? 1 : 0,
 			transform: showPlanSelector ? "translateX(0)" : `translateX(${px(size.spacing_32)})`,
 			"max-height": showPlanSelector ? px(1400) : "0",
-			overflow: "hidden",
 			transition: panelTransition,
 			"will-change": "opacity, transform",
 			"pointer-events": showPlanSelector ? "auto" : "none",
@@ -367,7 +366,7 @@ class SignupWizardLayout<TViewModel> implements Component<WizardLayoutAttrs<TVie
 					m(
 						"",
 						{ style: { height: px(32), width: Styles.get().isMobileLayout() ? px(32) : px(90) } },
-						m.trust(Styles.get().isMobileLayout() ? getTutaLogoSignetSvg() : getTutaLogo()),
+						m.trust(Styles.get().isMobileLayout() ? getTutaLogoSignetSvg(theme.outline_variant) : getTutaLogoSvg(theme.outline_variant)),
 					),
 					m(LanguageDropdown, { variant: "Link", deviceConfig }),
 				],
@@ -431,5 +430,3 @@ class SignupWizardLayout<TViewModel> implements Component<WizardLayoutAttrs<TVie
 		this.shouldFixButtonPos = shouldFixButtonPosition()
 	}
 }
-
-export default SignupWizardLayout

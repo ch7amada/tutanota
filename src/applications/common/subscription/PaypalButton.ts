@@ -4,27 +4,27 @@ import { lang } from "../../../ui/utils/LanguageViewModel"
 import { PayPalLogo } from "../../../ui/base/icons/Icons"
 import { ClickHandler } from "../../../ui/base/GuiUtils"
 import { noOp, promiseMap } from "@tutao/utils"
-
 import { locator } from "../api/main/CommonLocator"
-import stream from "mithril/stream"
-import { UpgradeSubscriptionData } from "./UpgradeSubscriptionWizard"
+import { SignupViewModel } from "../signup/models/SignupViewModel"
+import { component_size, px } from "../../../ui/size"
 import { EntityUpdatesListener, isUpdateForTypeRef, ListenerPriority } from "../../../platform-kit/instance-pipeline/utils/EntityUpdateUtils"
 import { AccountingInfoTypeRef } from "@tutao/entities/sys"
 import { idToElementId } from "@tutao/meta"
 
 export interface PaypalButtonAttrs {
-	data: Pick<UpgradeSubscriptionData, "accountingInfo">
+	data: Pick<SignupViewModel, "accountingInfo">
 	onclick: ClickHandler
 	oncomplete?: () => void
+	disabled?: boolean
 }
 
 export class PaypalButton implements Component<PaypalButtonAttrs> {
 	private entityUpdatesListener: EntityUpdatesListener
-	private _isPaypalLinked = stream(false)
+	private isPaypalLinked = false
 
 	constructor({ attrs }: Vnode<PaypalButtonAttrs>) {
 		const { accountingInfo } = attrs.data
-		this._isPaypalLinked(accountingInfo?.paypalBillingAgreement != null)
+		this.isPaypalLinked = accountingInfo?.paypalBillingAgreement != null
 		this.entityUpdatesListener = {
 			id: "PaypalButton",
 			onEntityUpdatesReceived: (updates) => {
@@ -32,8 +32,8 @@ export class PaypalButton implements Component<PaypalButtonAttrs> {
 					if (isUpdateForTypeRef(AccountingInfoTypeRef, update)) {
 						return locator.entityClient.load(AccountingInfoTypeRef, idToElementId(update.instanceId)).then((newAccountingInfo) => {
 							attrs.data.accountingInfo = newAccountingInfo
-							this._isPaypalLinked(newAccountingInfo.paypalBillingAgreement != null)
-							if (this._isPaypalLinked()) attrs.oncomplete?.()
+							this.isPaypalLinked = newAccountingInfo.paypalBillingAgreement != null
+							if (this.isPaypalLinked) attrs.oncomplete?.()
 							m.redraw()
 						})
 					}
@@ -52,30 +52,29 @@ export class PaypalButton implements Component<PaypalButtonAttrs> {
 		locator.eventController.addEntityUpdatesListener(this.entityUpdatesListener)
 	}
 
-	view({ attrs: { data, onclick } }: Vnode<PaypalButtonAttrs>): Children {
-		const { accountingInfo } = data
+	view({ attrs: { data, onclick, disabled } }: Vnode<PaypalButtonAttrs>): Children {
 		return [
 			m(
-				".flex-center",
-				{
-					style: {
-						"margin-top": "50px",
-					},
-				},
+				".flex-center.justify-center",
 				m(BaseButton, {
 					label: lang.makeTranslation("PayPal", "PayPal"),
-					icon: m(".flex", m.trust(PayPalLogo)),
-					class: "border border-radius bg-white button-height plr-16",
+					text: m(".flex.gap-8.items-center.justify-center", [
+						m("span", { style: { color: "#253B80" } }, "Redirect to"),
+						m(".flex.p-8.rel", { style: { top: px(2) } }, m.trust(PayPalLogo)),
+					]),
+					class: "border border-radius button-height plr-16",
+					style: {
+						height: px(component_size.button_height_lg),
+						"border-color": "#FFD140",
+						"background-color": "#FFD140",
+						"min-width": "100%",
+						opacity: disabled ? "0.6" : "initial",
+						pointerEvents: disabled ? "none" : "auto",
+						filter: disabled ? "grayscale(0.8)" : "initial",
+					},
+					disabled,
 					onclick,
 				}),
-			),
-			m(
-				".small.pt-16.center",
-				this._isPaypalLinked()
-					? lang.get("paymentDataPayPalFinished_msg", {
-							"{accountAddress}": accountingInfo?.paymentMethodInfo ?? "",
-						})
-					: lang.get("paymentDataPayPalLogin_msg"),
 			),
 		]
 	}

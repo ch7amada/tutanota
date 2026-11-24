@@ -1,4 +1,4 @@
-import { aes256RandomKey, AesKey, CryptoWrapper, keyToBase64, VersionedKey } from "@tutao/crypto"
+import { AeadCipherVersion, AesKey, CryptoWrapper, KeyEncryption, keyToBase64, SessionKeyDecryptor, SymmetricCipherUtils, VersionedKey } from "@tutao/crypto"
 import { elementIdPart, elementIdToId, listIdPart, OperationType } from "@tutao/meta"
 import { TooManyRequestsError } from "@tutao/rest-client/error"
 import { EventWithUserAlarmInfos } from "./CalendarFacade"
@@ -11,17 +11,26 @@ import { CryptoFacade } from "../../../../../../platform-kit/base/base-crypto/Cr
 import { AlarmNotification, NativePushFacade } from "@tutao/native-bridge/generatedIpc/types"
 import {
 	AlarmInfo,
+	AlarmNotificationTransferAggregatedType,
 	AlarmNotificationTypeRef,
 	AlarmService_POST,
 	AlarmServicePost,
 	createAlarmInfo,
+	createAlarmInfoTransferAggregatedType,
 	createAlarmNotification,
+	createAlarmNotificationTransferAggregatedType,
 	createAlarmServicePost,
+	createCalendarAdvancedRepeatRuleTransferAggregatedType,
 	createCalendarEventRef,
+	createCalendarEventRefTransferAggregatedType,
 	createDateWrapper,
+	createDateWrapperTransferAggregatedType,
 	createNotificationSessionKey,
+	createNotificationSessionKeyTransferAggregatedType,
+	createNotificationTransferAggregatedType,
 	createRepeatRule,
-	createUserAlarmInfoData,
+	createRepeatRuleTransferAggregatedType,
+	createUserAlarmInfoTransferAggregatedType,
 	PushIdentifier,
 	RepeatRule,
 	User,
@@ -41,19 +50,20 @@ export class AlarmFacade {
 		private readonly nativePushFacade: NativePushFacade,
 		private readonly instancePipeline: InstancePipeline,
 		private readonly infoMessageHandler: InfoMessageHandler,
+		private readonly symmetricCipherUtils: SymmetricCipherUtils,
+		private readonly keyEncryption: KeyEncryption,
 	) {}
 
 	public async createAlarms(loggedInUser: User, eventAlarmsTuples: EventAlarmInfoTemplatesTuple[], pushIdentifiers: PushIdentifier[]): Promise<void> {
-		const notificationSessionKey = aes256RandomKey()
+		const userGroupKey = this.userFacade.getCurrentUserGroupKey()
 		const alarmServicePostRequestData = await this.prepareAlarmServicePostData(
 			elementIdToId(loggedInUser._id),
 			this.userFacade.getUserGroupId(),
-			this.userFacade.getCurrentUserGroupKey(),
+			userGroupKey,
 			eventAlarmsTuples,
 			pushIdentifiers,
-			notificationSessionKey,
 		)
-		await this.postAlarmServiceRequest(notificationSessionKey, alarmServicePostRequestData)
+		await this.postAlarmServiceRequest(alarmServicePostRequestData, new SessionKeyDecryptor(userGroupKey, this.keyEncryption))
 	}
 
 	public async scheduleAlarmsForNewDevice(pushIdentifier: PushIdentifier, eventsWithAlarmInfos: Array<EventWithUserAlarmInfos>): Promise<void> {
@@ -63,7 +73,7 @@ export class AlarmFacade {
 			userAlarmInfos.map((userAlarmInfo) => this.createAlarmNotificationForEvent(event, userAlarmInfo.alarmInfo, elementIdToId(user._id))),
 		)
 
-		const sessionKey = aes256RandomKey()
+		const sessionKey = this.symmetricCipherUtils.aes256RandomKey()
 		await this.encryptNotificationKeyForDevices(sessionKey, alarmNotifications, [pushIdentifier])
 
 		const encryptedNotificationsWireFormat = await Promise.all(
@@ -85,9 +95,23 @@ export class AlarmFacade {
 		userGroupKey: VersionedKey,
 		eventAlarmTuples: Array<EventAlarmInfoTemplatesTuple>,
 		pushIdentifiers: PushIdentifier[],
-		notificationSessionKey: AesKey,
 	): Promise<AlarmServicePost> {
-		const alarmServicePost = createAlarmServicePost({ alarmNotifications: [], userAlarmInfoData: [] })
+		const notificationSessionKey = this.symmetricCipherUtils.aes256RandomKey()
+		const notification = createNotificationTransferAggregatedType({
+			_ownerKeyVersion: userGroupKey.version.toString(),
+			_ownerEncSessionKey: this.cryptoWrapper.encryptKey(userGroupKey.object, notificationSessionKey),
+			_kdfNonce: null,
+			alarms: [],
+		})
+		const alarmServicePost = createAlarmServicePost({
+			notification,
+			userAlarmInfo: [],
+
+			// no longer used
+
+			alarmNotifications: [],
+			userAlarmInfoData: [],
+		})
 
 		for (const { event, alarmInfoTemplates } of eventAlarmTuples) {
 			const eventRef = createCalendarEventRef({
@@ -96,24 +120,44 @@ export class AlarmFacade {
 			})
 
 			for (const alarmInfoTemplate of alarmInfoTemplates) {
-				const userAlarmInfoSessionKey = aes256RandomKey()
-				const userAlarmInfoData = createUserAlarmInfoData({
-					encryptedTrigger: this.cryptoWrapper.encryptString(userAlarmInfoSessionKey, alarmInfoTemplate.trigger),
-					alarmIdentifier: alarmInfoTemplate.alarmIdentifier,
-					ownerGroup: ownerGroup,
-					calendarEventRef: eventRef,
+				const userAlarmInfoSessionKey = this.symmetricCipherUtils.aes256RandomKey()
+				const calendarEventRefTransferAggregatedType = createCalendarEventRefTransferAggregatedType({
+					listId: eventRef.listId,
+					elementId: eventRef.elementId,
 				})
-				userAlarmInfoData.ownerEncSessionKey = this.cryptoWrapper.encryptKey(userGroupKey.object, userAlarmInfoSessionKey)
-				userAlarmInfoData.ownerKeyVersion = userGroupKey.version.toString()
-				alarmServicePost.userAlarmInfoData.push(userAlarmInfoData)
+				const alarmInfoTransferAggregatedType = createAlarmInfoTransferAggregatedType({
+					alarmIdentifier: alarmInfoTemplate.alarmIdentifier,
+					calendarRef: calendarEventRefTransferAggregatedType,
+					trigger: alarmInfoTemplate.trigger,
+				})
+				const userAlarmInfo = createUserAlarmInfoTransferAggregatedType({
+					_ownerGroup: ownerGroup,
+					_ownerEncSessionKey: this.cryptoWrapper.encryptKey(userGroupKey.object, userAlarmInfoSessionKey),
+					_ownerKeyVersion: userGroupKey.version.toString(),
+					_kdfNonce: null,
+					alarmInfo: alarmInfoTransferAggregatedType,
+				})
+				alarmServicePost.userAlarmInfo.push(userAlarmInfo)
 
 				// one session key is used for all notifications of a single alarmInfo, but is encrypted separately for each device.
 				// (Doesn't this mean that if you decrypt one key, you can decrypt all notifications on all devices? What security does this add?
 				// Does it mean that you can't brute force faster if you gain access to notifications from multiple devices?)
 
-				const alarmNotification = createAlarmNotification({
-					alarmInfo: createAlarmInfo({ ...alarmInfoTemplate, calendarRef: eventRef }),
-					repeatRule: event.repeatRule && this.createRepeatRuleForCalendarRepeatRule(event.repeatRule),
+				const alarmNotification = createAlarmNotificationTransferAggregatedType({
+					alarmInfo: alarmInfoTransferAggregatedType,
+					repeatRule:
+						event.repeatRule &&
+						createRepeatRuleTransferAggregatedType({
+							endType: event.repeatRule.endType,
+							endValue: event.repeatRule.endValue,
+							frequency: event.repeatRule.frequency,
+							interval: event.repeatRule.interval,
+							timeZone: event.repeatRule.timeZone,
+							excludedDates: event.repeatRule.excludedDates.map(({ date }) => createDateWrapperTransferAggregatedType({ date })),
+							advancedRules: event.repeatRule.advancedRules.map(({ ruleType, interval }) =>
+								createCalendarAdvancedRepeatRuleTransferAggregatedType({ ruleType, interval }),
+							),
+						}),
 					notificationSessionKeys: [],
 					operation: OperationType.CREATE,
 					summary: event.summary,
@@ -121,18 +165,22 @@ export class AlarmFacade {
 					eventEnd: event.endTime,
 					user: userId,
 				})
-				alarmServicePost.alarmNotifications.push(alarmNotification)
+				notification.alarms.push(alarmNotification)
 			}
 		}
 
-		await this.encryptNotificationKeyForDevices(notificationSessionKey, alarmServicePost.alarmNotifications, pushIdentifiers)
+		await this.encryptNotificationKeyTransferAggregateForDevices(notificationSessionKey, notification.alarms, pushIdentifiers)
 
 		return alarmServicePost
 	}
 
-	private async postAlarmServiceRequest(notificationSessionKey: AesKey, alarmServicePostData: AlarmServicePost): Promise<void> {
+	private async postAlarmServiceRequest(alarmServicePostData: AlarmServicePost, sessionKeyDecryptor: SessionKeyDecryptor): Promise<void> {
 		try {
-			await this.serviceExecutor.execute(AlarmService_POST, alarmServicePostData, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey: notificationSessionKey })
+			await this.serviceExecutor.execute(AlarmService_POST, alarmServicePostData, {
+				...DEFAULT_EXTRA_SERVICE_PARAMS,
+				sessionKeyDecryptor,
+				aeadCipherVersion: AeadCipherVersion.WithSessionKey,
+			})
 		} catch (e) {
 			if (e instanceof TooManyRequestsError) {
 				return this.infoMessageHandler.onInfoMessage({
@@ -164,6 +212,32 @@ export class AlarmFacade {
 		for (let notification of alarmNotifications) {
 			notification.notificationSessionKeys = encSessionKeys.map((esk) => {
 				return createNotificationSessionKey({
+					pushIdentifier: esk.identifierId,
+					pushIdentifierSessionEncSessionKey: esk.pushIdentifierSessionEncSessionKey,
+				})
+			})
+		}
+	}
+
+	/**
+	 * Encrypts {@link notificationSessionKey} for every alarmNotification with the sessionKey of each pushIdentifier.
+	 */
+	private async encryptNotificationKeyTransferAggregateForDevices(
+		notificationSessionKey: AesKey,
+		alarmNotifications: Array<AlarmNotificationTransferAggregatedType>,
+		pushIdentifierList: Array<PushIdentifier>,
+	): Promise<void> {
+		// Makes copies of the notification SKs, each encrypted by a different push identifier SK
+		// PushID SK ->* Notification SK -> alarm fields
+		const maybeEncSessionKeys = await this.encryptNotificationSKWithPushIdentifierSKs(pushIdentifierList, notificationSessionKey)
+
+		// rate limiting against blocking while resolving session keys (necessary)
+		const encSessionKeys = maybeEncSessionKeys.filter(isNotNull)
+
+		// Each alarmNotification contains ALL push identifiers & each pushIdentifierSessionEncryptedSessionKey.  Why?
+		for (let notification of alarmNotifications) {
+			notification.notificationSessionKeys = encSessionKeys.map((esk) => {
+				return createNotificationSessionKeyTransferAggregatedType({
 					pushIdentifier: esk.identifierId,
 					pushIdentifierSessionEncSessionKey: esk.pushIdentifierSessionEncSessionKey,
 				})

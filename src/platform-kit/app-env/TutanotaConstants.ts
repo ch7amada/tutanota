@@ -203,6 +203,9 @@ export const GENERATED_ID_MIN_TIMESTAMP: number = 0
 export const FULL_INDEXED_TIMESTAMP: number = GENERATED_ID_MIN_TIMESTAMP
 export const NOTHING_INDEXED_TIMESTAMP: number = GENERATED_ID_MAX_TIMESTAMP
 
+export const METERED_CONNECTION_DOWNLOAD_LIMIT_IN_BYTES = 50_000_000
+export const MAX_EXPECTED_ARCHIVE_SIZE_IN_BYTES = 250_000_000
+
 export const ENTITY_EVENT_BATCH_TTL_DAYS: number = 45 // 45 days (see InstanceDbMapperEventNotifier.java)
 
 export const enum PaymentDataResultType {
@@ -350,6 +353,7 @@ export const enum UnsubscribeFailureReason {
 	LABEL_LIMIT_EXCEEDED = "unsubscribe.label_limit_exceeded",
 	HAS_SCHEDULED_MAILS = "unsubscribe.has_scheduled_mails",
 	DRIVE_NOT_EMPTY = "unsubscribe.drive_not_empty",
+	NO_PAYMENT_METHOD = "unsubscribe.no_payment_method",
 }
 
 // legacy, should be deleted after clients older than 3.114 have been disabled.
@@ -447,8 +451,9 @@ export enum UsageTestMetricType {
 	STRING = "3",
 }
 
-export const FREE_MAIL_INDEX_DEFAULT_RANGE_DAYS = 28
-export const PAID_MAIL_INDEX_DEFAULT_RANGE_DAYS = 365
+export const FREE_OFFLINE_STORAGE_DEFAULT_TIME_RANGE_DAYS = 31
+
+export const PAID_OFFLINE_STORAGE_DEFAULT_TIME_RANGE_DAYS = 2 * 365
 
 export enum UsageTestParticipationMode {
 	Once = "0",
@@ -474,6 +479,8 @@ export enum GroupKeyRotationType {
 	Customer = "4",
 	AdminGroupKeyRotationMultipleUserAccount = "5", // scheduled for accounts that have multiple users but only a single admin user
 	AdminGroupKeyRotationMultipleAdminAccount = "6", // scheduled for accounts that have multiple admin users
+	InstanceKeySharingAfterCustomerGroupRotation = "7",
+	InstanceKeySharingAfterInternalMailGroupRotation = "8",
 }
 
 export const EXTERNAL_CALENDAR_SYNC_INTERVAL = 60 * 30 * 1000 // 30 minutes
@@ -496,6 +503,8 @@ export enum RolloutType {
 	OtherGroupKeyRotation = "3",
 	GroupKeyUpdatePending = "4",
 	EncryptionOfAttributesViaAead = "5",
+	ExpandedInboxRuleMigration = "6",
+	InstanceKeySharing = "7",
 }
 
 export enum DeactivationReason {

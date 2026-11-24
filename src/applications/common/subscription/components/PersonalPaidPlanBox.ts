@@ -1,5 +1,5 @@
 import m, { Component, Vnode } from "mithril"
-import { component_size, font_size, px, size } from "../../../../ui/size"
+import { component_size, rem, font_size, px, size } from "../../../../ui/size"
 import { lang } from "../../../../ui/utils/LanguageViewModel"
 import { type Callback } from "@tutao/utils"
 import { PLAN_SELECTOR_SELECTED_BOX_SCALE } from "@tutao/app-env"
@@ -128,7 +128,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 				{
 					style: {
 						cursor: isDisabled ? "not-allowed" : "pointer",
-						"background-color": isSelected ? localTheme.surface_container_high : localTheme.surface,
+						background: isSelected ? localTheme.surface_container_high : localTheme.surface,
 						color: localTheme.on_surface,
 						"min-height": px(270),
 						height: "100%",
@@ -175,7 +175,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 						display: "block",
 						border: "none",
 						opacity: isSelected ? 0.5 : 1.0,
-						backgroundColor: isSelected ? localTheme.primary : localTheme.outline_variant,
+						backgroundColor: isSelected ? localTheme.on_surface : localTheme.on_surface,
 					},
 				}),
 				this.renderTagLine(position, hasCampaign, localTheme, isCurrentPlan, isDisabled, planConfig),
@@ -219,8 +219,8 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 									".strike",
 									{
 										style: {
-											color: localTheme.on_surface_variant,
-											fontSize: px(font_size.smaller),
+											color: localTheme.on_surface,
+											fontSize: rem(font_size.smaller_em),
 											justifySelf: "end",
 										},
 									},
@@ -231,7 +231,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 								{
 									style: {
 										"line-height": "100%",
-										...(isApplePrice && { "font-size": px(20), "font-weight": "bold" }),
+										...(isApplePrice && { "font-size": rem(size.core_20_em), "font-weight": "bold" }),
 									},
 								},
 								price,
@@ -243,7 +243,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 							m("span", getPriceHintStr()),
 							(discountDetail?.discountType === "GlobalFirstYear" || discountDetail?.discountType === "BonusMonthsAndGlobalFirstYear") &&
 								isYearly &&
-								m("sup", { style: { "font-size": px(8) } }, "1"),
+								m("sup", { style: { "font-size": rem(size.core_8_em) } }, "1"),
 						),
 					),
 				]),
@@ -271,7 +271,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 					"justify-content": position === "right" ? "start" : "end",
 					"flex-direction": position === "right" ? "row-reverse" : "row",
 					height: px(component_size.button_height_compact),
-					color: hasCampaign ? localTheme.primary : undefined,
+					color: hasCampaign ? localTheme.on_surface : undefined,
 				},
 			},
 			isCurrentPlan || isDisabled
@@ -283,7 +283,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 	private renderPlanName(isSelected: boolean, hasCampaign: boolean, localTheme: Theme, planConfig: PlanConfig) {
 		let color
 		if (hasCampaign) {
-			color = localTheme.primary
+			color = localTheme.on_surface
 		} else {
 			color = isSelected ? localTheme.primary : localTheme.on_surface
 		}
@@ -291,7 +291,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 			".text-center.flex.col.center-horizontally.m-0.font-mdio",
 			{
 				style: {
-					"font-size": px(Styles.get().isMobileLayout() ? 18 : 20),
+					"font-size": rem(Styles.get().isMobileLayout() ? size.core_18_em : size.core_20_em),
 					color,
 				},
 			},
@@ -316,7 +316,7 @@ export class PersonalPaidPlanBox implements Component<PersonalPlanBoxAttrs> {
 				}),
 				m(
 					".smaller",
-					{ style: { color: hasCampaign ? localTheme.secondary : undefined } },
+					{ style: { color: hasCampaign ? localTheme.on_surface : undefined } },
 					lang.get(langKey, getFeaturePlaceholderReplacement(replacement, planType, provider)),
 				),
 			)

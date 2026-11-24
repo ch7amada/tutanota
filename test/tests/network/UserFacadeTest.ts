@@ -3,19 +3,32 @@ import { UserFacade } from "../../../src/platform-kit/base/facades/UserFacade.js
 import { KeyCache } from "../../../src/platform-kit/base/base-crypto/persistence/KeyCache.js"
 import { matchers, object, verify, when } from "testdouble"
 import { createTestEntity } from "../TestUtils.js"
-import { aes256RandomKey } from "../../../src/platform-kit/crypto"
 
 import { User, UserGroupKeyDistributionTypeRef } from "@tutao/entities/sys"
-import { encryptKey } from "../../../src/platform-kit/crypto/instance-pipeline-crypto/KeyEncryption"
 import { idToElementId } from "../../../src/platform-kit/meta"
+import { SymmetricCipherUtils } from "@tutao/crypto/symmetric-cipher-utils"
+import { Aes, AesCbcFacade, CryptoWrapper, KeyEncryption, random, SymmetricCipherFacade, X25519 } from "../../../src/platform-kit/crypto"
+import { AeadFacade } from "@tutao/crypto/aead-facade"
+import { SymmetricKeyDeriver } from "@tutao/crypto/symmetric-key-deriver"
 
 o.spec("UserFacadeTest", function () {
+	let symmetricCipherUtils: SymmetricCipherUtils
+	let keyEncryption: KeyEncryption
 	let keyCache: KeyCache
 	let facade: UserFacade
 
 	o.beforeEach(function () {
+		symmetricCipherUtils = new SymmetricCipherUtils(random)
+		const symmetricCipherFacade = new SymmetricCipherFacade(
+			new AesCbcFacade(),
+			new AeadFacade(symmetricCipherUtils),
+			new SymmetricKeyDeriver(),
+			symmetricCipherUtils,
+		)
+		const aes = new Aes(symmetricCipherFacade)
+		keyEncryption = new KeyEncryption(symmetricCipherFacade, aes)
 		keyCache = object()
-		facade = new UserFacade(keyCache, object())
+		facade = new UserFacade(keyCache, new CryptoWrapper(symmetricCipherUtils, aes, keyEncryption, new X25519(random)))
 	})
 
 	o("a fresh UserFacade doesn't think it's logged or partially logged in", function () {
@@ -36,10 +49,10 @@ o.spec("UserFacadeTest", function () {
 		o(facade.isFullyLoggedIn()).equals(false)
 	})
 
-	o("updateUserGroupKey - successfull", function () {
-		const distributionKey = aes256RandomKey()
-		const newUserGroupKey = aes256RandomKey()
-		const distributionEncUserGroupKey = encryptKey(distributionKey, newUserGroupKey)
+	o("updateUserGroupKey - successful", function () {
+		const distributionKey = symmetricCipherUtils.aes256RandomKey()
+		const newUserGroupKey = symmetricCipherUtils.aes256RandomKey()
+		const distributionEncUserGroupKey = keyEncryption.encryptKey(distributionKey, newUserGroupKey)
 		const distributionUpdate = createTestEntity(UserGroupKeyDistributionTypeRef, {
 			_id: idToElementId("userGroupId"),
 			distributionEncUserGroupKey,
@@ -51,9 +64,9 @@ o.spec("UserFacadeTest", function () {
 	})
 
 	o("updateUserGroupKey - ignore missing distribution key ", function () {
-		const distributionKey = aes256RandomKey()
-		const newUserGroupKey = aes256RandomKey()
-		const distributionEncUserGroupKey = encryptKey(distributionKey, newUserGroupKey)
+		const distributionKey = symmetricCipherUtils.aes256RandomKey()
+		const newUserGroupKey = symmetricCipherUtils.aes256RandomKey()
+		const distributionEncUserGroupKey = keyEncryption.encryptKey(distributionKey, newUserGroupKey)
 		const distributionUpdate = createTestEntity(UserGroupKeyDistributionTypeRef, {
 			_id: idToElementId("userGroupId"),
 			distributionEncUserGroupKey,
@@ -65,9 +78,9 @@ o.spec("UserFacadeTest", function () {
 	})
 
 	o("updateUserGroupKey - ignore decryption error", function () {
-		const distributionKey = aes256RandomKey()
-		const newUserGroupKey = aes256RandomKey()
-		const distributionEncUserGroupKey = encryptKey(newUserGroupKey, newUserGroupKey)
+		const distributionKey = symmetricCipherUtils.aes256RandomKey()
+		const newUserGroupKey = symmetricCipherUtils.aes256RandomKey()
+		const distributionEncUserGroupKey = keyEncryption.encryptKey(newUserGroupKey, newUserGroupKey)
 		const distributionUpdate = createTestEntity(UserGroupKeyDistributionTypeRef, {
 			_id: idToElementId("userGroupId"),
 			distributionEncUserGroupKey,
@@ -76,39 +89,5 @@ o.spec("UserFacadeTest", function () {
 		when(keyCache.getUserDistKey()).thenReturn(distributionKey)
 		facade.updateUserGroupKey(distributionUpdate)
 		verify(keyCache.setCurrentUserGroupKey(matchers.anything()), { times: 0 })
-	})
-
-	o("updateUserGroupKey - fall back to legacy user distribution key if regular one fails to decrypt", function () {
-		const legacyDistributionKey = aes256RandomKey()
-		const distributionKey = aes256RandomKey()
-		const newUserGroupKey = aes256RandomKey()
-
-		const legacyDistributionEncUserGroupKey = encryptKey(legacyDistributionKey, newUserGroupKey)
-		const distributionUpdate = createTestEntity(UserGroupKeyDistributionTypeRef, {
-			_id: idToElementId("userGroupId"),
-			distributionEncUserGroupKey: legacyDistributionEncUserGroupKey,
-			userGroupKeyVersion: "1",
-		})
-		when(keyCache.getUserDistKey()).thenReturn(distributionKey)
-		facade.updateUserGroupKey(distributionUpdate)
-		verify(keyCache.getLegacyUserDistKey(), { times: 1 })
-	})
-
-	o("updateUserGroupKey - do not fall back to legacy user distribution key if regular one is able to decrypt", function () {
-		const distributionKey = aes256RandomKey()
-		const newUserGroupKey = aes256RandomKey()
-
-		const distributionEncUserGroupKey = encryptKey(distributionKey, newUserGroupKey)
-		const distributionUpdate = createTestEntity(UserGroupKeyDistributionTypeRef, {
-			_id: idToElementId("userGroupId"),
-			distributionEncUserGroupKey: distributionEncUserGroupKey,
-			userGroupKeyVersion: "1",
-		})
-		when(keyCache.getUserDistKey()).thenReturn(distributionKey)
-		facade.updateUserGroupKey(distributionUpdate)
-		verify(keyCache.getLegacyUserDistKey(), { times: 0 })
-
-		// make sure we reach the end of the function and do not return earlier
-		verify(keyCache.setCurrentUserGroupKey(matchers.anything()))
 	})
 })

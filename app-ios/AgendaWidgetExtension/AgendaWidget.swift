@@ -13,7 +13,7 @@ import tutasdk
 struct WidgetEntry: TimelineEntry {
 	let date: Date
 	let configuration: ConfigurationAppIntent
-	let events: (EventMap, LongEventsDataMap)
+	let events: DaysToEventsList
 	let error: WidgetError?
 }
 
@@ -21,84 +21,99 @@ private let startOfToday = Calendar.current.startOfDay(for: Date.now).timeInterv
 private let startOfTomorrow = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date.now)!).timeIntervalSince1970
 private let startOfAfterTomorrow = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 2, to: Date.now)!).timeIntervalSince1970
 
-private let NORMAL_EVENTS_PLACEHOLDER = [
-	startOfToday: [
-		CalendarEventData(
+private let NORMAL_EVENTS_PLACEHOLDER: DaysToEventsList = [
+	[
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev1",
 			summary: "Gym",
 			startDate: date(2025, 4, 22, 9, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 22, 10, 0, "Europe/Berlin"),
 			calendarColor: "89cff0",
-			isBirthdayEvent: false
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: false,
+			timeString: "10:00 - 12:00"
 		),
-		CalendarEventData(
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev2",
 			summary: "Meeting",
 			startDate: date(2025, 4, 22, 10, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 22, 11, 0, "Europe/Berlin"),
 			calendarColor: "20c4f0",
-			isBirthdayEvent: false
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: false,
+			timeString: "10:00 - 12:00"
+
 		),
 	],
-	startOfTomorrow: [
-		CalendarEventData(
+	[
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev3",
 			summary: "Lunch",
 			startDate: date(2025, 4, 23, 11, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 23, 13, 0, "Europe/Berlin"),
 			calendarColor: "89a83b",
-			isBirthdayEvent: false
-		)
-	],
-	startOfAfterTomorrow: [
-		CalendarEventData(
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: false,
+			timeString: "10:00 - 12:00"
+		),
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev4",
 			summary: "Concert w/ Mark",
 			startDate: date(2025, 4, 24, 13, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 24, 19, 0, "Europe/Berlin"),
 			calendarColor: "c476fc",
-			isBirthdayEvent: false
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: false,
+			timeString: "10:00 - 12:00"
 		),
-		CalendarEventData(
+	],
+	[
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev5",
 			summary: "Dinner",
 			startDate: date(2025, 4, 24, 19, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 24, 20, 0, "Europe/Berlin"),
 			calendarColor: "a91a2f",
-			isBirthdayEvent: false
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: false,
+			timeString: "10:00 - 12:00"
 		),
-	],
-]
-
-private let ALL_DAY_EVENTS_PLACEHOLDER = [
-	startOfToday: SimpleLongEventsData(
-		event: CalendarEventData(
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev0",
 			summary: "Mark is in Town",
 			startDate: date(2025, 4, 24, 0, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 25, 0, 0, "Europe/Berlin"),
 			calendarColor: "ED7D99",
-			isBirthdayEvent: false
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: false,
+			timeString: "10:00 - 12:00"
 		),
-		count: 1
-	),
-	startOfAfterTomorrow: SimpleLongEventsData(
-		event: CalendarEventData(
+	],
+	[
+		UIEvent(
+			calendarId: "asdf",
 			id: "ev6",
 			summary: "Spring Festival",
 			startDate: date(2025, 4, 20, 9, 0, "Europe/Berlin"),
 			endDate: date(2025, 4, 25, 10, 0, "Europe/Berlin"),
 			calendarColor: "89cff0",
-			isBirthdayEvent: false
-		),
-		count: 2
-	),
+			isBirthdayEvent: false,
+			isDisplayedAsAllDay: true,
+			timeString: "10:00 - 12:00"
+		)
+	], [], [],
 ]
 
 struct AgendaProvider: AppIntentTimelineProvider {
 	func makeErrorEntry(configuration: ConfigurationAppIntent, error: WidgetErrors, stackTrace: String = "") -> WidgetEntry {
 		let errorObject = WidgetError(type: error, message: error.getUserFriendlyErrorMessage(), stacktrace: stackTrace)
-		return WidgetEntry(date: Date(), configuration: configuration, events: ([:], [:]), error: errorObject)
+		return WidgetEntry(date: Date(), configuration: configuration, events: [], error: errorObject)
 	}
 
 	func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<WidgetEntry> {
@@ -128,18 +143,18 @@ struct AgendaProvider: AppIntentTimelineProvider {
 
 		do {
 			let model = try await WidgetModel(userId: userId)
-			let (normalEvents, longEvents) = try await model.getEventsForCalendars(calendars, date: currentDate)
+			let daysToEventsList: DaysToEventsList = try await model.getEventsForCalendars(calendars, date: currentDate)
 			let frameOffset = 60.0 * 15  // 60 seconds * 15 = 15 minutes
 
-			for date in stride(from: currentDate, to: nextPeriod, by: frameOffset) {
-				let filteredNormalEvents = normalEvents.mapValues({ normalEvents in
-					normalEvents.filter { event in event.endDate.timeIntervalSince1970 >= date.timeIntervalSince1970 }
-				})
+			for timelineDate in stride(from: currentDate, to: nextPeriod, by: frameOffset) {
+				let filteredEvents = daysToEventsList.map { (dayEvents: [UIEvent]) in
+					dayEvents.filter { event in event.endDate.timeIntervalSince1970 >= timelineDate.timeIntervalSince1970 }
+				}
 
-				let entry = WidgetEntry(date: date, configuration: configuration, events: (filteredNormalEvents, longEvents), error: nil)
+				let entry = WidgetEntry(date: timelineDate, configuration: configuration, events: filteredEvents, error: nil)
 				entries.append(entry)
 
-				if filteredNormalEvents.isEmpty { break }
+				if filteredEvents.isEmpty { break }
 			}
 		} catch {
 			let nsError = error as NSError
@@ -154,12 +169,17 @@ struct AgendaProvider: AppIntentTimelineProvider {
 	}
 
 	func placeholder(in context: Context) -> WidgetEntry {
-		WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: (NORMAL_EVENTS_PLACEHOLDER, ALL_DAY_EVENTS_PLACEHOLDER), error: nil)
+		//		WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: (NORMAL_EVENTS_PLACEHOLDER, ALL_DAY_EVENTS_PLACEHOLDER), error: nil)
+		WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: NORMAL_EVENTS_PLACEHOLDER, error: nil)
 	}
 
 	func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> WidgetEntry {
-		let events = context.isPreview ? (NORMAL_EVENTS_PLACEHOLDER, ALL_DAY_EVENTS_PLACEHOLDER) : ([:], [:])
-		return WidgetEntry(date: Date(), configuration: configuration, events: events, error: nil)
+		//		let events = context.isPreview ? (NORMAL_EVENTS_PLACEHOLDER, ALL_DAY_EVENTS_PLACEHOLDER) : ([:], [:])
+		_ = context.isPreview ? NORMAL_EVENTS_PLACEHOLDER : []
+
+		//		return WidgetEntry(date: Date(), configuration: configuration, events: events, error: nil)
+		return WidgetEntry(date: Date(), configuration: configuration, events: [], error: nil)
+
 	}
 }
 
@@ -180,8 +200,7 @@ extension View {
 }
 
 struct AgendaWidgetEntryView: View {
-	var normalEvents: EventMap
-	var allDayEventsData: LongEventsDataMap  // a map of
+	var daysToEventsList: DaysToEventsList
 	var error: WidgetError?
 	var userId: String
 
@@ -191,8 +210,10 @@ struct AgendaWidgetEntryView: View {
 
 	var body: some View {
 
-		let noNormalEvents = normalEvents.allSatisfy({ $0.value.isEmpty })
-		let noAllDayEvents = allDayEventsData.allSatisfy({ $0.value.count == 0 })
+		// days to events list is being passed in but each day is empty for some reason
+
+		let noNormalEvents = daysToEventsList.allSatisfy({ !$0.contains(where: { !$0.isDisplayedAsAllDay }) })
+		let noAllDayEvents = daysToEventsList.allSatisfy({ !$0.contains(where: { $0.isDisplayedAsAllDay }) })
 
 		GeometryReader { g in
 			VStack {
@@ -201,7 +222,7 @@ struct AgendaWidgetEntryView: View {
 				} else if noNormalEvents && noAllDayEvents {
 					EmptyBody(widgetHeight: g.size.height, family: family, userId: userId)
 				} else {
-					DaysList(userId: userId, family: family, widgetHeight: g.size.height, normalEvents: normalEvents, allDayEventsData: allDayEventsData)
+					DaysList(userId: userId, family: family, widgetHeight: g.size.height, daysToEventsList: daysToEventsList)
 				}
 			}
 			.frame(maxHeight: g.size.height, alignment: .top)
@@ -216,7 +237,7 @@ struct AgendaWidget: Widget {
 	var body: some WidgetConfiguration {
 		let appIntentConfiguration = AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: AgendaProvider()) { entry in
 			let userId = entry.configuration.account?.id ?? ""
-			return AgendaWidgetEntryView(normalEvents: entry.events.0, allDayEventsData: entry.events.1, error: entry.error, userId: userId)
+			return AgendaWidgetEntryView(daysToEventsList: entry.events, error: entry.error, userId: userId)
 		}
 		.configurationDisplayName("Agenda").description(translate("TutaoWidgetDescription", default: "Show today's upcoming events"))
 		.supportedFamilies([.systemMedium, .systemLarge, .systemExtraLarge])
@@ -244,16 +265,12 @@ extension View {
 	"With All Day Event",
 	as: .systemLarge,
 	widget: { AgendaWidget() },
-	timeline: {
-		WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: (NORMAL_EVENTS_PLACEHOLDER, ALL_DAY_EVENTS_PLACEHOLDER), error: nil)
-	}
+	timeline: { WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: NORMAL_EVENTS_PLACEHOLDER, error: nil) }
 )
 
 #Preview(
 	"Without All Day Event",
 	as: .systemLarge,
 	widget: { AgendaWidget() },
-	timeline: {
-		WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: (NORMAL_EVENTS_PLACEHOLDER, ALL_DAY_EVENTS_PLACEHOLDER), error: nil)
-	}
+	timeline: { WidgetEntry(date: Date(), configuration: ConfigurationAppIntent(), events: NORMAL_EVENTS_PLACEHOLDER, error: nil) }
 )

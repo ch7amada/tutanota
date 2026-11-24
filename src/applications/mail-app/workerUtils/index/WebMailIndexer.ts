@@ -1,11 +1,4 @@
-import {
-	CancelledError,
-	EnvProvider,
-	FREE_MAIL_INDEX_DEFAULT_RANGE_DAYS,
-	FULL_INDEXED_TIMESTAMP,
-	NOTHING_INDEXED_TIMESTAMP,
-	TimeConstants,
-} from "@tutao/app-env"
+import { CancelledError, EnvProvider, FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP, ProgrammingError, TimeConstants } from "@tutao/app-env"
 import {
 	assertNotNull,
 	clamp,
@@ -40,38 +33,33 @@ import { isDraft } from "../../mail/model/MailChecks.js"
 import { BulkMailLoader, MAIL_INDEXER_CHUNK } from "./BulkMailLoader.js"
 import { MailIndexerBackend, MailWithDetailsAndAttachments } from "./MailIndexerBackend"
 import { ProgressMonitor } from "../../../../platform-kit/network/ProgressMonitorInterface"
-import { FileImportStatus, ImapFolderSyncStatus, MailImportType, MailSetKind } from "../../../../entities/tutanota/Utils"
+import { FileImportStatus, MailboxMigrationFolderSyncStatus, MailImportType, MailSetKind } from "../../../../entities/tutanota/Utils"
 import { isFolder } from "../../mail/MailUtils"
 import { User } from "@tutao/entities/sys"
 import {
 	File,
-	ImapFolderSyncStateTypeRef,
 	ImportedFileMailTypeRef,
-	ImportedImapMailTypeRef,
+	ImportedMigrationMailTypeRef,
 	ImportFileMailStateTypeRef,
 	Mail,
 	MailBox,
 	MailboxGroupRootTypeRef,
+	MailboxMigrationFolderSyncStateTypeRef,
 	MailBoxTypeRef,
-	MailDetails,
 	MailSetEntry,
 	MailSetEntryTypeRef,
 	MailSetTypeRef,
 	MailTypeRef,
 } from "@tutao/entities/tutanota"
 import { EntityUpdateData, isUpdateForTypeRef } from "../../../../platform-kit/instance-pipeline/utils/EntityUpdateUtils"
-import { abortAware, MailIndexer, MailIndexerNewMailDownloader } from "./MailIndexer"
+import { abortAware, MailIndexer, MailIndexerNewMailDownloader, MailIndexingAbortReason } from "./MailIndexer"
 
 EnvProvider.assertWorkerOrNode()
 
+export const INITIAL_MAIL_INDEX_INTERVAL_DAYS = 28
 const MAIL_INDEX_BATCH_INTERVAL = TimeConstants.DAY_IN_MILLIS // one day
 
 const TAG = "WebMailIndexer"
-
-const enum MailIndexingAbortReason {
-	Cancelled = "MailIndexingCancelled",
-	Restarting = "MailIndexingRestarting",
-}
 
 type CommonImportStateFields = {
 	status: NumberString
@@ -193,17 +181,13 @@ export class WebMailIndexer implements MailIndexer {
 		}
 	}
 
-	cancelMailIndexing() {
-		this.abortController.abort(MailIndexingAbortReason.Cancelled)
-	}
-
-	cancelMailIndexingBeforeRestart() {
-		this.abortController.abort(MailIndexingAbortReason.Restarting)
+	cancelMailIndexing(abortReason: MailIndexingAbortReason = MailIndexingAbortReason.Cancelled) {
+		this.abortController.abort(abortReason)
 	}
 
 	async doInitialMailIndexing(user: User): Promise<void> {
 		// create index in background, termination is handled in Indexer.enableMailIndexing
-		const oldestTimestamp = this._dateProvider.getStartOfDayShiftedBy(-FREE_MAIL_INDEX_DEFAULT_RANGE_DAYS).getTime()
+		const oldestTimestamp = this._dateProvider.getStartOfDayShiftedBy(-INITIAL_MAIL_INDEX_INTERVAL_DAYS).getTime()
 		// We don't have to disable mail indexing when it's stopped now
 		try {
 			await this.indexMailboxes(user, oldestTimestamp)
@@ -228,7 +212,7 @@ export class WebMailIndexer implements MailIndexer {
 		}
 
 		if (this._isIndexing) {
-			this.cancelMailIndexingBeforeRestart()
+			this.cancelMailIndexing(MailIndexingAbortReason.Restarting)
 			await this._mailboxIndexingPromise.promise
 		}
 
@@ -266,6 +250,7 @@ export class WebMailIndexer implements MailIndexer {
 				progress: restarting ? 1 : 0,
 				failedIndexingUpTo: cancelled ? null : oldestTimestamp,
 				error: cancelled ? null : e instanceof ConnectionError ? IndexingErrorReason.ConnectionLost : IndexingErrorReason.Unknown,
+				autoRestartEnabled: e.reason !== MailIndexingAbortReason.UserCancelled,
 			}
 
 			if (cancelled) {
@@ -316,6 +301,7 @@ export class WebMailIndexer implements MailIndexer {
 				await this.infoMessageHandler.onSearchIndexStateUpdate({
 					initializing: false,
 					mailIndexEnabled: this.mailIndexingEnabled,
+					autoRestartEnabled: true,
 					progress: 0,
 					currentMailIndexTimestamp: this.currentIndexTimestamp,
 					aimedMailIndexTimestamp: this.currentIndexTimestamp,
@@ -330,6 +316,7 @@ export class WebMailIndexer implements MailIndexer {
 		const update: SearchIndexStateInfo = {
 			initializing: false,
 			mailIndexEnabled: this._mailIndexingEnabled,
+			autoRestartEnabled: true,
 			progress: 1,
 			currentMailIndexTimestamp: this.currentIndexTimestamp,
 			aimedMailIndexTimestamp: oldestTimestamp,
@@ -443,25 +430,18 @@ export class WebMailIndexer implements MailIndexer {
 		return data.mailSetListDatas.every((data) => data.loadedCompletely && isEmpty(data.loadedButUnusedEntries))
 	}
 
-	private async processIndexMails(
-		mailSetEntries: Array<MailSetEntry>,
-		indexLoader: BulkMailLoader,
-	): Promise<{ mail: Mail; mailDetails: MailDetails; attachments: File[] }[]> {
+	private async processIndexMails(mailSetEntries: Array<MailSetEntry>, indexLoader: BulkMailLoader): Promise<MailWithDetailsAndAttachments[]> {
 		this.assertNotCancelled("processIndexMails")
 		const mails = await indexLoader.loadMailsFromMultipleLists(mailSetEntries.map((entry) => entry.mail))
 		let mailsWithoutErros = mails.filter((m) => !hasError(m))
 		console.log(TAG, `processIndexMails ${mails.at(0)?._id.at(0)} ${mails.length}`)
-		const mailsWithMailDetails = await indexLoader.loadMailDetails(mailsWithoutErros)
+		const { mailsWithDetails } = await indexLoader.loadMailDetails(mailsWithoutErros)
 		const files = await indexLoader.loadAttachments(mailsWithoutErros)
-		const mailsWithMailDetailsAndFiles = mailsWithMailDetails
-			.map((mailTuples) => {
-				return {
-					mail: mailTuples.mail,
-					mailDetails: mailTuples.mailDetails,
-					attachments: files.filter((file) => mailTuples.mail.attachments.find((a) => isSameId(a, file._id))),
-				}
-			})
-			.filter(isNotNull)
+		const mailsWithMailDetailsAndFiles = mailsWithDetails.map((mailTuples) => ({
+			mail: mailTuples.mail,
+			mailDetails: mailTuples.mailDetails,
+			attachments: files.filter((file) => mailTuples.mail.attachments.find((a) => isSameId(a, file._id))),
+		}))
 		console.log(TAG, `processIndexMails done ${mails.at(0)?._id.at(0)} ${mails.length}`)
 		return mailsWithMailDetailsAndFiles
 	}
@@ -514,7 +494,7 @@ export class WebMailIndexer implements MailIndexer {
 	private async preloadMails(mailIds: IdTuple[]): Promise<MailWithDetailsAndAttachments[]> {
 		const indexLoader = await this.bulkLoaderFactory()
 		const mails = await indexLoader.loadMailsFromMultipleLists(mailIds)
-		const mailsWithDetails = await indexLoader.loadMailDetails(mails)
+		const { mailsWithDetails } = await indexLoader.loadMailDetails(mails)
 		const attachments = await indexLoader.loadAttachments(mails)
 		const attachmentsById = new Map(attachments.map((a) => [getElementId(a), a]))
 		return mailsWithDetails.map(({ mail, mailDetails }) => {
@@ -534,8 +514,8 @@ export class WebMailIndexer implements MailIndexer {
 				mail: ImportedFileMailTypeRef,
 			},
 			[MailImportType.ImapImport]: {
-				state: ImapFolderSyncStateTypeRef,
-				mail: ImportedImapMailTypeRef,
+				state: MailboxMigrationFolderSyncStateTypeRef,
+				mail: ImportedMigrationMailTypeRef,
 			},
 		}
 		const refs = typeMapping[mailImportType]
@@ -546,9 +526,9 @@ export class WebMailIndexer implements MailIndexer {
 		const importMailState = await this.entityClient.load(refs.state as TypeRef<CommonImportState>, importStateId)
 
 		if (mailImportType === MailImportType.ImapImport) {
-			const imapFolderSyncStatus = importMailState.status as ImapFolderSyncStatus
-			// We do not index while still syncing the folder from the IMAP server.
-			if (imapFolderSyncStatus === ImapFolderSyncStatus.RUNNING) {
+			const mailboxMigrationFolderSyncStatus = importMailState.status as MailboxMigrationFolderSyncStatus
+			// We do not index while still syncing the folder from the migrating server.
+			if (mailboxMigrationFolderSyncStatus === MailboxMigrationFolderSyncStatus.RUNNING) {
 				return []
 			}
 		} else if (mailImportType === MailImportType.FileImport) {
@@ -588,7 +568,7 @@ export class WebMailIndexer implements MailIndexer {
 		for (const event of updates) {
 			if (isUpdateForTypeRef(ImportFileMailStateTypeRef, event)) {
 				await this.processImportStateEntityUpdates(event.operation, [assertNotNull(event.instanceListId), event.instanceId], MailImportType.FileImport)
-			} else if (isUpdateForTypeRef(ImapFolderSyncStateTypeRef, event)) {
+			} else if (isUpdateForTypeRef(MailboxMigrationFolderSyncStateTypeRef, event)) {
 				await this.processImportStateEntityUpdates(event.operation, [assertNotNull(event.instanceListId), event.instanceId], MailImportType.ImapImport)
 			}
 		}
@@ -674,8 +654,12 @@ export class WebMailIndexer implements MailIndexer {
 		await this.indexMailboxes(user, currentIndexTimestamp)
 	}
 
-	async extendMailIndex(user: User, aimedTimestamp: number): Promise<void> {
-		await this.indexMailboxes(user, aimedTimestamp)
+	async extendMailIndex(): Promise<void> {
+		// no-op on web
+	}
+
+	remainingDataInBytes(): Promise<number> {
+		throw new ProgrammingError("Tried to get remaining data to download using web client")
 	}
 }
 

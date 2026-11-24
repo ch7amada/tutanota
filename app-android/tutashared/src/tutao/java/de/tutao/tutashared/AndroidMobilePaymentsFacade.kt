@@ -38,7 +38,7 @@ class AndroidMobilePaymentsFacade(val activity: Activity, val app: AppType) : Mo
 		plan: String,
 		interval: Long,
 		customerIdBytes: DataWrapper,
-		currentInterval: Long?,
+		foreignKey: String?,
 	): MobilePaymentResult {
 		val planPrefix = getPlanPrefix()
 		val productId = when (plan) {
@@ -55,18 +55,23 @@ class AndroidMobilePaymentsFacade(val activity: Activity, val app: AppType) : Mo
 		}
 
 		val productDetails = billingClient.queryProduct(productId)
-		val offerDetails = productDetails.subscriptionOfferDetails
-			.orEmpty()
-			.singleOrNull() { offer ->
-				offer.basePlanId == basePlanId && offer.offerId == null
-			} ?: error("Could not find base plan $basePlanId for product $productId")
 
 		val accountId = customerIdBytes.toObfuscatedAccountId()
 		val currentPurchases = billingClient.queryPurchases(
-			QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).includeSuspendedSubscriptions(true).build()
-		).filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && it.accountIdentifiers?.obfuscatedAccountId == accountId }
+			QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS)
+				.includeSuspendedSubscriptions(true).build()
+		).filter {
+			it.purchaseState == Purchase.PurchaseState.PURCHASED &&
+					if (foreignKey != null) {
+						it.purchaseToken == foreignKey
+					} else {
+						it.accountIdentifiers?.obfuscatedAccountId == accountId
+					}
+		}
 		val currentPurchase = currentPurchases.singleOrNull()
 		if (currentPurchases.size > 1) error("Multiple subscriptions found for this account")
+		if (foreignKey != null && currentPurchase == null) error("Could not find subscription to replace")
+		val offerDetails = productDetails.getSubscriptionOffer(basePlanId)
 		if (currentPurchase != null) {
 			return replaceSubscription(productId, accountId, productDetails, offerDetails, currentPurchase)
 		}
@@ -96,12 +101,14 @@ class AndroidMobilePaymentsFacade(val activity: Activity, val app: AppType) : Mo
 			.setProductDetails(productDetails)
 			.setOfferToken(offerDetails.offerToken)
 			.setSubscriptionProductReplacementParams(
-				SubscriptionProductReplacementParams.newBuilder().setOldProductId(oldProductId).setReplacementMode(mode).build()
+				SubscriptionProductReplacementParams.newBuilder().setOldProductId(oldProductId).setReplacementMode(mode)
+					.build()
 			).build()
 		val billingFlowParams = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(productDetailsParams))
 			.setObfuscatedAccountId(accountId)
 			.setSubscriptionUpdateParams(
-				BillingFlowParams.SubscriptionUpdateParams.newBuilder().setOldPurchaseToken(currentPurchase.purchaseToken).build()
+				BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+					.setOldPurchaseToken(currentPurchase.purchaseToken).build()
 			).build()
 		return billingClient.launchBillingFlow(billingFlowParams)
 	}
@@ -145,18 +152,23 @@ class AndroidMobilePaymentsFacade(val activity: Activity, val app: AppType) : Mo
 		}
 	}
 
-	override suspend fun queryExternalSubscriptionOwnership(customerIdBytes: DataWrapper?): MobilePaymentSubscriptionOwnership {
+	override suspend fun queryExternalSubscriptionOwnership(foreignKey: String?): MobilePaymentSubscriptionOwnership {
+
 		val params = QueryPurchasesParams.newBuilder()
 			.setProductType(BillingClient.ProductType.SUBS)
 			.includeSuspendedSubscriptions(true)
 			.build()
-		val purchases = billingClient.queryPurchases(params)
+		val purchases = try {
+			billingClient.queryPurchases(params)
+		} catch (e: Throwable) {
+			println("failed to query purchases: $e")
+			return MobilePaymentSubscriptionOwnership.UNKNOWN
+		}
 		if (purchases.isEmpty()) return MobilePaymentSubscriptionOwnership.NO_SUBSCRIPTION
 
-		val customerId = customerIdBytes?.toObfuscatedAccountId()
-		return if (customerId != null && purchases.any { purchase ->
+		return if (foreignKey != null && purchases.any { purchase ->
 				purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
-						purchase.accountIdentifiers?.obfuscatedAccountId == customerId
+						purchase.purchaseToken == foreignKey
 			}) {
 			MobilePaymentSubscriptionOwnership.OWNER
 		} else {
@@ -173,7 +185,8 @@ class AndroidMobilePaymentsFacade(val activity: Activity, val app: AppType) : Mo
 		return billingClient.queryPurchases(params).any { it.isAutoRenewing }
 	}
 
-	fun hasPlaystorePayment(): Boolean {
+	suspend fun hasPlaystorePayment(): Boolean {
+		billingClient.waitForInit()
 		return true
 	}
 

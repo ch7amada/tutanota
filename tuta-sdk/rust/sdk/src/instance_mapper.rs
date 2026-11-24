@@ -1924,6 +1924,7 @@ mod tests {
 			name: "encName".to_owned(),
 			group: GeneratedId::test_random(),
 			mailAddressAliases: vec![],
+			_formerInstanceKeys: None,
 			_errors: Default::default(),
 		};
 

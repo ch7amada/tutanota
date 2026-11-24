@@ -138,6 +138,7 @@ export class BusinessPlanContainer implements Component<PlanBoxContainerAttrs> {
 
 	view({ attrs }: Vnode<PlanBoxContainerAttrs>): Children {
 		const { currentPlan, priceAndConfigProvider, selectedPlan, selectedSubscriptionOptions, discountDetails } = attrs
+		const isMobileLayout = Styles.get().isMobileLayout() || attrs.forceMobileLayout
 
 		const isYearly = selectedSubscriptionOptions.paymentInterval() === PaymentInterval.Yearly
 		const anyPaidPlanHasCampaign =
@@ -152,12 +153,12 @@ export class BusinessPlanContainer implements Component<PlanBoxContainerAttrs> {
 					transform: "translateX(-50%)",
 				}
 			: {
-					width: "fit-content",
+					width: attrs.forceMobileLayout ? "100%" : "fit-content",
 					marginInline: "auto",
 				}
 
 		return m(
-			`#plan-selector${Styles.get().isMobileLayout() ? ".flex.flex-column.gap-16" : ".flex.gap-16"}`,
+			`#plan-selector${isMobileLayout ? ".flex.flex-column.gap-16" : ".flex.gap-16"}`,
 			{
 				"data-testid": "dialog:select-subscription-business",
 				style: { position: "relative", "margin-top": anyPaidPlanHasCampaign ? px(20) : "initial", ...container },
@@ -169,17 +170,21 @@ export class BusinessPlanContainer implements Component<PlanBoxContainerAttrs> {
 					paymentInterval: selectedSubscriptionOptions.paymentInterval(),
 				})
 
+				const isCurrentPlanAndInterval =
+					currentPlan === planConfig.type && attrs.currentPaymentInterval === selectedSubscriptionOptions.paymentInterval()
+
 				return m(BusinessPlanBox, {
 					planConfig,
 					price: prices.priceStr,
 					referencePrice: prices.referencePriceStr,
 					isSelected: selectedPlan() === planConfig.type,
-					isDisabled: !!planConfig.isDisabled || currentPlan === planConfig.type,
-					isCurrentPlan: currentPlan === planConfig.type,
+					isDisabled: !!planConfig.isDisabled || isCurrentPlanAndInterval,
+					isCurrentPlan: isCurrentPlanAndInterval,
 					onclick: (p) => selectedPlan(p as AvailablePlans),
 					priceAndConfigProvider: priceAndConfigProvider,
 					discountDetail: discountDetails?.[planConfig.type],
 					selectedPaymentInterval: selectedSubscriptionOptions.paymentInterval,
+					forceMobileLayout: attrs.forceMobileLayout,
 				})
 			}),
 		)

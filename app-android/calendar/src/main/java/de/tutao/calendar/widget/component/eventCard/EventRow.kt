@@ -26,12 +26,7 @@ import de.tutao.calendar.R
 import de.tutao.calendar.widget.data.UIEvent
 import de.tutao.calendar.widget.style.Dimensions
 import de.tutao.tutashared.IdTuple
-import de.tutao.tutashared.midnightInDate
 import de.tutao.tutashared.parseColor
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 
 @Composable
 fun EventRow(
@@ -58,8 +53,7 @@ fun EventRow(
 				maxLines = 1,
 			)
 			Text(
-				event.formattedStartTime + " - " + event.formattedEndTime,
-
+				event.displayedTimes,
 				style = TextStyle(
 					color = GlanceTheme.colors.onSurface,
 					fontSize = Dimensions.FontSize.font_12.sp
@@ -74,7 +68,6 @@ fun EventRow(
 @Preview(widthDp = 250, heightDp = 50)
 @Composable
 fun EventRowTodayPreview() {
-	val startOfToday = midnightInDate(ZoneId.systemDefault(), LocalDateTime.now())
 	EventRow(
 		modifier = GlanceModifier,
 		UIEvent(
@@ -85,6 +78,7 @@ fun EventRowTodayPreview() {
 			"08:00",
 			"17:00",
 			isDisplayedAsAllDay = false,
+			"08:00 - 17:00"
 		),
 		actionRunCallback<ActionCallback>(),
 	)
@@ -94,8 +88,6 @@ fun EventRowTodayPreview() {
 @Preview(widthDp = 250, heightDp = 50)
 @Composable
 fun EventRowTomorrowPreview() {
-	val startOfToday = midnightInDate(ZoneId.systemDefault(), LocalDateTime.now())
-	val startOfTomorrow = Instant.ofEpochMilli(startOfToday).plus(1, ChronoUnit.DAYS)
 	EventRow(
 		modifier = GlanceModifier,
 		UIEvent(
@@ -106,6 +98,7 @@ fun EventRowTomorrowPreview() {
 			"08:00",
 			"17:00",
 			isDisplayedAsAllDay = false,
+			"08:00 - 17:00"
 		),
 		actionRunCallback<ActionCallback>(),
 	)

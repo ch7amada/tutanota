@@ -1,8 +1,8 @@
 import m, { ClassComponent, Vnode } from "mithril"
 import { WizardStepComponentAttrs } from "../../../ui/base/wizard/WizardStep"
-import { SignupViewModel } from "./SignupView"
+import type { PlanSelectionModel } from "../subscription/PlanSelectionModel"
 import { getCurrentPaymentInterval, PlanTypeToName, shouldShowExternalStorePrices, UpgradeType } from "../subscription/utils/SubscriptionUtils"
-import { getDiscountDetails, getPlanSelectorSubtitle, getPlanSelectorTitle } from "../subscription/utils/PlanSelectorUtils"
+import { getDiscountDetails, getPlanSelectorSubtitle, getPlanSelectorTitle, hasRelevantGlobalFirstYearCampaign } from "../subscription/utils/PlanSelectorUtils"
 import { TranslationKeyType } from "../../../ui/utils/TranslationKey"
 import { PrimaryButtonAttrs } from "../../../ui/base/buttons/VariantButtons.js"
 import { PlanSelector, PlanSelectorAttr, SubscriptionActionButtons } from "../subscription/PlanSelector"
@@ -11,17 +11,26 @@ import { lang } from "../../../ui/utils/LanguageViewModel"
 import { px } from "../../../ui/size"
 import { Styles } from "../../../ui/styles"
 import { MessageBanner } from "../../../ui/base/MessageBanner"
-import { AvailablePlanType, PlanType } from "../../../entities/sys/Utils"
+import { AvailablePlanType, PlanType, SubscriptionType } from "../../../entities/sys/Utils"
 import { PaymentInterval } from "../subscription/utils/PriceUtils"
 
-export class PlanSelectorPage implements ClassComponent<WizardStepComponentAttrs<SignupViewModel>> {
-	view(vnode: Vnode<WizardStepComponentAttrs<SignupViewModel>>) {
+export interface PlanSelectorPageAttrs extends WizardStepComponentAttrs<PlanSelectionModel> {
+	forceMobileBusinessLayout?: boolean
+}
+
+export class PlanSelectorPage implements ClassComponent<PlanSelectorPageAttrs> {
+	view(vnode: Vnode<PlanSelectorPageAttrs>) {
 		const ctx = vnode.attrs.ctx
+		const { forceMobileBusinessLayout } = vnode.attrs
 		const data = ctx.viewModel
 		const { planPrices, acceptedPlans, accountingInfo } = data
 		let availablePlans = acceptedPlans
 		const isApplePrice = shouldShowExternalStorePrices(accountingInfo ?? null)
 		const discountDetails = getDiscountDetails(isApplePrice, planPrices!)
+		const somePlanHasDiscount = hasRelevantGlobalFirstYearCampaign(
+			discountDetails,
+			data.options.businessUse() ? SubscriptionType.Business : SubscriptionType.Personal,
+		)
 		const promotionMessage = planPrices!.getRawPricingData().messageTextId as TranslationKeyType
 		let message
 		try {
@@ -39,15 +48,14 @@ export class PlanSelectorPage implements ClassComponent<WizardStepComponentAttrs
 			[PlanType.Revolutionary]: getAsLazy(button),
 			[PlanType.Legend]: getAsLazy(button),
 		}
-		const isBusiness = ctx.viewModel.options.businessUse()
-
+		const isWideBusinessLayout = data.options.businessUse() && !forceMobileBusinessLayout
 		return m(
 			`.full-width${Styles.get().isMobileLayout() ? ".pt-16" : ""}`,
-			// Headline for general messages -- currently only used when a user tries to manage multiple subscriptions on ios (which is not possible)
-			data.msg && m(MessageBanner, { translation: data.msg, type: "error" }),
+			// Upgrade messages explain plan requirements; signup may report store-subscription errors.
+			data.messageBoxMessage &&
+				m(MessageBanner, { translation: data.messageBoxMessage, type: data.upgradeType === UpgradeType.Signup ? "error" : "base" }),
 			// Headline for promotional messages
 			message && m(MessageBanner, { translation: message, type: "base" }),
-
 			m(
 				".flex.flex-column.items-start.full-width",
 				{
@@ -57,22 +65,22 @@ export class PlanSelectorPage implements ClassComponent<WizardStepComponentAttrs
 					},
 				},
 				[
-					this.renderHeadline(data),
-					this.renderSubtitle(data),
+					this.renderHeadline(data, somePlanHasDiscount),
+					this.renderSubtitle(data, somePlanHasDiscount),
 					m(
-						`.flex.gap-64.full-width${isBusiness ? ".justify-center" : ""}`,
+						`.plan-selector-wrapper.flex.gap-64.full-width${isWideBusinessLayout ? ".justify-center" : ""}`,
 						m(
 							".flex-grow",
 							{
 								style: {
-									"max-width": Styles.get().isMobileLayout() ? "initial" : isBusiness ? px(860) : px(530),
+									"max-width": Styles.get().isMobileLayout() ? "initial" : isWideBusinessLayout ? px(860) : px(530),
 								},
 							},
 							m(PlanSelector, {
 								options: data.options!,
 								actionButtons: actionButtons,
 								priceAndConfigProvider: planPrices!,
-								availablePlans: availablePlans!,
+								availablePlans,
 								isExternalStorePrice: isApplePrice,
 								currentPlan: data.currentPlan ?? undefined,
 								currentPaymentInterval: getCurrentPaymentInterval(accountingInfo) ?? PaymentInterval.Yearly,
@@ -82,12 +90,12 @@ export class PlanSelectorPage implements ClassComponent<WizardStepComponentAttrs
 								targetPlan: data.targetPlanType!,
 								onContinue: (selectedPlan: AvailablePlanType) => {
 									data.targetPlanType = selectedPlan
-									data.updatePrice()
 									ctx.setLabel(PlanTypeToName[selectedPlan])
 									ctx.goNext()
 								},
 								newSignupFlow: true,
 								personalPlansAvailable: data.personalPlansAvailable,
+								forceMobileBusinessLayout,
 							} satisfies PlanSelectorAttr),
 						),
 					),
@@ -95,13 +103,13 @@ export class PlanSelectorPage implements ClassComponent<WizardStepComponentAttrs
 			),
 		)
 	}
-	private renderSubtitle(data: SignupViewModel) {
-		const subtitleTranslationKey = getPlanSelectorSubtitle(data.globalCampaignName, data.bonusMonthForYearlyPlans > 0)
+	private renderSubtitle(data: PlanSelectionModel, somePlanHasDiscount: boolean) {
+		const subtitleTranslationKey = getPlanSelectorSubtitle(data.globalCampaignName, data.bonusMonthForYearlyPlans > 0, somePlanHasDiscount)
 		return m(`p.mb-32`, lang.getTranslationText(subtitleTranslationKey))
 	}
 
-	private renderHeadline(data: SignupViewModel) {
-		const titleTranslationKey = getPlanSelectorTitle(data.globalCampaignName, data.bonusMonthForYearlyPlans > 0)
+	private renderHeadline(data: PlanSelectionModel, somePlanHasDiscount: boolean) {
+		const titleTranslationKey = getPlanSelectorTitle(data.globalCampaignName, data.bonusMonthForYearlyPlans > 0, somePlanHasDiscount)
 
 		return m(
 			`h1.font-mdio${Styles.get().isMobileLayout() ? ".h3" : ".h1"}`,

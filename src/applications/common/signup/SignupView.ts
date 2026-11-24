@@ -1,55 +1,30 @@
 import m, { Children, Vnode } from "mithril"
-import { EnvProvider, PaymentSetup } from "@tutao/app-env"
-import { InfoLink, lang, MaybeTranslation, Translation, TranslationKey } from "../../../ui/utils/LanguageViewModel.js"
+import { EnvProvider, PaymentSetup, SessionType } from "@tutao/app-env"
 import { BaseTopLevelView } from "../../../ui/BaseTopLevelView.js"
 import { TopLevelAttrs, TopLevelView } from "../../../ui/base/TopLevelView.js"
 import { createWizard, WizardAttrs } from "../../../ui/base/wizard/Wizard"
-import { NewAccountData, ReferralData } from "../subscription/UpgradeSubscriptionWizard"
-import stream from "mithril/stream"
-import Stream from "mithril/stream"
-import { asPaymentInterval, PaymentInterval, PriceAndConfigProvider, SubscriptionPrice } from "../subscription/utils/PriceUtils"
-import {
-	canSubscribeToPlan,
-	getDefaultPaymentMethod,
-	PaymentData,
-	queryExternalSubscriptionOwnership,
-	UpgradeType,
-} from "../subscription/utils/SubscriptionUtils"
-import { locator } from "../api/main/CommonLocator"
-import {
-	getAvailablePlansFromSubscriptionParameters,
-	getBusinessOnly,
-	getReferralCodeFromParams,
-	getRegistrationDataIdFromParams,
-	getSubscriptionParameters,
-	getWebsiteLangFromParams,
-	stringToSubscriptionType,
-} from "../misc/LoginUtils"
-import { FeatureListProvider, SelectedSubscriptionOptions, UpgradePriceType } from "../subscription/FeatureListProvider"
-import { MobilePaymentSubscriptionOwnership } from "@tutao/native-bridge/generatedIpc/enums"
-import { PowSolution } from "../api/common/pow-worker"
+import type { WizardStepComponentAttrs } from "../../../ui/base/wizard/WizardStep"
 import { PlanSelectorPage } from "./PlanSelectorPage"
 import { SignupFormPage } from "./SignupFormPage"
-import InvoiceAndPaymentDataPageNew from "./InvoiceAndPaymentDataPageNew"
-import { SimplifiedCreditCardViewModel } from "../subscription/SimplifiedCreditCardInputModel"
+import InvoiceAndPaymentDataPage from "./InvoiceAndPaymentDataPage"
 import { IconMessageBox, InfoMessaggeBoxAttrs } from "../../../ui/base/ColumnEmptyMessageBox"
 import { theme } from "../../../ui/theme"
 import { RecoveryKitPage } from "../subscription/RecoveryKitPage"
-import { UpgradeConfirmSubscriptionPageNew } from "../subscription/UpgradeConfirmSubscriptionPageNew"
+import { UpgradeConfirmSubscriptionPage } from "../subscription/UpgradeConfirmSubscriptionPage"
 import { ReferralType, SignupFlowStage, SignupFlowUsageTestController } from "../subscription/usagetest/UpgradeSubscriptionWizardUsageTestUtils"
 import { completeUpgradeStage } from "../ratings/UserSatisfactionUtils"
 import { windowFacade } from "../misc/WindowFacade"
-import SignupWizardLayout from "./SignupWizardLayout"
-import { filterInt, noOp } from "@tutao/utils"
+import { SignupWizardLayout } from "./SignupWizardLayout"
+import { assertNotNull, noOp } from "@tutao/utils"
 import { Icons } from "../../../ui/base/icons/Icons"
-import { AccountingInfo, Customer } from "@tutao/entities/sys"
-import { AvailablePlanType, PlanType, SubscriptionType } from "../../../entities/sys/Utils"
-import { getPreselectedPlanType } from "../subscription/SubscriptionPage"
+import { isExternalPaymentMethod, PlanType } from "../../../entities/sys/Utils"
 import { UsageTestModel } from "../misc/UsageTestModel"
 import { UsageTestController } from "@tutao/usagetests"
-import { InvoiceData } from "../subscription/utils/PaymentUtils"
-import { Country } from "../gui/CountryList"
-import { NotFoundError } from "@tutao/rest-client/error"
+import { SignupViewModel } from "./models/SignupViewModel"
+import { Styles } from "../../../ui/styles"
+import { layout_size } from "../../../ui/size"
+import { locator } from "../api/main/CommonLocator"
+import { upgrade } from "../subscription/SubscriptionConfirmationUtils"
 
 EnvProvider.assertMainOrNode()
 
@@ -59,185 +34,47 @@ export interface SignupViewAttrs extends TopLevelAttrs {
 	usageTestController: UsageTestController
 }
 
-export class SignupViewModel {
-	get isInitialized(): boolean {
-		return this._isInitialized
-	}
-	private _isInitialized = false
-	public options: SelectedSubscriptionOptions
-	public invoiceData: InvoiceData
-	public paymentData: PaymentData
-	public targetPlanType: PlanType
-	public price: SubscriptionPrice | null
-	public nextYearPrice: SubscriptionPrice | null
-	public accountingInfo: AccountingInfo | null
-	public customer: Customer | null
-	public newAccountData: NewAccountData | null
-	public registrationDataId: string | null
-	public priceInfoTextId?: TranslationKey | null
-	public upgradeType: UpgradeType
-	public planPrices?: PriceAndConfigProvider
-	public currentPlan: PlanType | null
-	public featureListProvider?: FeatureListProvider
-	public referralData: null | ReferralData
-	public multipleUsersAllowed: boolean
-	public acceptedPlans: AvailablePlanType[] = []
-	public msg?: Translation | null
-	public firstMonthForFreeOfferActive?: boolean
-	public bonusMonthForYearlyPlans: number = 0
-	public isCalledBySatisfactionDialog: boolean
-	public registrationCode?: string
-	public powChallengeSolutionPromise?: Promise<PowSolution>
-	public emailInputStore?: string
-	public passwordInputStore?: string
-	public addressInputStore?: string
-	public inlinePlanSelectorOpen: Stream<boolean>
-	public inlinePlanSelectorToggleSteps: number[]
-	public ccViewModel: SimplifiedCreditCardViewModel = new SimplifiedCreditCardViewModel(lang)
-	public globalCampaignName: string | null
-	public personalPlansAvailable: boolean
-	public readonly isFreeOnly: boolean
-
-	constructor() {
-		const urlParams = m.parseQueryString(location.search.substring(1) + "&" + location.hash.substring(1))
-
-		const registrationDataId = getRegistrationDataIdFromParams(urlParams)
-		const referralData = getReferralCodeFromParams(urlParams)
-
-		// We assume that if a user comes from our website for signup, the language selected on the website should take precedence over the browser language.
-		// As we initialize the language with the browser's one in the app.ts already, we try to overwrite it by the website language here.
-		const websiteLang = getWebsiteLangFromParams(urlParams)
-		if (websiteLang) lang.setLanguage(websiteLang)
-
-		const subscriptionParams = getSubscriptionParameters(urlParams)
-		this.acceptedPlans = getAvailablePlansFromSubscriptionParameters(subscriptionParams).filter(canSubscribeToPlan)
-		const subscriptionType = stringToSubscriptionType(subscriptionParams?.type ?? "private")
-		this.isFreeOnly = subscriptionType === SubscriptionType.FreeOnly
-
-		const paymentInterval = asPaymentInterval(PaymentInterval.Yearly)
-		this.options = {
-			businessUse: stream(subscriptionType === SubscriptionType.Business),
-			paymentInterval: stream(paymentInterval),
-		}
-
-		this.registrationDataId = registrationDataId
-		this.referralData = referralData
-		this.invoiceData = {
-			invoiceAddress: "",
-			country: null,
-			vatNumber: "", // only for EU countries otherwise empty
-		}
-		this.paymentData = {
-			paymentMethod: getDefaultPaymentMethod(),
-			creditCardData: null,
-		}
-		this.price = null
-		this.nextYearPrice = null
-		this.targetPlanType = getPreselectedPlanType(subscriptionParams)
-		this.accountingInfo = null
-		this.customer = null
-		this.newAccountData = null
-		this.upgradeType = UpgradeType.Signup
-		this.currentPlan = null
-		this.multipleUsersAllowed = false
-		this.isCalledBySatisfactionDialog = false
-		this.inlinePlanSelectorOpen = stream(false)
-		this.inlinePlanSelectorToggleSteps = [1, 2, 3]
-		this.globalCampaignName = null
-		this.personalPlansAvailable = !getBusinessOnly(urlParams)
-	}
-
-	private cleanupCalled = false
-
-	private beforeUnloadHandler = (_event: BeforeUnloadEvent) => {
-		this.runBeforeUnload()
-	}
-
-	private runBeforeUnload() {
-		if (this.cleanupCalled) return
-		this.cleanupCalled = true
-		locator.logins.logout(true)
-	}
-
-	public updatePrice() {
-		if (this.targetPlanType === PlanType.Free) {
-			this.price = null
-			this.nextYearPrice = null
-			return
-		}
-		this.price = this.planPrices!.getSubscriptionPriceWithCurrency(this.options.paymentInterval(), UpgradePriceType.PlanActualPrice, this)
-		const nextYear = this.planPrices!.getSubscriptionPriceWithCurrency(this.options.paymentInterval(), UpgradePriceType.PlanNextYearsPrice, this)
-		this.nextYearPrice = this.price.rawPrice !== nextYear.rawPrice ? nextYear : null
-	}
-
-	public updateInvoiceCountry(country: Country) {
-		this.invoiceData.country = country
-		// We overwrite this flag only for th UI change, this does not affect anything for the stored data in the server.
-		// Actual paymentBillingAgreement is removed in PaymentDataService.put if the updated payment method is not PayPal.
-		if (this.accountingInfo) this.accountingInfo.paypalBillingAgreement = null
-	}
-
-	async init() {
-		let priceDataProvider: PriceAndConfigProvider
-		try {
-			priceDataProvider = await PriceAndConfigProvider.getInitializedInstance(
-				this.registrationDataId,
-				locator.serviceExecutor,
-				this.referralData?.code ?? null,
-			)
-		} catch (e) {
-			if (e instanceof NotFoundError && this.registrationDataId != null) {
-				this.registrationDataId = null
-				priceDataProvider = await PriceAndConfigProvider.getInitializedInstance(null, locator.serviceExecutor, this.referralData?.code ?? null)
-			} else {
-				throw e
-			}
-		}
-		const prices = priceDataProvider.getRawPricingData()
-		this.globalCampaignName = prices.globalCampaignName
-		const domainConfig = locator.domainConfigProvider().getCurrentDomainConfig()
-		const featureListProvider = await FeatureListProvider.getInitializedInstance(domainConfig)
-		let message: MaybeTranslation | null = null
-		this.options.businessUse(prices.business)
-		if (EnvProvider.get().getPaymentSetup() !== PaymentSetup.Default) {
-			this.options.businessUse(false)
-			const appstoreSubscriptionOwnership = await queryExternalSubscriptionOwnership(null)
-			// if we are on iOS/google play we only show other plans if there's no subscription for this Apple ID/Google ID.
-			if (appstoreSubscriptionOwnership !== MobilePaymentSubscriptionOwnership.NoSubscription) {
-				this.acceptedPlans = this.acceptedPlans.filter((plan) => plan === PlanType.Free)
-			}
-			if (appstoreSubscriptionOwnership !== MobilePaymentSubscriptionOwnership.NoSubscription) {
-				message = lang.getTranslation("storeMultiSubscriptionError_msg", { "{AppStorePayment}": InfoLink.AppStorePayment })
-			}
-		}
-
-		this.priceInfoTextId = priceDataProvider.getPriceInfoMessage()
-		this.planPrices = priceDataProvider
-		this.featureListProvider = featureListProvider
-		this.msg = message
-		this.firstMonthForFreeOfferActive = prices.firstMonthForFreeForYearlyPlan
-		const bonusMonths = filterInt(prices.bonusMonthsForYearlyPlan)
-		this.bonusMonthForYearlyPlans = Number.isNaN(bonusMonths) ? 0 : bonusMonths
-		this._isInitialized = true
-	}
-}
-
 export class SignupView extends BaseTopLevelView implements TopLevelView<SignupViewAttrs> {
 	private bottomMargin = 0
 
-	private wizardViewModel: SignupViewModel
+	private readonly wizardViewModel: SignupViewModel
 	private unregisterListener: (...args: Array<any>) => any = noOp
 	private SignupWizard = createWizard<SignupViewModel>()
+	private readonly ConfirmationPage: m.Component<WizardStepComponentAttrs<SignupViewModel>> = {
+		view: ({ attrs: { ctx } }) => {
+			const data = ctx.viewModel
+			return m(UpgradeConfirmSubscriptionPage, {
+				ctx,
+				onEditPlan: () => {
+					if (Styles.get().bodyWidth >= layout_size.wizard_show_illustration_min_width && !data.options.businessUse()) {
+						data.inlinePlanSelectorOpen(!data.inlinePlanSelectorOpen())
+					} else {
+						ctx.controller.setStep(0)
+					}
+				},
+				onEditPayment: () => {
+					ctx.controller.setStepUnreachable(ctx.index)
+					ctx.controller.setStep(2)
+				},
+				onPaymentIntervalChanged: () => {
+					data.updatePrice()
+					SignupFlowUsageTestController.completeStage(SignupFlowStage.SELECT_PLAN, data.targetPlanType, data.options.paymentInterval())
+					SignupFlowUsageTestController.completeStage(SignupFlowStage.CREATE_ACCOUNT, data.targetPlanType, data.options.paymentInterval())
+				},
+				onConfirm: async () => {
+					if (isExternalPaymentMethod(data.paymentData.paymentMethod) && !locator.logins.isUserLoggedIn()) {
+						const account = assertNotNull(data.newAccountData)
+						await locator.logins.createSession(account.mailAddress, account.password, SessionType.Temporary)
+					}
+					return upgrade(data, data.referralData?.code ?? null)
+				},
+			})
+		},
+	}
 
 	constructor({ attrs }: Vnode<SignupViewAttrs>) {
 		super()
 		this.wizardViewModel = attrs.viewModel
-	}
-
-	async onbeforeremove() {}
-
-	private closeListener = async (event: Event) => {
-		event.preventDefault()
 	}
 
 	async oncreate({ attrs }: Vnode<SignupViewAttrs>) {
@@ -268,6 +105,10 @@ export class SignupView extends BaseTopLevelView implements TopLevelView<SignupV
 
 	onNewUrl(args: Record<string, any>, requestedPath: string) {}
 
+	handleBackButton(): boolean {
+		return this.SignupWizard.goBack()
+	}
+
 	view({ attrs }: Vnode<SignupViewAttrs>) {
 		return m(
 			"#signup-view.main-view.flex.col.nav-bg",
@@ -288,65 +129,26 @@ export class SignupView extends BaseTopLevelView implements TopLevelView<SignupV
 								color: theme.on_surface_variant,
 							} satisfies InfoMessaggeBoxAttrs),
 						)
-					: this.renderSignupPages(attrs),
+					: this.renderSignupPages(),
 			],
 		)
 	}
 
-	renderSignupPages(attrs: SignupViewAttrs): Children {
-		return attrs.viewModel.isFreeOnly ? this.renderFreeOnlySignupPages(attrs) : this.renderDefaultSignupPages(attrs)
-	}
-
-	renderFreeOnlySignupPages(attrs: SignupViewAttrs): Children {
-		return m(this.SignupWizard, {
-			layout: SignupWizardLayout,
-			steps: [
-				{
-					title: "Create Account",
-					content: SignupFormPage,
-					isBackButtonEnabled: () => true,
-					onNext: () => {
-						SignupFlowUsageTestController.completeStage(
-							SignupFlowStage.CREATE_ACCOUNT,
-							this.wizardViewModel.targetPlanType,
-							this.wizardViewModel.options.paymentInterval(),
-						)
-						SignupFlowUsageTestController.completeStage(
-							SignupFlowStage.SELECT_PAYMENT_METHOD,
-							this.wizardViewModel.targetPlanType,
-							this.wizardViewModel.options.paymentInterval(),
-							this.wizardViewModel.paymentData.paymentMethod,
-						)
-					},
-					onPrev: (ctx) => {
-						m.route.set("/")
-					},
-				},
-				{
-					title: "Recovery Kit",
-					content: RecoveryKitPage,
-					onNext: () => this.unregisterListener(),
-					onPrev: () => {},
-					isBackButtonEnabled: () => false,
-				},
-			],
-			viewModel: this.wizardViewModel,
-		} satisfies WizardAttrs<SignupViewModel>)
-	}
-
-	renderDefaultSignupPages(attrs: SignupViewAttrs): Children {
+	renderSignupPages(): Children {
 		return m(this.SignupWizard, {
 			layout: SignupWizardLayout,
 			steps: [
 				{
 					title: "Select Plan",
 					content: PlanSelectorPage,
-					onNext: () =>
+					onNext: () => {
+						this.wizardViewModel.updatePrice()
 						SignupFlowUsageTestController.completeStage(
 							SignupFlowStage.SELECT_PLAN,
 							this.wizardViewModel.targetPlanType,
 							this.wizardViewModel.options.paymentInterval(),
-						),
+						)
+					},
 					onPrev: (ctx) => {
 						if (ctx.viewModel.options.businessUse() && ctx.viewModel.personalPlansAvailable) {
 							ctx.viewModel.options.businessUse(false)
@@ -378,7 +180,7 @@ export class SignupView extends BaseTopLevelView implements TopLevelView<SignupV
 				},
 				{
 					title: "Payment",
-					content: InvoiceAndPaymentDataPageNew,
+					content: InvoiceAndPaymentDataPage,
 					onNext: () => {
 						SignupFlowUsageTestController.completeStage(
 							SignupFlowStage.SELECT_PAYMENT_METHOD,
@@ -391,7 +193,7 @@ export class SignupView extends BaseTopLevelView implements TopLevelView<SignupV
 				},
 				{
 					title: "Order Confirmation",
-					content: UpgradeConfirmSubscriptionPageNew,
+					content: this.ConfirmationPage,
 					onNext: () => {
 						let referralConversion: ReferralType = "not_referred"
 						if (this.wizardViewModel.referralData && this.wizardViewModel.referralData.isCalledBySatisfactionDialog)

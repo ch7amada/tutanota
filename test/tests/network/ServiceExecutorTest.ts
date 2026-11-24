@@ -8,32 +8,48 @@ import { assert, deepEqual, downcast } from "../../../src/platform-kit/utils"
 import { ProgrammingError } from "../../../src/platform-kit/app-env"
 import { clientInitializedTypeModelResolver, createTestEntity, removeOriginals } from "../TestUtils.js"
 import { InstancePipeline, LoggedInUserProvider, TypeModelResolver } from "../../../src/platform-kit/instance-pipeline"
-import { aes256RandomKey, AesKey, SymmetricCipherFacade, SymmetricEncryptionScheme } from "../../../src/platform-kit/crypto"
+import {
+	Aes,
+	AesCbcFacade,
+	AesKey,
+	KeyEncryption,
+	PartialSubKeyInfoAesCbcThenHmac,
+	random,
+	SessionKeyDecryptor,
+	SymmetricCipherFacade,
+	SymmetricCipherUtils,
+	SymmetricEncryptionScheme,
+	VersionedEncryptedKey,
+	VersionedKey,
+} from "../../../src/platform-kit/crypto"
 import { LoginIncompleteError } from "../../../src/platform-kit/rest-client/error"
 import { CustomerAccountReturnTypeRef, CustomerAccountService_GET } from "@tutao/entities/accounting"
 import {
-	AlarmNotificationTypeRef,
+	AlarmNotificationTransferAggregatedTypeTypeRef,
 	AlarmServicePost,
 	AlarmServicePostTypeRef,
 	GiftCardCreateData,
 	GiftCardCreateDataTypeRef,
+	GiftCardTransferAggregatedTypeTypeRef,
+	NotificationTransferAggregatedTypeTypeRef,
 	SaltData,
 	SaltDataTypeRef,
-	UserAlarmInfoDataTypeRef,
+	UserAlarmInfoTransferAggregatedTypeTypeRef,
 } from "@tutao/entities/sys"
 import { ServiceExecutor } from "../../../src/platform-kit/network/ServiceExecutor"
 import { IncomingServerJson } from "../../../src/platform-kit/instance-pipeline/TypeMapper"
-import { AEAD_FACADE } from "@tutao/crypto/aead-facade"
-import { AES_CBC_FACADE } from "@tutao/crypto/aes-cbc-facade"
-import { SYMMETRIC_KEY_DERIVER } from "@tutao/crypto/symmetric-key-deriver"
 import { DEFAULT_EXTRA_SERVICE_PARAMS } from "../../../src/platform-kit/instance-pipeline/RestClientOptions"
+import { AeadFacade } from "@tutao/crypto/aead-facade"
+import { SymmetricKeyDeriver } from "@tutao/crypto/symmetric-key-deriver"
 
 const { anything } = matchers
 
 o.spec("ServiceExecutor", function () {
+	let symmetricCipherUtils: SymmetricCipherUtils
+	let keyEncryption: KeyEncryption
 	const service = {
-		app: "testapp",
-		name: "testservice",
+		app: "testApp",
+		name: "testService",
 	}
 	let restClient: RestClient
 	let authHeaders: Record<string, string> = {}
@@ -42,6 +58,8 @@ o.spec("ServiceExecutor", function () {
 	let executor: ServiceExecutor
 	let fullyLoggedIn: boolean = true
 	let sessionKey: AesKey
+	let ownerKey: VersionedKey
+	let ownerEncSessionKey: VersionedEncryptedKey
 	let alarmServicePostData: AlarmServicePost
 	let alarmServicePostDataTypeModel: ServerTypeModel
 	let saltDataTypeModel: ServerTypeModel
@@ -63,25 +81,68 @@ o.spec("ServiceExecutor", function () {
 	})
 
 	o.beforeEach(async () => {
+		symmetricCipherUtils = new SymmetricCipherUtils(random)
+
 		restClient = object()
 		authHeaders = {}
 		fullyLoggedIn = true
 
 		typeModelResolver = clientInitializedTypeModelResolver()
-		instancePipeline = new InstancePipeline(typeModelResolver, () => null!, new SymmetricCipherFacade(AES_CBC_FACADE, AEAD_FACADE, SYMMETRIC_KEY_DERIVER))
-		sessionKey = aes256RandomKey()
+		const symmetricCipherFacade = new SymmetricCipherFacade(
+			new AesCbcFacade(),
+			new AeadFacade(symmetricCipherUtils),
+			new SymmetricKeyDeriver(),
+			symmetricCipherUtils,
+		)
+		keyEncryption = new KeyEncryption(symmetricCipherFacade, new Aes(symmetricCipherFacade))
+		instancePipeline = new InstancePipeline(
+			typeModelResolver,
+			() => null!,
+			symmetricCipherFacade,
+			authDataProvider,
+			() => object(),
+			random,
+			keyEncryption,
+		)
+		sessionKey = symmetricCipherUtils.aes256RandomKey()
+		ownerKey = { object: symmetricCipherUtils.aes256RandomKey(), version: 0 }
+		ownerEncSessionKey = { key: keyEncryption.encryptKey(ownerKey.object, sessionKey), encryptingKeyVersion: ownerKey.version }
 
 		cryptoFacade = object()
 		executor = new ServiceExecutor(restClient, authDataProvider, instancePipeline, () => cryptoFacade, typeModelResolver)
 
 		saltData = createTestEntity(SaltDataTypeRef, { mailAddress: "someuser@example.org" }, { populateAggregates: true })
 		alarmServicePostData = createTestEntity(AlarmServicePostTypeRef, {
-			alarmNotifications: [createTestEntity(AlarmNotificationTypeRef, {}, { populateAggregates: true })],
-			userAlarmInfoData: [createTestEntity(UserAlarmInfoDataTypeRef, {}, { populateAggregates: true })],
+			notification: createTestEntity(
+				NotificationTransferAggregatedTypeTypeRef,
+				{
+					alarms: [createTestEntity(AlarmNotificationTransferAggregatedTypeTypeRef, {}, { populateAggregates: true })],
+					_ownerEncSessionKey: ownerEncSessionKey.key,
+					_ownerKeyVersion: ownerKey.version.toString(),
+				},
+				{ populateAggregates: true },
+			),
+			userAlarmInfo: [
+				createTestEntity(
+					UserAlarmInfoTransferAggregatedTypeTypeRef,
+					{
+						_ownerEncSessionKey: ownerEncSessionKey.key,
+						_ownerKeyVersion: ownerKey.version.toString(),
+					},
+					{ populateAggregates: true },
+				),
+			],
 		})
-		alarmServicePostData.alarmNotifications[0].user = "some-user"
+		alarmServicePostData.notification!.alarms[0].user = "some-user"
 
-		alarmServicePostDataJson = (await instancePipeline.mapAndEncrypt(alarmServicePostData._type, alarmServicePostData, sessionKey)).getJsonRepresentation()
+		alarmServicePostDataJson = (
+			await instancePipeline.mapAndEncryptWithSubKeyInfo(
+				alarmServicePostData._type,
+				alarmServicePostData,
+				new PartialSubKeyInfoAesCbcThenHmac(new SessionKeyDecryptor(ownerKey, keyEncryption)),
+				ownerKey,
+			)
+		).getJsonRepresentation()
 		saltDataJson = (await instancePipeline.mapAndEncrypt(saltData._type, saltData, sessionKey)).getJsonRepresentation()
 
 		alarmServicePostDataTypeModel = await typeModelResolver.resolveServerTypeReference(alarmServicePostData._type)
@@ -124,8 +185,10 @@ o.spec("ServiceExecutor", function () {
 			const getService = new GetService(service.app, service.name, AlarmServicePostTypeRef, NullEntityTypeRef)
 			respondWith(null)
 
-			const sessionKey = aes256RandomKey()
-			const response = await executor.execute(getService, alarmServicePostData, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey })
+			const response = await executor.execute(getService, alarmServicePostData, {
+				...DEFAULT_EXTRA_SERVICE_PARAMS,
+				sessionKeyDecryptor: new SessionKeyDecryptor(ownerKey, keyEncryption),
+			})
 
 			o(response).equals(NULL_ENTITY)
 
@@ -151,7 +214,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.GET,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -166,7 +229,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.GET,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -189,7 +252,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.GET,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -206,7 +269,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.GET,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -217,7 +280,10 @@ o.spec("ServiceExecutor", function () {
 			const postService = new PostService(service.app, service.name, AlarmServicePostTypeRef, NullEntityTypeRef)
 
 			respondWith(null)
-			const response = await executor.execute(postService, alarmServicePostData, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey })
+			const response = await executor.execute(postService, alarmServicePostData, {
+				...DEFAULT_EXTRA_SERVICE_PARAMS,
+				sessionKeyDecryptor: new SessionKeyDecryptor(ownerKey, keyEncryption),
+			})
 
 			const requestOptionsCaptor = matchers.captor()
 			verify(restClient.request("/rest/testapp/testservice", HttpMethod.POST, requestOptionsCaptor.capture()))
@@ -239,7 +305,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.POST,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -262,7 +328,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.POST,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -273,7 +339,10 @@ o.spec("ServiceExecutor", function () {
 			const putService = new PutService(service.app, service.name, AlarmServicePostTypeRef, NullEntityTypeRef)
 
 			respondWith(null)
-			const response = await executor.execute(putService, alarmServicePostData, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey })
+			const response = await executor.execute(putService, alarmServicePostData, {
+				...DEFAULT_EXTRA_SERVICE_PARAMS,
+				sessionKeyDecryptor: new SessionKeyDecryptor(ownerKey, keyEncryption),
+			})
 
 			const optionsCaptor = matchers.captor()
 			verify(restClient.request("/rest/testapp/testservice", HttpMethod.PUT, optionsCaptor.capture()))
@@ -293,7 +362,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.PUT,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -310,7 +379,10 @@ o.spec("ServiceExecutor", function () {
 			const deleteService = new DeleteService(service.app, service.name, AlarmServicePostTypeRef, NullEntityTypeRef)
 			respondWith(null)
 
-			const response = await executor.execute(deleteService, alarmServicePostData, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey })
+			const response = await executor.execute(deleteService, alarmServicePostData, {
+				...DEFAULT_EXTRA_SERVICE_PARAMS,
+				sessionKeyDecryptor: new SessionKeyDecryptor(ownerKey, keyEncryption),
+			})
 
 			const optionsCaptor = matchers.captor()
 			verify(restClient.request("/rest/testapp/testservice", HttpMethod.DELETE, optionsCaptor.capture()))
@@ -330,7 +402,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/testapp/testservice",
 					HttpMethod.DELETE,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -419,7 +491,7 @@ o.spec("ServiceExecutor", function () {
 				postings: [],
 			})
 
-			const sk = aes256RandomKey()
+			const sk = symmetricCipherUtils.aes256RandomKey()
 			const untypedInstance = await instancePipeline.mapAndEncrypt(CustomerAccountReturnTypeRef, customerAccountReturn, sk)
 			when(cryptoFacade.resolveServiceSessionKey(anything())).thenResolve(sk)
 
@@ -431,7 +503,7 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/accounting/customeraccountservice",
 					HttpMethod.GET,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
@@ -443,7 +515,7 @@ o.spec("ServiceExecutor", function () {
 				postings: [],
 			})
 
-			const sessionKey = aes256RandomKey()
+			const sessionKey = symmetricCipherUtils.aes256RandomKey()
 			const untypedInstance = await instancePipeline.mapAndEncrypt(CustomerAccountReturnTypeRef, customerAccountReturn, sessionKey)
 			when(cryptoFacade.resolveServiceSessionKey(anything())).thenResolve(null)
 
@@ -458,20 +530,29 @@ o.spec("ServiceExecutor", function () {
 				restClient.request(
 					"/rest/accounting/customeraccountservice",
 					HttpMethod.GET,
-					matchers.argThat((p) => p.responseType === MediaType.Json),
+					matchers.argThat((options: RestClientOptions) => options.responseType === MediaType.Json),
 				),
 			)
 		})
 	})
 
 	o.spec("keys encrypt", function () {
-		o("uses passed key to encrypt request data", async function () {
+		o("uses passed owner key to decrypt session key to encrypt request data", async function () {
 			const getService = new GetService(service.app, service.name, GiftCardCreateDataTypeRef, NullEntityTypeRef)
 			const giftCardTypeModel = await typeModelResolver.resolveServerTypeReference(GiftCardCreateDataTypeRef)
-			const giftCardCreateData = createTestEntity(GiftCardCreateDataTypeRef, { message: "test" })
+			const giftCardCreateData = createTestEntity(GiftCardCreateDataTypeRef, {
+				giftCard: createTestEntity(GiftCardTransferAggregatedTypeTypeRef, {
+					_ownerEncSessionKey: ownerEncSessionKey.key,
+					_ownerKeyVersion: ownerKey.version.toString(),
+					message: "test",
+				}),
+			})
 
 			respondWith(null)
-			const response = await executor.execute(getService, giftCardCreateData, { ...DEFAULT_EXTRA_SERVICE_PARAMS, sessionKey })
+			const response = await executor.execute(getService, giftCardCreateData, {
+				...DEFAULT_EXTRA_SERVICE_PARAMS,
+				sessionKeyDecryptor: new SessionKeyDecryptor(ownerKey, keyEncryption),
+			})
 
 			const optionsCaptor = matchers.captor()
 			verify(restClient.request("/rest/testapp/testservice", HttpMethod.GET, optionsCaptor.capture()))
@@ -481,9 +562,15 @@ o.spec("ServiceExecutor", function () {
 			o(response).equals(NULL_ENTITY)
 		})
 
-		o("when data is encrypted and the key is not passed it throws", async function () {
+		o("when data is encrypted and the owner key is not passed it throws", async function () {
 			const getService = new GetService(service.app, service.name, GiftCardCreateDataTypeRef, NullEntityTypeRef)
-			const giftCardCreateData = createTestEntity(GiftCardCreateDataTypeRef, { message: "test" })
+			const giftCardCreateData = createTestEntity(GiftCardCreateDataTypeRef, {
+				giftCard: createTestEntity(GiftCardTransferAggregatedTypeTypeRef, {
+					_ownerEncSessionKey: ownerEncSessionKey.key,
+					_ownerKeyVersion: ownerKey.version.toString(),
+					message: "test",
+				}),
+			})
 
 			await o(() => executor.execute(getService, giftCardCreateData, null)).asyncThrows(ProgrammingError)
 			verify(restClient.request(anything(), anything(), DEFAULT_REST_CLIENT_OPTIONS), { ignoreExtraArgs: true, times: 0 })

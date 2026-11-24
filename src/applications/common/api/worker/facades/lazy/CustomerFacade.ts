@@ -21,16 +21,7 @@ import { AsymmetricCryptoFacade } from "../../../../../../platform-kit/base/base
 import PublicEncryptionKeyProvider from "../../../../../../platform-kit/base/base-crypto/PublicEncryptionKeyProvider"
 import { isInternalUser } from "../../../common/utils/UserUtils"
 import { PaymentData, SubscriptionApp } from "../../../../subscription/utils/SubscriptionUtils"
-import {
-	_encryptKeyWithVersionedKey,
-	cryptoUtils,
-	CryptoWrapper,
-	hexToRsaPublicKey,
-	keyToUint8Array,
-	PQKeyPairs,
-	VersionedEncryptedKey,
-	VersionedKey,
-} from "@tutao/crypto"
+import { cryptoUtils, CryptoWrapper, hexToRsaPublicKey, keyToUint8Array, PQKeyPairs, VersionedEncryptedKey, VersionedKey } from "@tutao/crypto"
 import { CounterType } from "../../../../../../entities/monitor/Utils"
 import { createCustomerAccountCreateData, CustomerAccountService_POST } from "@tutao/entities/tutanota"
 import { DataFile, SpamRuleFieldType, SpamRuleType } from "../../../../../../entities/tutanota/Utils"
@@ -64,7 +55,7 @@ import {
 	User,
 } from "@tutao/entities/sys"
 import { AccountType, BookingItemFeatureType, GroupType } from "../../../../../../entities/sys/Utils"
-import { RsaImplementation } from "../../../../../../platform-kit/crypto/encryption/RsaImplementation"
+import type { RsaImplementation } from "../../../../../../platform-kit/crypto/encryption/RsaImplementation"
 import {
 	CacheMode,
 	DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS,
@@ -221,7 +212,7 @@ export class CustomerFacade {
 			const adminGroupId = this.userFacade.getGroupId(GroupType.Admin)
 			const adminGroupKey = await this.keyLoaderFacade.getCurrentSymGroupKey(adminGroupId)
 
-			const adminGroupEncSessionKey = _encryptKeyWithVersionedKey(adminGroupKey, sessionKey)
+			const adminGroupEncSessionKey = this.cryptoWrapper.encryptKeyWithVersionedKey(adminGroupKey, sessionKey)
 			const data = createCreateCustomerServerPropertiesData({
 				adminGroupEncSessionKey: adminGroupEncSessionKey.key,
 				adminGroupKeyVersion: adminGroupEncSessionKey.encryptingKeyVersion.toString(),
@@ -237,7 +228,7 @@ export class CustomerFacade {
 			value = value.toLowerCase().trim()
 			let newListEntry = createEmailSenderListElement({
 				value,
-				hashedValue: uint8ArrayToBase64(this.cryptoWrapper.sha256Hash(stringToUtf8Uint8Array(value))),
+				hashedValue: this.getHashForSpamRuleValue(value),
 				type,
 				field,
 			})
@@ -249,6 +240,7 @@ export class CustomerFacade {
 	editSpamRule(spamRule: EmailSenderListElement): Promise<void> {
 		return this.loadCustomerServerProperties().then((props) => {
 			spamRule.value = spamRule.value.toLowerCase().trim()
+			spamRule.hashedValue = this.getHashForSpamRuleValue(spamRule.value)
 			const index = props.emailSenderList.findIndex((item) => {
 				return spamRule._id === item._id
 			})
@@ -337,9 +329,9 @@ export class CustomerFacade {
 
 		const recoverData = this.recoverCodeFacade.generateRecoveryCode(userGroupKey)
 
-		const userEncAdminGroupKey = _encryptKeyWithVersionedKey(userGroupKey, adminGroupKey.object)
-		const adminEncAccountingInfoSessionKey = _encryptKeyWithVersionedKey(adminGroupKey, accountingInfoSessionKey)
-		const adminEncCustomerServerPropertiesSessionKey = _encryptKeyWithVersionedKey(adminGroupKey, customerServerPropertiesSessionKey)
+		const userEncAdminGroupKey = this.cryptoWrapper.encryptKeyWithVersionedKey(userGroupKey, adminGroupKey.object)
+		const adminEncAccountingInfoSessionKey = this.cryptoWrapper.encryptKeyWithVersionedKey(adminGroupKey, accountingInfoSessionKey)
+		const adminEncCustomerServerPropertiesSessionKey = this.cryptoWrapper.encryptKeyWithVersionedKey(adminGroupKey, customerServerPropertiesSessionKey)
 
 		const data = createCustomerAccountCreateData({
 			authToken,
@@ -507,6 +499,30 @@ export class CustomerFacade {
 
 	async getUser(): Promise<Nullable<User>> {
 		return this.userFacade.getUser()
+	}
+
+	getHashForSpamRuleValue(value: string) {
+		return uint8ArrayToBase64(this.cryptoWrapper.sha256Hash(stringToUtf8Uint8Array(value)))
+	}
+
+	/**
+	 * This is done because of having had the edit field fail for a long time in the edit mode.
+	 */
+	updateIncorrectSpamRules(rulesWithMismatchingHashes: Map<number, EmailSenderListElement>): Promise<number> {
+		return this.loadCustomerServerProperties().then((props) => {
+			let updatedEntries = 0
+			for (const [index, rule] of rulesWithMismatchingHashes.entries()) {
+				const computedHash = this.getHashForSpamRuleValue(rule.value)
+				if (computedHash !== rule.hashedValue) {
+					rule.hashedValue = computedHash
+					props.emailSenderList[index] = rule
+					updatedEntries++
+				}
+			}
+
+			this.entityClient.update(props).catch(ofClass(LockedError, noOp))
+			return updatedEntries
+		})
 	}
 }
 

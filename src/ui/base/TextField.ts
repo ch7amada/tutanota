@@ -1,5 +1,5 @@
-import m, { Children, ClassComponent, CVnode } from "mithril"
-import { component_shape, font_size, px, size } from "../size"
+import m, { Children, ClassComponent, CVnode, VnodeDOM } from "mithril"
+import { component_shape, font_size, px, rem, size } from "../size"
 import { DefaultAnimationTime } from "../animation/Animations"
 import { theme } from "../theme"
 import type { MaybeTranslation } from "../utils/LanguageViewModel"
@@ -27,7 +27,9 @@ export type TextFieldAttrs = {
 	// only used by the BubbleTextField (-> uses old TextField) to display bubbles and out of office notification
 	injectionsRight?: lazy<Children>
 	keyHandler?: keyHandler
-	onDomInputCreated?: (dom: HTMLInputElement) => void
+	// does not fire for readonly textfields
+	onDomInputCreated?: (dom: HTMLInputElement, vnode: VnodeDOM) => void
+	onDomWrapperCreated?: (dom: HTMLElement) => void
 	// interceptor used by the BubbleTextField to react on certain keys
 	onfocus?: (dom: HTMLElement, input: HTMLInputElement) => unknown
 	onblur?: (...args: Array<any>) => any
@@ -95,7 +97,10 @@ export class TextField implements ClassComponent<TextFieldAttrs> {
 				`.login-textfield.rel.overflow-hidden`,
 				{
 					id: vnode.attrs.id,
-					oncreate: (vnode) => (this._domWrapper = vnode.dom as HTMLElement),
+					oncreate: (vnode) => {
+						this._domWrapper = vnode.dom as HTMLElement
+						a.onDomWrapperCreated?.(this._domWrapper)
+					},
 					onclick: (e: MouseEvent) => (a.onclick ? a.onclick(e, this._domInputWrapper) : this.focus(e, a)),
 					"aria-haspopup": a.hasPopup,
 					"data-testid": `tf:${a.label ? lang.getTestId(a.label) : a.value}`,
@@ -119,7 +124,7 @@ export class TextField implements ClassComponent<TextFieldAttrs> {
 										this._domLabel = vnode.dom as HTMLElement
 									},
 									style: {
-										fontSize: `${labelBase ? font_size.base : font_size.small}px`,
+										fontSize: rem(labelBase ? font_size.base_em : font_size.small_em),
 										transform: `translateY(${labelBase ? baseLabelPosition : 0})`,
 										"transition-timing-function": "ease-out",
 										"transition-duration": `${labelTransitionSpeed}ms`,
@@ -268,7 +273,7 @@ export class TextField implements ClassComponent<TextFieldAttrs> {
 						oncreate: (vnode) => {
 							this.domInput = vnode.dom as HTMLInputElement
 							this.domInput.value = a.value
-							a.onDomInputCreated?.(this.domInput)
+							a.onDomInputCreated?.(this.domInput, vnode)
 							if (a.type !== LegacyTextFieldType.Area) {
 								;(vnode.dom as HTMLElement).addEventListener("animationstart", (e: AnimationEvent) => {
 									if (e.animationName === "onAutoFillStart") {
@@ -357,7 +362,14 @@ export class TextField implements ClassComponent<TextFieldAttrs> {
 				},
 				onfocus: (e: FocusEvent) => this.focus(e, a),
 				onblur: (e: FocusEvent) => this.blur(e, a),
-				onkeydown: (e: KeyboardEvent) => useKeyHandler(e, a.keyHandler),
+				onkeydown: (e: KeyboardEvent) => {
+					const handled = useKeyHandler(e, a.keyHandler)
+					if (!isKeyPressed(e.key, Keys.F1, Keys.TAB, Keys.ESC) && !(e.ctrlKey || e.metaKey)) {
+						// When we are in a text field we don't want keys propagated up to act as hotkeys
+						e.stopPropagation()
+					}
+					return handled
+				},
 				oninput: () => {
 					this.domInput.style.height = "0px"
 					this.domInput.style.height = px(Math.max(this.domInput.scrollHeight, (a.minLineCount ?? 1) * font_size.line_height_input))

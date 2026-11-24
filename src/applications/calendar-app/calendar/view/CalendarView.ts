@@ -95,7 +95,6 @@ import {
 	handleSendUpdatesClick,
 } from "./EventDetailsView.js"
 import { ContactCardViewer } from "../../../mail-app/contacts/view/ContactCardViewer.js"
-import { calendarLocator } from "../../calendarLocator.js"
 import { simulateMailToClick } from "../gui/eventpopup/ContactPreviewView.js"
 import { CalendarSidebarRow, CalendarSidebarRowAttrs } from "../gui/CalendarSidebarRow"
 import { showGroupSharingDialog } from "../../../common/sharing/view/GroupSharingDialog"
@@ -123,7 +122,6 @@ import { CalendarImporter } from "../../../common/calendar/import/CalendarImport
 import { ImportInteractionHandler } from "../../../common/calendar/gui/ImportInteractionHandler"
 import { EventSeriesResolver } from "../../../common/calendar/import/EventSeriesResolver"
 import { reverse } from "../../../common/misc/EnumUtils"
-import { isFreeSignupOnly } from "../../../common/misc/LoginUtils"
 import { CalendarQuickSearchBar } from "./CalendarQuickSearchBar"
 
 export type GroupColors = Map<Id, string>
@@ -192,40 +190,37 @@ export class CalendarView extends BaseTopLevelView implements TopLevelView<Calen
 								SidebarSection,
 								{
 									name: "yourCalendars_label",
-									button:
-										isFreeSignupOnly() && locator.logins.getUserController().isFreeAccount()
-											? null
-											: m(IconButton, {
-													label: "addCalendar_action",
-													colors: ButtonColor.Nav,
-													click:
-														(EnvProvider.get().isApp() || EnvProvider.get().isDesktop()) &&
-														findFirstPrivateCalendar(attrs.calendarViewModel.calendarInfos)
-															? createDropdown({
-																	lazyButtons: () => [
-																		{
-																			label: "addCalendar_action",
-																			colors: ButtonColor.Nav,
-																			click: () => this.onPressedAddCalendar(CalendarType.Private),
-																			icon: Icons.Plus,
-																			size: ButtonSize.Compact,
-																		},
-																		{
-																			label: "addCalendarFromURL_action",
-																			icon: Icons.Chainlink,
-																			size: ButtonSize.Compact,
-																			click: () => this.onPressedAddCalendar(CalendarType.External),
-																		},
-																	],
-																})
-															: () => this.onPressedAddCalendar(CalendarType.Private),
-													icon: Icons.Plus,
-													size: ButtonSize.Compact,
-												}),
+									button: m(IconButton, {
+										label: "addCalendar_action",
+										colors: ButtonColor.Nav,
+										click:
+											(EnvProvider.get().isApp() || EnvProvider.get().isDesktop()) &&
+											findFirstPrivateCalendar(attrs.calendarViewModel.calendarInfos)
+												? createDropdown({
+														lazyButtons: () => [
+															{
+																label: "addCalendar_action",
+																colors: ButtonColor.Nav,
+																click: () => this.onPressedAddCalendar(CalendarType.Private),
+																icon: Icons.Plus,
+																size: ButtonSize.Compact,
+															},
+															{
+																label: "addCalendarFromURL_action",
+																icon: Icons.Chainlink,
+																size: ButtonSize.Compact,
+																click: () => this.onPressedAddCalendar(CalendarType.External),
+															},
+														],
+													})
+												: () => this.onPressedAddCalendar(CalendarType.Private),
+										icon: Icons.Plus,
+										size: ButtonSize.Compact,
+									}),
 									hideIfEmpty: true,
 								},
 								this.renderCalendars(CalendarType.Private),
-								(!isFreeSignupOnly() || !locator.logins.getUserController().isFreeAccount()) && this.renderBirthdayCalendar(),
+								this.renderBirthdayCalendar(),
 							),
 							m(
 								SidebarSection,
@@ -554,7 +549,7 @@ export class CalendarView extends BaseTopLevelView implements TopLevelView<Calen
 			return null
 		}
 
-		if (!this.viewModel.eventPreviewModel && calendarLocator.syncTracker.isSyncDone) {
+		if (!this.viewModel.eventPreviewModel) {
 			this.exitEventDetails()
 			return null
 		}
@@ -629,7 +624,7 @@ export class CalendarView extends BaseTopLevelView implements TopLevelView<Calen
 					if (!(await Dialog.confirm("openMailApp_msg", "yes_label"))) return
 
 					const query = `contactId=${stringToBase64(contact._id.join("/"))}`
-					calendarLocator.systemFacade.openMailApp(stringToBase64(query))
+					locator.systemFacade.openMailApp(stringToBase64(query))
 				},
 				onWriteMail: (to: PartialRecipient) => simulateMailToClick(to.address),
 				extendedActions: true,
@@ -1398,7 +1393,7 @@ export class CalendarView extends BaseTopLevelView implements TopLevelView<Calen
 			},
 		]
 
-		if (this.canShare(isExternal) && (!isFreeSignupOnly() || !locator.logins.getUserController().isFreeAccount())) {
+		if (this.canShare(isExternal)) {
 			actions.push({
 				label: "sharing_label",
 				icon: Icons.PersonAddFilled,

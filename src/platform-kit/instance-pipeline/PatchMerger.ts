@@ -3,9 +3,9 @@
 // apply patch operations using a similar logic from the server
 // update the instance in the offline db
 
-import { AssociationReprType, getAssociationRepresentationType, isSameId, isSameSingleId, isSameTypeRef, TypeRef } from "../meta"
+import { AssociationReprType, Entity, getAssociationRepresentationType, isSameId, isSameSingleId, isSameTypeRef, PersistentEntity, TypeRef } from "../meta"
 import { ParsedValue } from "./ParsedValue"
-import { assertNotNull, deepEqual, isEmpty, isNotNull, KeyVersion, lazy, Nullable } from "@tutao/utils"
+import { assertNotNull, deepEqual, isEmpty, isNotNull, lazy, Nullable } from "@tutao/utils"
 import {
 	DecryptedParsedInstance,
 	DecryptedParsedValue,
@@ -14,9 +14,17 @@ import {
 	InstancePipeline,
 	PatchOperationError,
 } from "@tutao/instance-pipeline"
-import { AesKey, InstanceDecryptor, InstanceTypeId, SymmetricCipherFacade, validateKdfNonceLength, VersionedEncryptedKey } from "@tutao/crypto"
+import {
+	AesKey,
+	InstanceDecryptor,
+	InstanceKeyProvider,
+	OwnerKeyProvider,
+	SymmetricCipherFacade,
+	validateKdfNonceLength,
+	VersionedEncryptedKey,
+} from "@tutao/crypto"
 import { CryptoError } from "@tutao/crypto/error"
-import { Entity, ServerTypeModel } from "@tutao/meta"
+import { ServerTypeModel } from "@tutao/meta"
 import { PatchOperationType } from "./PatchGenerator.js"
 import { TypeModelResolver } from "./EntityFunctions"
 import { Patch, UserTypeRef } from "@tutao/entities/sys"
@@ -24,16 +32,14 @@ import { EntityUpdateData } from "./utils/EntityUpdateUtils"
 import { IncomingServerJson } from "./TypeMapper"
 import { EnvProvider } from "@tutao/app-env"
 import { isNull } from "../utils/Utils"
-
-export interface OwnerKeyProvider {
-	(ownerKeyVersion: KeyVersion): Promise<AesKey>
-}
+import { AssociationPath, ValuePath } from "./EncryptionContextPath"
+import { InstanceTypeId, makeKeyDerivationContext } from "./InstanceTypeContext"
 
 export interface OwnerEncSessionKeyProvider {
 	(instanceElementId: Id, entity: Entity): Promise<VersionedEncryptedKey>
 }
 
-export interface SessionKeyResolver {
+export interface SessionAndInstanceKeyResolver {
 	/**
 	 * Returns the session key for the provided type/instance:
 	 * * null, if the instance is unencrypted
@@ -56,6 +62,13 @@ export interface SessionKeyResolver {
 	 *
 	 */
 	resolveServiceSessionKey(instance: EntityAdapter): Promise<AesKey | null>
+
+	/**
+	 * Return an instance key provider if possible and needed for the instance.
+	 * Needed if the instance is encrypted with instance keys, and we cannot get the ownerGroupKey.
+	 * @param instance
+	 */
+	makeInstanceKeyProvider(instance: PersistentEntity): Promise<Nullable<InstanceKeyProvider>>
 }
 
 /*
@@ -82,7 +95,7 @@ export class PatchMerger {
 		private readonly cacheStorage: GetOrPutInstance,
 		public readonly instancePipeline: InstancePipeline,
 		private readonly typeModelResolver: TypeModelResolver,
-		private readonly sessionKeyResolver: lazy<SessionKeyResolver>,
+		private readonly sessionKeyResolver: lazy<SessionAndInstanceKeyResolver>,
 		private readonly symmetricCipherFacade: SymmetricCipherFacade,
 	) {}
 
@@ -106,10 +119,13 @@ export class PatchMerger {
 				id: instanceType.typeId,
 				name: instanceType.typeId.toString(),
 			}
-			const instanceDecryptor = this.symmetricCipherFacade.getInstanceDecryptor(sk, kdfNonce, instanceTypeId)
+			const ownerKeyProvider = this.instancePipeline.cryptoMapper.makeOwnerKeyProvider(ownerGroup)
+
+			const keyDerivationContext = makeKeyDerivationContext(instanceTypeId)
+			const instanceDecryptor = this.symmetricCipherFacade.getInstanceDecryptor(keyDerivationContext, sk, kdfNonce, ownerKeyProvider, null)
 			// We need to preserve the order of patches, so no promiseMap here
 			for (const patch of patches) {
-				const appliedSuccessfully = await this.applySinglePatch(parsedInstance, typeModel, patch, ownerGroup, instanceDecryptor)
+				const appliedSuccessfully = await this.applySinglePatch(parsedInstance, typeModel, patch, instanceDecryptor)
 				if (!appliedSuccessfully) {
 					return null
 				}
@@ -139,7 +155,6 @@ export class PatchMerger {
 		parsedInstance: DecryptedParsedInstance,
 		typeModel: ServerTypeModel,
 		patch: Patch,
-		ownerGroup: Nullable<Id>,
 		instanceDecryptor: InstanceDecryptor,
 	): Promise<boolean> {
 		try {
@@ -175,8 +190,8 @@ export class PatchMerger {
 				case PatchOperationType.REPLACE:
 				case PatchOperationType.ADD_ITEM: {
 					const encryptedParsedValue = await this.parseValueOnPatch(pathResult, patch.value)
-					const fieldPath: string = this.removeNetworkDebuggingSymbolsIfNeeded(patch.attributePath)
-					const value = await this.decryptValueOnPatch(pathResult, encryptedParsedValue, ownerGroup, instanceDecryptor, fieldPath)
+					const attributePath: string = this.removeNetworkDebuggingSymbolsIfNeeded(patch.attributePath)
+					const value = await this.decryptValueOnPatch(pathResult, encryptedParsedValue, instanceDecryptor, attributePath)
 					await this.applyPatchOperation(patch.patchOperation, pathResult, value)
 					break
 				}
@@ -187,11 +202,11 @@ export class PatchMerger {
 		}
 	}
 
-	private removeNetworkDebuggingSymbolsIfNeeded(fieldPath: string): string {
+	private removeNetworkDebuggingSymbolsIfNeeded(path: string): string {
 		if (!EnvProvider.get().networkDebuggingEnabled()) {
-			return fieldPath
+			return path
 		}
-		return fieldPath
+		return path
 			.split("/")
 			.map((pathItem) => pathItem.split(":")[0])
 			.join("/")
@@ -333,9 +348,8 @@ export class PatchMerger {
 	private async decryptValueOnPatch(
 		pathResult: PathResult,
 		valueInPatchPayload: EncryptedParsedValue,
-		ownerGroup: Nullable<Id>,
 		instanceDecryptor: InstanceDecryptor,
-		fieldPath: string,
+		attributePatchPath: string,
 	): Promise<DecryptedParsedValue> {
 		const { typeModel, attributeId } = pathResult
 		const isValue = isNotNull(typeModel.values[attributeId])
@@ -346,8 +360,7 @@ export class PatchMerger {
 				encryptedValueInfo,
 				valueInPatchPayload,
 				instanceDecryptor,
-				this.instancePipeline.cryptoMapper.makeOwnerKeyProvider(ownerGroup),
-				fieldPath,
+				ValuePath.fromPatchPath(typeModel.app, attributePatchPath),
 			)
 		}
 
@@ -357,8 +370,7 @@ export class PatchMerger {
 				const decryptedAggregates = await this.instancePipeline.cryptoMapper.decryptAggregateAssociation(
 					valueInPatchPayload.asNestedObjList(),
 					instanceDecryptor,
-					this.instancePipeline.cryptoMapper.makeOwnerKeyProvider(ownerGroup),
-					`${fieldPath}/`,
+					AssociationPath.fromPatchPath(typeModel.app, attributePatchPath),
 				)
 				if (this.instancePipeline.cryptoMapper.containErrors(decryptedAggregates)) {
 					// we do not want to apply a patch that failed decryption

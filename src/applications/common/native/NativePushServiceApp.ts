@@ -21,8 +21,8 @@ import { ClientDetector } from "../../../platform-kit/app-env/boot/ClientDetecto
 const MOBILE_SYS_MODEL_VERSION = 126
 
 function effectiveModelVersion(): number {
-	// on desktop we use generated classes
-	// on mobile we use hand-written classes
+	// on desktop, we use generated classes
+	// on mobile, we use handwritten classes
 	return EnvProvider.get().isDesktop() ? sysModelInfo.version : MOBILE_SYS_MODEL_VERSION
 }
 
@@ -49,7 +49,7 @@ export class NativePushServiceApp {
 		console.log(`Registering for push notifications for app type ${this.app}`)
 		if (EnvProvider.get().isAndroidApp() || EnvProvider.get().isDesktop()) {
 			try {
-				const identifier = (await this.loadPushIdentifierFromNative()) ?? (await locator.workerFacade.generateSsePushIdentifer())
+				const identifier = (await this.loadPushIdentifierFromNative()) ?? (await locator.workerFacade.generateSsePushIdentifier())
 				const pushIdentifier = (await this.loadPushIdentifier(identifier)) ?? (await this.createPushIdentifierInstance(identifier, PushServiceType.SSE))
 				this._currentIdentifier = { identifier, disabled: pushIdentifier.disabled }
 
@@ -179,7 +179,7 @@ export class NativePushServiceApp {
 
 		const userId = elementIdToId(this.logins.getUserController().user._id)
 
-		// The native part might have alarms stored for the older model version and they might miss some new fields.
+		// The native part might have alarms stored for the older model version, and they might miss some new fields.
 		// We need to remove all of them, re-download and re-schedule all of them.
 		const scheduledAlarmsModelVersion = this.deviceConfig.getScheduledAlarmsModelVersion(userId)
 		if (scheduledAlarmsModelVersion == null || scheduledAlarmsModelVersion < effectiveModelVersion()) {

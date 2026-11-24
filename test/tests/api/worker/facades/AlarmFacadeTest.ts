@@ -1,7 +1,17 @@
 import o from "@tutao/otest"
 import { clientInitializedTypeModelResolver, createTestEntity, instancePipelineFromTypeModelResolver } from "../../../TestUtils"
 import { matchers, object, verify, when } from "testdouble"
-import { AesKey, base64ToKey, VersionedKey } from "../../../../../src/platform-kit/crypto"
+import {
+	Aes,
+	AesCbcFacade,
+	AesKey,
+	base64ToKey,
+	KeyEncryption,
+	random,
+	SymmetricCipherFacade,
+	SymmetricCipherUtils,
+	VersionedKey,
+} from "../../../../../src/platform-kit/crypto"
 import { InstancePipeline, TypeModelResolver } from "../../../../../src/platform-kit/instance-pipeline"
 import { AlarmFacade } from "../../../../../src/applications/common/api/worker/facades/lazy/AlarmFacade"
 import { InfoMessageHandler } from "../../../../../src/applications/common/gui/InfoMessageHandler"
@@ -18,17 +28,17 @@ import {
 	AlarmNotificationTypeRef,
 	AlarmService_POST,
 	CalendarEventRefTypeRef,
-	createAlarmInfo,
-	createAlarmNotification,
+	createAlarmInfoTransferAggregatedType,
+	createAlarmNotificationTransferAggregatedType,
 	createAlarmServicePost,
-	createCalendarEventRef,
-	createUserAlarmInfoData,
+	createCalendarEventRefTransferAggregatedType,
+	createNotificationTransferAggregatedType,
+	createUserAlarmInfoTransferAggregatedType,
 	GroupMembership,
 	GroupMembershipTypeRef,
 	PushIdentifier,
 	PushIdentifierTypeRef,
 	User,
-	UserAlarmInfoData,
 	UserAlarmInfoTypeRef,
 	UserTypeRef,
 } from "@tutao/entities/sys"
@@ -36,8 +46,12 @@ import { CalendarEvent, CalendarEventTypeRef, createCalendarEvent } from "@tutao
 import { CryptoWrapper } from "../../../../../src/platform-kit/crypto/instance-pipeline-crypto/CryptoWrapper"
 import { EventAlarmInfoTemplatesTuple } from "../../../../../src/applications/common/calendar/import/ImportExportUtils"
 import { IncomingServerJson } from "../../../../../src/platform-kit/instance-pipeline/TypeMapper"
+import { AeadFacade } from "@tutao/crypto/aead-facade"
+import { SymmetricKeyDeriver } from "@tutao/crypto/symmetric-key-deriver"
 
 o.spec("AlarmFacadeTest", function () {
+	let symmetricCipherUtils: SymmetricCipherUtils
+	let keyEncryption: KeyEncryption
 	let nativePushFacadeMock: NativePushFacade
 	let userFacadeMock: UserFacade
 	let cryptoWrapperMock: CryptoWrapper
@@ -53,8 +67,16 @@ o.spec("AlarmFacadeTest", function () {
 	let userGroupMembership: GroupMembership
 
 	o.beforeEach(function () {
+		symmetricCipherUtils = new SymmetricCipherUtils(random)
+		const symmetricCipherFacade = new SymmetricCipherFacade(
+			new AesCbcFacade(),
+			new AeadFacade(symmetricCipherUtils),
+			new SymmetricKeyDeriver(),
+			symmetricCipherUtils,
+		)
+		keyEncryption = new KeyEncryption(symmetricCipherFacade, new Aes(symmetricCipherFacade))
 		typeModelResolver = clientInitializedTypeModelResolver()
-		instancePipeline = instancePipelineFromTypeModelResolver(typeModelResolver)
+		instancePipeline = instancePipelineFromTypeModelResolver(random, symmetricCipherFacade, typeModelResolver)
 		nativePushFacadeMock = object()
 		userFacadeMock = object()
 		cryptoWrapperMock = object()
@@ -77,6 +99,8 @@ o.spec("AlarmFacadeTest", function () {
 			nativePushFacadeMock,
 			instancePipeline,
 			infoMessageHandlerMock,
+			symmetricCipherUtils,
+			keyEncryption,
 		)
 	})
 
@@ -90,6 +114,8 @@ o.spec("AlarmFacadeTest", function () {
 		const encryptedTrigger = new Uint8Array(1)
 
 		o.beforeEach(function () {
+			userGroupKey.version = 0
+
 			when(userFacadeMock.getUserGroupId()).thenReturn(user.userGroup.group)
 			when(userFacadeMock.getCurrentUserGroupKey()).thenReturn(userGroupKey)
 
@@ -105,33 +131,41 @@ o.spec("AlarmFacadeTest", function () {
 		})
 
 		o.test("successful scenario", async function () {
-			const calendarEventRef = createCalendarEventRef({
-				listId: listIdPart(personalCalendarEvent._id),
-				elementId: elementIdPart(personalCalendarEvent._id),
+			const alarmInfo = createAlarmInfoTransferAggregatedType({
+				alarmIdentifier: personalAlarmInfoTemplate.alarmIdentifier,
+				calendarRef: createCalendarEventRefTransferAggregatedType({
+					elementId: elementIdPart(personalCalendarEvent._id),
+					listId: listIdPart(personalCalendarEvent._id),
+				}),
+				trigger: personalAlarmInfoTemplate.trigger,
 			})
-			const alarmNotifications: AlarmNotification[] = [
-				createAlarmNotification({
-					alarmInfo: createAlarmInfo({ ...personalAlarmInfoTemplate, calendarRef: calendarEventRef }),
-					repeatRule: null,
-					notificationSessionKeys: [],
-					operation: OperationType.CREATE,
-					summary: personalCalendarEvent.summary,
-					eventStart: personalCalendarEvent.startTime,
-					eventEnd: personalCalendarEvent.endTime,
-					user: elementIdToId(user._id),
+			const notification = createNotificationTransferAggregatedType({
+				_ownerKeyVersion: userGroupKey.version.toString(),
+				_ownerEncSessionKey: ownerEncSessionKey,
+				_kdfNonce: null,
+				alarms: [
+					createAlarmNotificationTransferAggregatedType({
+						alarmInfo,
+						repeatRule: null,
+						notificationSessionKeys: [],
+						operation: OperationType.CREATE,
+						summary: personalCalendarEvent.summary,
+						eventStart: personalCalendarEvent.startTime,
+						eventEnd: personalCalendarEvent.endTime,
+						user: elementIdToId(user._id),
+					}),
+				],
+			})
+			const userAlarmInfo = [
+				createUserAlarmInfoTransferAggregatedType({
+					_ownerGroup: userGroupMembership.group,
+					_ownerEncSessionKey: ownerEncSessionKey,
+					_ownerKeyVersion: userGroupKey.version.toString(),
+					_kdfNonce: null,
+					alarmInfo,
 				}),
 			]
-			const userAlarmInfoData: UserAlarmInfoData[] = [
-				createUserAlarmInfoData({
-					encryptedTrigger,
-					alarmIdentifier: personalAlarmInfoTemplate.alarmIdentifier,
-					ownerGroup: user.userGroup.group,
-					calendarEventRef: calendarEventRef,
-				}),
-			]
-			userAlarmInfoData[0].ownerEncSessionKey = ownerEncSessionKey
-			userAlarmInfoData[0].ownerKeyVersion = userGroupKey.version.toString()
-			const alarmServicePostData = createAlarmServicePost({ alarmNotifications, userAlarmInfoData })
+			const alarmServicePostData = createAlarmServicePost({ alarmNotifications: [], notification, userAlarmInfoData: [], userAlarmInfo })
 
 			const eventAlarmsTuple: EventAlarmInfoTemplatesTuple = {
 				event: personalCalendarEvent,

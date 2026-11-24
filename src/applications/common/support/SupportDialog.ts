@@ -19,7 +19,7 @@ import { getSupportUsageTestStage } from "./SupportUsageTestUtils.js"
 import { Dialog } from "../../../ui/base/Dialog.js"
 import { Thunk } from "@tutao/utils"
 import { showProgressDialog } from "../../../ui/dialogs/ProgressDialog"
-import { size } from "../../../ui/size"
+import { px, size } from "../../../ui/size"
 import { SupportCategory, SupportData, SupportDataTypeRef, SupportTopic } from "@tutao/entities/tutanota"
 import { windowFacade } from "../misc/WindowFacade"
 import { Keys } from "../../../ui/utils/KeyboardKeys"
@@ -88,14 +88,15 @@ export async function showSupportDialog(logins: LoginController) {
 		}),
 	)
 	data.categories = filterCategories(supportData)
-
+	const isFreeAccount = !locator.logins.getUserController().isPaidAccount()
+	const STATIC_CONTENT_LENGTH = isFreeAccount ? 1 : 2
 	const SECTION_BUTTON_PIXEL_HEIGHT = size.core_56 + size.spacing_8
 	const STATIC_CONTENT_PIXEL_HEIGHT = 232
 	// this height allows the static content + all categories to fit on the dialog without scrolling and with perfect
 	// padding (24px on the sides and on the bottom)
 	// we're adding one category because of the static support link.
 	// the height is limited automatically by the dialog; if there's too many categories, a scroll bar appears.
-	const dialogHeight = STATIC_CONTENT_PIXEL_HEIGHT + (data.categories.length + 1) * SECTION_BUTTON_PIXEL_HEIGHT
+	const dialogHeight = STATIC_CONTENT_PIXEL_HEIGHT + (data.categories.length + STATIC_CONTENT_LENGTH) * SECTION_BUTTON_PIXEL_HEIGHT
 
 	const dialog = new MultiPageDialog<SupportDialogPageName>(
 		"home",
@@ -104,6 +105,7 @@ export async function showSupportDialog(logins: LoginController) {
 				title: lang.get("supportMenu_label"),
 				content: m(SupportLandingPage, {
 					data,
+					dialog,
 					toCategoryDetail: () => {
 						const selectedCategory = data.selectedCategory()
 
@@ -119,7 +121,7 @@ export async function showSupportDialog(logins: LoginController) {
 						topicStage.complete()
 					},
 				}),
-				rightAction: { type: ButtonType.Secondary, click: () => dialog.onClose(), label: "done_action", title: "done_action" },
+				rightAction: { type: ButtonType.Secondary, click: () => dialog.onClose(), label: "close_alt", title: "close_alt" },
 			},
 			categoryDetail: {
 				content: m(SupportCategoryPage, {
@@ -149,8 +151,8 @@ export async function showSupportDialog(logins: LoginController) {
 				leftAction: { type: ButtonType.Secondary, click: () => goBack(), label: "back_action", title: "back_action" },
 				rightAction: {
 					type: ButtonType.Secondary,
-					label: "done_action",
-					title: "done_action",
+					label: "close_alt",
+					title: "close_alt",
 					click: () => {
 						dialog.onClose()
 					},
@@ -178,8 +180,8 @@ export async function showSupportDialog(logins: LoginController) {
 				leftAction: { type: ButtonType.Secondary, click: () => goBack(), label: "back_action", title: "back_action" },
 				rightAction: {
 					type: ButtonType.Secondary,
-					label: "done_action",
-					title: "done_action",
+					label: "close_alt",
+					title: "close_alt",
 					click: () => {
 						dialog.onClose()
 					},
@@ -202,8 +204,8 @@ export async function showSupportDialog(logins: LoginController) {
 				},
 				rightAction: {
 					type: ButtonType.Secondary,
-					label: "done_action",
-					title: "done_action",
+					label: "close_alt",
+					title: "close_alt",
 					click: withConfirmation(() => dialog.onClose(), "supportCloseLostRequest_msg"),
 				},
 			},
@@ -219,8 +221,8 @@ export async function showSupportDialog(logins: LoginController) {
 
 						dialog.onClose()
 					},
-					label: "done_action",
-					title: "done_action",
+					label: "close_alt",
+					title: "close_alt",
 				},
 			},
 			supportRequestSent: {
@@ -228,8 +230,8 @@ export async function showSupportDialog(logins: LoginController) {
 				title: lang.get("supportMenu_label"),
 				rightAction: {
 					type: ButtonType.Secondary,
-					label: "done_action",
-					title: "done_action",
+					label: "close_alt",
+					title: "close_alt",
 					click: () => {
 						dialog.onClose()
 					},
@@ -246,8 +248,8 @@ export async function showSupportDialog(logins: LoginController) {
 				leftAction: { type: ButtonType.Secondary, click: () => goBack(), label: "back_action", title: "back_action" },
 				rightAction: {
 					type: ButtonType.Secondary,
-					label: "done_action",
-					title: "done_action",
+					label: "close_alt",
+					title: "close_alt",
 					click: () => {
 						dialog.onClose()
 					},
@@ -255,7 +257,7 @@ export async function showSupportDialog(logins: LoginController) {
 			},
 		}),
 		windowFacade,
-		dialogHeight,
+		px(dialogHeight),
 	).getDialog()
 
 	dialog

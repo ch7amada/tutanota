@@ -22,7 +22,6 @@ import { DesktopIntegrator, getDesktopIntegratorForPlatform } from "./integratio
 import net from "node:net"
 import child_process from "node:child_process"
 import { LocalShortcutManager } from "./electron-localshortcut/LocalShortcut"
-import { cryptoFns } from "./CryptoFns"
 import { DesktopConfigMigrator } from "./config/migrations/DesktopConfigMigrator"
 import { DesktopKeyStoreFacade } from "./DesktopKeyStoreFacade.js"
 import { SchedulerImpl } from "../api/common/utils/Scheduler.js"
@@ -48,7 +47,7 @@ import { DesktopWebauthnFacade } from "./2fa/DesktopWebauthnFacade.js"
 import { DesktopPostLoginActions } from "./DesktopPostLoginActions.js"
 import { DesktopInterWindowEventFacade } from "./ipc/DesktopInterWindowEventFacade.js"
 import { OfflineDbFactory, PerWindowSqlCipherFacade } from "./db/PerWindowSqlCipherFacade.js"
-import { LazyLoaded, lazyMemoized, noOp } from "../../../platform-kit/utils"
+import { LazyLoaded, lazyMemoized, noOp, Nullable } from "../../../platform-kit/utils"
 import dns from "node:dns"
 import { getConfigFile } from "./config/ConfigFile.js"
 import { OfflineDbRefCounter } from "./db/OfflineDbRefCounter.js"
@@ -63,21 +62,30 @@ import { TutaSseFacade } from "./sse/TutaSseFacade.js"
 import { SseStorage } from "./sse/SseStorage.js"
 import { DesktopSseDelay } from "./sse/reconnectDelay.js"
 import { KeychainEncryption } from "./credentials/KeychainEncryption.js"
-import { Argon2IDExports, SYMMETRIC_CIPHER_FACADE } from "../../../platform-kit/crypto"
+import {
+	Aes,
+	AesCbcFacade,
+	Argon2IDExports,
+	InstanceKeyProvider,
+	KeyEncryption,
+	random,
+	SymmetricCipherFacade,
+	SymmetricCipherUtils,
+} from "../../../platform-kit/crypto"
 import { DelayedImpls, exposeLocalDelayed } from "../api/common/WorkerProxy.js"
 import { DefaultDateProvider } from "../calendar/date/CalendarUtils.js"
 import { AlarmScheduler } from "../calendar/date/AlarmScheduler.js"
 import { DesktopExternalCalendarFacade } from "./ipc/DesktopExternalCalendarFacade.js"
-import { customFetch } from "./net/NetAgent"
+import { customFetch, netAgent } from "./net/NetAgent"
 import { DesktopMailImportFacade } from "./mailimport/DesktopMailImportFacade.js"
 import { MailboxExportPersistence } from "./export/MailboxExportPersistence.js"
 import { DesktopExportLock } from "./export/DesktopExportLock"
-import { ClientOnlyTypeModelResolver, InstancePipeline, NamedClientModel } from "../../../platform-kit/instance-pipeline"
+import { ClientOnlyTypeModelResolver, InstanceKeyProviderMakerInterface, InstancePipeline, NamedClientModel } from "../../../platform-kit/instance-pipeline"
 import { CommandExecutor } from "./CommandExecutor"
 import { makeSuspensionAwareFetch } from "./net/SuspensionAwareFetch"
 import { restSuspension } from "../../../platform-kit/rest-client"
 import { DesktopErrorHandler } from "./DesktopErrorHandler"
-import { AppNameEnum } from "@tutao/meta"
+import { AppNameEnum, PersistentEntity } from "@tutao/meta"
 import { baseModelInfo, baseTypeModels } from "@tutao/entities/base"
 import { sysModelInfo, sysTypeModels } from "@tutao/entities/sys"
 import { tutanotaModelInfo, tutanotaTypeModels } from "@tutao/entities/tutanota"
@@ -89,10 +97,18 @@ import { accountingModelInfo, accountingTypeModels } from "@tutao/entities/accou
 import { initClientModels } from "../api/common/ClientModelInfoInitializer"
 import { loadWasmFromFileOrNetwork } from "../../../platform-kit/utils/WebAssembly"
 import { DesktopOauthWindowFacade } from "./DesktopOauthWindowFacade"
-import { ImapSyncEventListener } from "./imapimport/imapsync/ImapSyncEventListener"
-import { createImapSync } from "./imapimport/imapsync/ImapSync"
-import { DesktopImapSyncSystemFacade, ImapInitFolderSyncFactory, ImapSyncFactory } from "./imapimport/DesktopImapSyncSystemFacade"
+import { MigrationSyncEventListener } from "./migration/MigrationSyncEventListener"
+import { DesktopMigrationSyncSystemFacade, MigrationInitFolderSyncFactory, MigrationSyncFactory } from "./migration/DesktopMigrationSyncSystemFacade"
 import { CertificateProvider } from "./CertificateProvider"
+import { CryptoFunctions } from "./CryptoFunctions"
+import { AeadFacade } from "../../../platform-kit/crypto/encryption/symmetric/AeadFacade"
+import { SymmetricKeyDeriver } from "../../../platform-kit/crypto/encryption/symmetric/SymmetricKeyDeriver"
+import { MigrationFetchMethod } from "../api/common/utils/migrationImportUtils/MigrationKnownConfigs"
+import { MigrationSyncSession } from "./migration/MigrationSyncSession"
+import { createImapSyncSession } from "./migration/imapsync/ImapSyncSession"
+import { createGmailSyncSession } from "./migration/gmailsync/GmailSyncSession"
+import { createM365SyncSession } from "./migration/m365sync/M365SyncSession"
+import { DesktopArchiveDownloaderFacade } from "./DesktopArchiveDownloaderFacade"
 
 mp()
 
@@ -129,6 +145,17 @@ const windowsRegistryFacade = new LazyLoaded(async () => {
 	const { WindowsRegistryFacade } = await import("./integration/WindowsRegistryFacade.js")
 	return new WindowsRegistryFacade(commandExecutor)
 })
+
+const symmetricCipherUtils = new SymmetricCipherUtils(random)
+const symmetricCipherFacade = new SymmetricCipherFacade(
+	new AesCbcFacade(),
+	new AeadFacade(symmetricCipherUtils),
+	new SymmetricKeyDeriver(),
+	symmetricCipherUtils,
+)
+const cryptoFns = new CryptoFunctions(random, symmetricCipherUtils, symmetricCipherFacade)
+const aes = new Aes(symmetricCipherFacade)
+const keyEncryption = new KeyEncryption(symmetricCipherFacade, aes)
 
 const tfs = new TempFs(fs, electron, cryptoFns)
 const commandExecutor = new CommandExecutor(child_process)
@@ -232,25 +259,31 @@ async function createComponents(): Promise<Components> {
 			// That is because, as they need to work offline, they cannot rely on being able to load group keys.
 			throw new ProgrammingError("trying to use group keys for alarm encryption")
 		},
-		SYMMETRIC_CIPHER_FACADE,
+		symmetricCipherFacade,
+		(): InstanceKeyProviderMakerInterface => {
+			return {
+				async makeInstanceKeyProvider(_: PersistentEntity): Promise<Nullable<InstanceKeyProvider>> {
+					return null
+				},
+			}
+		},
+		random,
+		keyEncryption,
 	)
 	const sseStorage = new SseStorage(conf)
-	const alarmStorage = new DesktopAlarmStorage(conf, desktopCrypto, keyStoreFacade, nativeInstancePipeline)
-	const updater = new ElectronUpdater(conf, notifier, desktopCrypto, app, appIcon, new UpdaterWrapper(), fs)
 	const shortcutManager = new LocalShortcutManager()
+	const alarmStorage = new DesktopAlarmStorage(conf, desktopCrypto, keyStoreFacade, nativeInstancePipeline, keyEncryption)
+	const wm = new WindowManager(conf, tray, notifier, electron, shortcutManager, appIcon)
+	const schedulerImpl = new SchedulerImpl(dateProvider, global, global)
+	const updater = new ElectronUpdater(conf, wm, notifier, desktopCrypto, app, appIcon, new UpdaterWrapper(), fs, schedulerImpl)
 	const credentialsDb = new DesktopCredentialsStorage(makeDbPath("credentials"), app)
 	const appPassHandler = new AppPassHandler(desktopCrypto, conf, loadArgon2(), lang, async () => {
 		const last = await wm.getLastFocused(true)
 		return last.commonNativeFacade
 	})
 	const keychainManager = new KeychainEncryption(appPassHandler, desktopCrypto, keyStoreFacade)
-	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(desktopCrypto, credentialsDb, keychainManager)
 
-	updater.setUpdateDownloadedListener(() => {
-		for (let applicationWindow of wm.getAll()) {
-			applicationWindow.desktopFacade.appUpdateDownloaded()
-		}
-	})
+	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(desktopCrypto, credentialsDb, keychainManager)
 
 	/** functions to create and delete the physical db file on disk */
 	const offlineDbFactory: OfflineDbFactory = {
@@ -278,10 +311,7 @@ async function createComponents(): Promise<Components> {
 	const offlineDbRefCounter = new OfflineDbRefCounter(offlineDbFactory)
 
 	const desktopExportLock = new DesktopExportLock()
-
-	const wm = new WindowManager(conf, tray, notifier, electron, shortcutManager, appIcon)
 	const themeFacade = new DesktopThemeFacade(conf, wm, electron.nativeTheme)
-	const schedulerImpl = new SchedulerImpl(dateProvider, global, global)
 	const alarmScheduler = new AlarmScheduler(dateProvider, schedulerImpl)
 	const desktopAlarmScheduler = new DesktopAlarmScheduler(wm, notifier, alarmStorage, alarmScheduler)
 	desktopAlarmScheduler.rescheduleAll().catch((e) => {
@@ -383,18 +413,28 @@ async function createComponents(): Promise<Components> {
 			},
 		}
 		const certificateProvider = new CertificateProvider(commandExecutor)
-		const imapSyncFactory: ImapSyncFactory = (accountSyncId: IdTuple) => {
-			const wrappedListener: ImapSyncEventListener = {
-				onMultipleMails: async (mails, type) => await window.imapSyncFacade.onMultipleMails(accountSyncId, mails, type),
-				onMailbox: async (mb, type) => await window.imapSyncFacade.onMailbox(accountSyncId, mb, type),
-				onMailboxStatus: async (stat) => await window.imapSyncFacade.onMailboxStatus(accountSyncId, stat),
-				onPostpone: async (until) => await window.imapSyncFacade.onPostpone(accountSyncId, until),
-				onFinish: async () => await window.imapSyncFacade.onFinish(accountSyncId),
-				onError: async (err) => await window.imapSyncFacade.onError(accountSyncId, err),
+		const createMigrationSync = (fetchMethod: MigrationFetchMethod, listener: MigrationSyncEventListener): MigrationSyncSession => {
+			switch (fetchMethod) {
+				case MigrationFetchMethod.GraphApi:
+					return createM365SyncSession(listener)
+				case MigrationFetchMethod.GoogleApi:
+					return createGmailSyncSession(listener)
+				case MigrationFetchMethod.Imap:
+					return createImapSyncSession(listener, certificateProvider)
 			}
-			return createImapSync(wrappedListener, certificateProvider)
 		}
-		const imapInitFolderSyncFactory: ImapInitFolderSyncFactory = () => {
+		const migrationSyncFactory: MigrationSyncFactory = (migrationSyncId: IdTuple, fetchMethod: MigrationFetchMethod) => {
+			const wrappedListener: MigrationSyncEventListener = {
+				onMultipleMails: async (mails, type) => await window.migrationSyncFacade.onMultipleMails(migrationSyncId, mails, type),
+				onMailbox: async (mb, type) => await window.migrationSyncFacade.onMailbox(migrationSyncId, mb, type),
+				onMailboxStatus: async (stat) => await window.migrationSyncFacade.onMailboxStatus(migrationSyncId, stat),
+				onPostpone: async (until) => await window.migrationSyncFacade.onPostpone(migrationSyncId, until),
+				onFinish: async () => await window.migrationSyncFacade.onFinish(migrationSyncId),
+				onError: async (err) => await window.migrationSyncFacade.onError(migrationSyncId, err),
+			}
+			return createMigrationSync(fetchMethod, wrappedListener)
+		}
+		const migrationInitFolderSyncFactory: MigrationInitFolderSyncFactory = (fetchMethod: MigrationFetchMethod) => {
 			const noopListener = {
 				onMultipleMails: async () => {},
 				onMailbox: async () => {},
@@ -403,16 +443,17 @@ async function createComponents(): Promise<Components> {
 				onFinish: async () => {},
 				onError: async () => {},
 			}
-			return createImapSync(noopListener, certificateProvider)
+			return createMigrationSync(fetchMethod, noopListener)
 		}
 		const dispatcher = new DesktopGlobalDispatcher(
+			new DesktopArchiveDownloaderFacade(customFetch, sqlCipherFacade),
 			desktopCommonSystemFacade,
 			new DesktopDesktopSystemFacade(wm, window, sock),
 			new DesktopExportFacade(tfs, electron, conf, window, dragIcons, mailboxExportPersistence, fs, dateProvider, desktopExportLock),
 			new DesktopExternalCalendarFacade(electron.app.userAgentFallback),
 			new DesktopFileFacade(window, conf, dateProvider, customFetch, electron, tfs, fs, path, commandExecutor, process, progressTracker),
-			new DesktopImapSyncSystemFacade(imapSyncFactory, imapInitFolderSyncFactory),
 			new DesktopInterWindowEventFacade(window, wm),
+			new DesktopMigrationSyncSystemFacade(migrationSyncFactory, migrationInitFolderSyncFactory),
 			nativeCredentialsFacade,
 			desktopCrypto,
 			desktopImportFacade,
@@ -476,6 +517,11 @@ async function startupInstance(components: Components) {
 }
 
 async function onAppReady(components: Components) {
+	// This listener is fired off only sometimes, presumably when the OS is not too busy?
+	electron.powerMonitor.on("resume", () => {
+		log.debug("resume from suspend, resetting net agent")
+		netAgent.reset()
+	})
 	const { wm, keyStoreFacade, conf } = components
 	err.init(wm)
 	// We await for it to not open any windows on top of keychain dialogs

@@ -10,12 +10,13 @@ import m, { Children } from "mithril"
 import { IconButtonAttrs } from "./IconButton.js"
 import { ClientDetector } from "../../platform-kit/app-env/boot/ClientDetector.js"
 import { isColorLight, isValidCSSHexColor } from "./Color.js"
-import { font_size, px, shape, size } from "../size"
+import { font_size, px, rem, shape, size } from "../size"
 
 import { PosRect } from "../utils/PosRect"
 import { Icon, IconSize } from "./Icon"
 import { theme } from "../theme"
 import { modal } from "./Modal"
+import { KeyPress } from "../utils/KeyManager"
 
 export const enum DropType {
 	ExternalFile = "ExternalFile",
@@ -464,7 +465,7 @@ export function renderDragElement(name: string, icon: Icons, count: number, subS
 									aspectRatio: "1 / 1",
 									borderRadius: px(shape.full),
 									padding: px(size.base_4),
-									lineHeight: px(font_size.small),
+									lineHeight: rem(font_size.small_em),
 									height: `calc(1em + ${size.base_4}px * 2)`,
 								},
 							},
@@ -486,4 +487,13 @@ export function contextDropdown(e: MouseEvent, dropdownAttrs: DropdownButtonAttr
 	const dropdown = new Dropdown(() => dropdownAttrs, 300)
 	dropdown.setOrigin(new DomRectReadOnlyPolyfilled(e.clientX, e.clientY, 0, 0))
 	modal.displayUniqueOverride(dropdown, false)
+}
+export function keyboardEventFrom(key: KeyPress) {
+	return new KeyboardEvent("keydown", {
+		key: key.key,
+		shiftKey: key.shift,
+		ctrlKey: key.ctrl,
+		altKey: key.alt,
+		metaKey: key.meta,
+	})
 }

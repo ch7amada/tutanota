@@ -79,12 +79,14 @@ import { Dialog } from "../../../ui/base/Dialog.js"
 import { createUserAreaGroupDeleteData, TemplateGroupService_DELETE, UserSettingsGroupRootTypeRef } from "@tutao/entities/tutanota"
 import { ButtonType } from "../../../ui/base/Button"
 import { renderHeaderButtons } from "../../calendar-app/gui/HeaderButtons"
-import ImapImportSettingsViewer from "./imapimport/ImapImportSettingsViewer.js"
+import MigrationSettingsViewer from "./migration/MigrationSettingsViewer.js"
+import { InboxRuleSettingsViewer } from "./InboxRuleSettingsViewer"
 
 EnvProvider.assertMainOrNode()
 
 export class SettingsView extends BaseTopLevelView implements TopLevelView<SettingsViewAttrs> {
 	viewSlider: ViewSlider
+	private readonly standardViewSlider: ViewSlider
 
 	private readonly _settingsFoldersColumn: ViewColumn
 	private readonly _settingsColumn: ViewColumn
@@ -122,6 +124,13 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 				undefined,
 			),
 			new SettingsFolder(
+				() => "inboxRulesSettings_action",
+				() => Icons.FunnelFilled,
+				"inboxrules",
+				() => new InboxRuleSettingsViewer(mailLocator.mailboxModel, mailLocator.entityClient, mailLocator.inboxRuleModel, mailLocator.inboxRuleHandler),
+				undefined,
+			),
+			new SettingsFolder(
 				() => "contacts_label",
 				() => Icons.PeopleFilled,
 				"contacts",
@@ -137,7 +146,7 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 				undefined,
 			),
 			new SettingsFolder(
-				() => "notificationSettings_action",
+				() => "notificationSettings_label",
 				() => Icons.BellFilled,
 				"notifications",
 				() => new NotificationSettingsViewer(),
@@ -210,7 +219,7 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 						"migration",
 						() => {
 							if (EnvProvider.get().isDesktop()) {
-								return new ImapImportSettingsViewer(() => mailLocator.getImapMailImportController())
+								return new MigrationSettingsViewer(() => mailLocator.getMailboxMigrationController())
 							} else {
 								return new WebMailImportSettingsViewer(false)
 							}
@@ -403,7 +412,10 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 				headerCenter: "settings_label",
 			},
 		)
-		this.viewSlider = new ViewSlider([this._settingsFoldersColumn, this._settingsColumn, this._settingsDetailsColumn], windowFacade)
+		this.viewSlider = this.standardViewSlider = new ViewSlider(
+			[this._settingsFoldersColumn, this._settingsColumn, this._settingsDetailsColumn],
+			windowFacade,
+		)
 
 		this._customDomains = new LazyLoaded(async () => {
 			const domainInfos = await getAvailableDomains(this.logins, true)
@@ -428,7 +440,7 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 		if (await this.logins.getUserController().canHaveUsers()) {
 			adminFolders.push(
 				new SettingsFolder(
-					() => "adminUserList_action",
+					() => "adminUserList_label",
 					() => Icons.PersonFilled,
 					"users",
 					() =>
@@ -497,7 +509,7 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 			if (this.logins.getUserController().isGlobalAdmin()) {
 				adminFolders.push(
 					new SettingsFolder<void>(
-						() => "adminSubscription_action",
+						() => "adminSubscription_label",
 						() => Icons.TrophyFilled,
 						"subscription",
 						() =>
@@ -508,7 +520,7 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 
 				adminFolders.push(
 					new SettingsFolder<void>(
-						() => "adminPayment_action",
+						() => "adminPayment_label",
 						() => Icons.CreditcardFilled,
 						"invoice",
 						() => new PaymentViewer(),
@@ -583,14 +595,28 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 	}
 
 	view({ attrs }: Vnode<SettingsViewAttrs>): Children {
+		const isUpgrading = this._currentViewer instanceof SubscriptionSettingsViewer && this._currentViewer.isUpgradeVisible
+		if (isUpgrading && this.viewSlider === this.standardViewSlider) {
+			// Give the shared plan selector room to position personal and business plans within the same page.
+			this.viewSlider = new ViewSlider([this._settingsFoldersColumn, this._settingsColumn], windowFacade)
+		} else if (!isUpgrading) {
+			this.viewSlider = this.standardViewSlider
+		}
+
 		return m(
 			"#settings.main-view",
+			{
+				// this ondragover is for dragging InboxRules
+				ondragover: (ev: DragEvent) => {
+					ev.preventDefault()
+				},
+			},
 			m(this.viewSlider, {
 				header: m(Header, {
 					...attrs.header,
 					buttons: renderHeaderButtons(),
 				}),
-				bottomNav: m(BottomNav),
+				bottomNav: isUpgrading ? null : m(BottomNav),
 			}),
 		)
 	}
@@ -1026,16 +1052,18 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 					},
 					abortController.signal,
 				),
-				progress,
 				{
-					middle: "exportUsers_action",
-					left: [
-						{
-							label: "cancel_action",
-							type: ButtonType.Primary,
-							click: () => abortController.abort(),
-						},
-					],
+					progressStream: progress,
+					headerBarAttrs: {
+						middle: "exportUsers_action",
+						left: [
+							{
+								label: "cancel_action",
+								type: ButtonType.Primary,
+								click: () => abortController.abort(),
+							},
+						],
+					},
 				},
 			)
 			await exportUserCsv(data, locator.fileController)

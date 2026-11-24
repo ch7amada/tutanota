@@ -18,7 +18,7 @@ import {
 	onceAsync,
 } from "@tutao/utils"
 import { MailboxDetail, MailboxModel } from "../../../common/mailFunctionality/MailboxModel"
-import { CancelledError, EnvProvider, FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP } from "@tutao/app-env"
+import { CancelledError, FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP } from "@tutao/app-env"
 import { elementIdToId, getElementId, isSameIdTuple, isSameSingleId } from "@tutao/meta"
 import { MailSetKind } from "../../../../entities/tutanota/Utils"
 import {
@@ -26,6 +26,7 @@ import {
 	getFreeSearchStartDate,
 	getMailRestriction,
 	isIncompleteMailResult,
+	isNonBlockingSearchAvailable,
 	isSameSearchRestriction,
 	isSameSearchWithExtendedRange,
 	mailSearchComparator,
@@ -37,7 +38,7 @@ import { Indexer } from "../../workerUtils/index/Indexer"
 import { LoginController } from "../../../common/api/main/LoginController"
 import { isMailDeletable } from "../../mail/model/MailChecks"
 import { isPermanentDeleteAllowedForFolder } from "../../mail/MailUtils"
-import { ListAutoSelectBehavior } from "../../../common/misc/DeviceConfig"
+import { deviceConfig, DownloadArchivesOnMeteredConnection, ListAutoSelectBehavior } from "../../../common/misc/DeviceConfig"
 import { getMailFilterForType, MailFilterType } from "../../mail/view/MailViewerUtils"
 import { MailOpenedListener } from "../../mail/view/MailViewModel"
 import { getStartOfTheWeekOffsetForUser } from "../../../common/misc/weekOffset"
@@ -55,6 +56,7 @@ import { ListFetchResult, onlySingleSelection } from "../../../../ui/base/ListUt
 import { MailSearchModel } from "../model/MailSearchModel"
 import { ClientDetector } from "../../../../platform-kit/app-env/boot/ClientDetector"
 import { isDriveEnabled } from "../../../common/misc/DriveUtils"
+import { MailIndexingAbortReason } from "../../workerUtils/index/MailIndexer"
 
 const SEARCH_PAGE_SIZE = 100
 export class MailSearchViewModel {
@@ -177,7 +179,7 @@ export class MailSearchViewModel {
 
 		if (
 			this.searchResult &&
-			!EnvProvider.get().isFullArchiveSearchAvailable() &&
+			isNonBlockingSearchAvailable() &&
 			restriction.end &&
 			isSameSearchWithExtendedRange(searchResultQuery(this.searchResult.searchResult), newQuery)
 		) {
@@ -352,7 +354,7 @@ export class MailSearchViewModel {
 			// for non-blocking search, the current search result will be extended as the range extends.
 			// for full-archive-download search, once indexing is done, the list will reload automatically if empty and
 			// by user action if not.
-			void this.indexerFacade.extendMailIndex(targetStartDate?.getTime() ?? FULL_INDEXED_TIMESTAMP)
+			void this.extendMailIndex(targetStartDate?.getTime() ?? FULL_INDEXED_TIMESTAMP)
 		} else if (!isSameDay) {
 			this.searchAgain()
 		}
@@ -361,11 +363,17 @@ export class MailSearchViewModel {
 	}
 
 	extendMailIndex(time: number): Promise<void> {
+		if (deviceConfig.getContinueDownloadArchivesOnMeteredConnection() === DownloadArchivesOnMeteredConnection.DECLINED) {
+			// allow user to change their decision by explicit extend of mail index
+			deviceConfig.setContinueDownloadArchivesOnMeteredConnection(DownloadArchivesOnMeteredConnection.UNDECIDED)
+		}
+
 		return this.indexerFacade.extendMailIndex(time)
 	}
 
 	cancelMailIndexing() {
-		this.indexerFacade.cancelMailIndexing()
+		deviceConfig.setContinueDownloadArchivesOnMeteredConnection(DownloadArchivesOnMeteredConnection.UNDECIDED)
+		this.indexerFacade.cancelMailIndexing(MailIndexingAbortReason.UserCancelled)
 	}
 
 	getUserId(): string {
@@ -447,7 +455,7 @@ export class MailSearchViewModel {
 		const isIndexingDoneOrCanceled = newState.progress === 0 && newState.error == null
 
 		const currentResult = this.searchResult
-		if (!EnvProvider.get().isFullArchiveSearchAvailable()) {
+		if (isNonBlockingSearchAvailable()) {
 			// Free users are not permitted to search beyond a certain date; avoid searching beyond this date if the index
 			// extended beyond it
 			const dateLimit = this.canSelectTimePeriod()

@@ -42,6 +42,9 @@ export const enum PaymentSetup {
 	Playstore = "playstore",
 	/// credit cards, paypal, invoice etc. this includes fdroid
 	Default = "default",
+	// this can happen if payment is permanently or temporarily unavailable (mostly when play store billing
+	// or StoreKit error out)
+	None = "none",
 }
 
 /**
@@ -82,6 +85,8 @@ export type DomainConfig = {
 	referralBaseUrl: string
 	/** Base URL for requesting any information from de website */
 	websiteBaseUrl: string
+	/** Base URL for shared Drive files */
+	driveFileShareBaseUrl: string
 }
 
 export const enum Mode {
@@ -231,10 +236,6 @@ export class EnvProvider {
 	 */
 	public isOfflineStorageAvailable(): boolean {
 		return !this.isBrowser() && !this.isAdminClient()
-	}
-
-	public isFullArchiveSearchAvailable(): boolean {
-		return this.isOfflineStorageAvailable() && this.isDesktop()
 	}
 
 	public static bootFinished(): void {

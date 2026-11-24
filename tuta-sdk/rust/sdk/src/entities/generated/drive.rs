@@ -86,6 +86,8 @@ pub struct DriveFile {
 	pub blobs: Vec<super::sys::Blob>,
 	#[serde(rename = "29")]
 	pub originalParent: Option<IdTupleGenerated>,
+	#[serde(rename = "167")]
+	pub share: Option<GeneratedId>,
 
 	#[serde(default)]
 	pub _errors: Errors,
@@ -198,16 +200,18 @@ pub struct DriveUploadedFile {
 	#[serde(rename = "56")]
 	pub _id: Option<CustomId>,
 	#[serde(rename = "57")]
-	pub fileName: String,
+	pub fileName: Option<String>,
 	#[serde(rename = "58")]
-	pub mimeType: String,
+	pub mimeType: Option<String>,
 	#[serde(rename = "59")]
 	#[serde(with = "serde_bytes")]
-	pub ownerEncSessionKey: Vec<u8>,
+	pub ownerEncSessionKey: Option<Vec<u8>>,
 	#[serde(rename = "112")]
-	pub ownerKeyVersion: i64,
+	pub ownerKeyVersion: Option<i64>,
 	#[serde(rename = "60")]
 	pub referenceTokens: Vec<super::sys::BlobReferenceTokenWrapper>,
+	#[serde(rename = "149")]
+	pub file: Option<DriveFileTransferAggregatedType>,
 
 	#[serde(default)]
 	pub _errors: Errors,
@@ -295,11 +299,15 @@ pub struct DriveItemPutIn {
 	#[serde(rename = "75")]
 	pub _format: i64,
 	#[serde(rename = "76")]
-	pub newName: String,
+	pub newName: Option<String>,
 	#[serde(rename = "77")]
 	pub file: Option<IdTupleGenerated>,
 	#[serde(rename = "78")]
 	pub folder: Option<IdTupleGenerated>,
+	#[serde(rename = "150")]
+	pub fileWithNewName: Option<DriveFileNameTransferAggregatedType>,
+	#[serde(rename = "151")]
+	pub folderWithNewName: Option<DriveFolderNameTransferAggregatedType>,
 
 	#[serde(default)]
 	pub _errors: Errors,
@@ -340,14 +348,16 @@ pub struct DriveFolderServicePostIn {
 	#[serde(rename = "85")]
 	pub _format: i64,
 	#[serde(rename = "86")]
-	pub folderName: String,
+	pub folderName: Option<String>,
 	#[serde(rename = "87")]
 	#[serde(with = "serde_bytes")]
-	pub ownerEncSessionKey: Vec<u8>,
+	pub ownerEncSessionKey: Option<Vec<u8>>,
 	#[serde(rename = "114")]
-	pub ownerKeyVersion: i64,
+	pub ownerKeyVersion: Option<i64>,
 	#[serde(rename = "88")]
-	pub parent: IdTupleGenerated,
+	pub parent: Option<IdTupleGenerated>,
+	#[serde(rename = "152")]
+	pub folder: Option<DriveFolderTransferAggregatedType>,
 
 	#[serde(default)]
 	pub _errors: Errors,
@@ -497,6 +507,344 @@ impl Entity for DriveItemServiceDeleteOut {
 		TypeRef {
 			app: AppName::Drive,
 			type_id: TypeId::from(118),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFolderTransferAggregatedType {
+	#[serde(rename = "124")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "125")]
+	#[serde(with = "serde_bytes")]
+	pub _ownerEncSessionKey: Option<Vec<u8>>,
+	#[serde(rename = "126")]
+	pub _ownerKeyVersion: Option<i64>,
+	#[serde(rename = "127")]
+	#[serde(with = "serde_bytes")]
+	pub _kdfNonce: Option<Vec<u8>>,
+	#[serde(rename = "128")]
+	pub name: String,
+	#[serde(rename = "129")]
+	pub parent: Option<IdTupleGenerated>,
+
+	#[serde(default)]
+	pub _errors: Errors,
+}
+
+impl Entity for DriveFolderTransferAggregatedType {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(123),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFolderNameTransferAggregatedType {
+	#[serde(rename = "131")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "132")]
+	#[serde(with = "serde_bytes")]
+	pub _ownerEncSessionKey: Option<Vec<u8>>,
+	#[serde(rename = "133")]
+	pub _ownerKeyVersion: Option<i64>,
+	#[serde(rename = "134")]
+	#[serde(with = "serde_bytes")]
+	pub _kdfNonce: Option<Vec<u8>>,
+	#[serde(rename = "135")]
+	pub name: String,
+
+	#[serde(default)]
+	pub _errors: Errors,
+}
+
+impl Entity for DriveFolderNameTransferAggregatedType {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(130),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileTransferAggregatedType {
+	#[serde(rename = "137")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "138")]
+	#[serde(with = "serde_bytes")]
+	pub _ownerEncSessionKey: Option<Vec<u8>>,
+	#[serde(rename = "139")]
+	pub _ownerKeyVersion: Option<i64>,
+	#[serde(rename = "140")]
+	#[serde(with = "serde_bytes")]
+	pub _kdfNonce: Option<Vec<u8>>,
+	#[serde(rename = "141")]
+	pub name: String,
+	#[serde(rename = "142")]
+	pub mimeType: String,
+
+	#[serde(default)]
+	pub _errors: Errors,
+}
+
+impl Entity for DriveFileTransferAggregatedType {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(136),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileNameTransferAggregatedType {
+	#[serde(rename = "144")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "145")]
+	#[serde(with = "serde_bytes")]
+	pub _ownerEncSessionKey: Option<Vec<u8>>,
+	#[serde(rename = "146")]
+	pub _ownerKeyVersion: Option<i64>,
+	#[serde(rename = "147")]
+	#[serde(with = "serde_bytes")]
+	pub _kdfNonce: Option<Vec<u8>>,
+	#[serde(rename = "148")]
+	pub name: String,
+
+	#[serde(default)]
+	pub _errors: Errors,
+}
+
+impl Entity for DriveFileNameTransferAggregatedType {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(143),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShare {
+	#[serde(rename = "155")]
+	pub _id: Option<GeneratedId>,
+	#[serde(rename = "156")]
+	pub _permissions: GeneratedId,
+	#[serde(rename = "157")]
+	pub _format: i64,
+	#[serde(rename = "158")]
+	pub _ownerGroup: Option<GeneratedId>,
+	#[serde(rename = "160")]
+	pub accessToken: String,
+	#[serde(rename = "161")]
+	#[serde(with = "serde_bytes")]
+	pub verifier: Option<Vec<u8>>,
+	#[serde(rename = "162")]
+	pub expirationDate: Option<DateTime>,
+	#[serde(rename = "163")]
+	#[serde(with = "serde_bytes")]
+	pub shareKeyEncFileSessionKey: Vec<u8>,
+	#[serde(rename = "164")]
+	#[serde(with = "serde_bytes")]
+	pub ownerEncPassword: Option<Vec<u8>>,
+	#[serde(rename = "165")]
+	pub groupKeyVersion: i64,
+	#[serde(rename = "166")]
+	#[serde(with = "serde_bytes")]
+	pub nonce: Vec<u8>,
+	#[serde(rename = "159")]
+	pub file: IdTupleGenerated,
+}
+
+impl Entity for DriveFileShare {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(153),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShareServicePostIn {
+	#[serde(rename = "169")]
+	pub _format: i64,
+	#[serde(rename = "171")]
+	pub expirationDate: Option<DateTime>,
+	#[serde(rename = "172")]
+	#[serde(with = "serde_bytes")]
+	pub shareKeyEncFileSessionKey: Vec<u8>,
+	#[serde(rename = "173")]
+	#[serde(with = "serde_bytes")]
+	pub ownerEncPassword: Option<Vec<u8>>,
+	#[serde(rename = "174")]
+	pub groupKeyVersion: i64,
+	#[serde(rename = "175")]
+	#[serde(with = "serde_bytes")]
+	pub verifier: Option<Vec<u8>>,
+	#[serde(rename = "176")]
+	#[serde(with = "serde_bytes")]
+	pub nonce: Vec<u8>,
+	#[serde(rename = "170")]
+	pub file: IdTupleGenerated,
+}
+
+impl Entity for DriveFileShareServicePostIn {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(168),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShareServicePasswordUpdate {
+	#[serde(rename = "178")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "179")]
+	#[serde(with = "serde_bytes")]
+	pub verifier: Vec<u8>,
+	#[serde(rename = "180")]
+	#[serde(with = "serde_bytes")]
+	pub ownerEncPassword: Vec<u8>,
+}
+
+impl Entity for DriveFileShareServicePasswordUpdate {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(177),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShareServicePutIn {
+	#[serde(rename = "182")]
+	pub _format: i64,
+	#[serde(rename = "185")]
+	pub expirationDate: Option<DateTime>,
+	#[serde(rename = "186")]
+	pub groupKeyVersion: i64,
+	#[serde(rename = "183")]
+	pub share: GeneratedId,
+	#[serde(rename = "184")]
+	pub passwordUpdate: Option<DriveFileShareServicePasswordUpdate>,
+}
+
+impl Entity for DriveFileShareServicePutIn {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(181),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShareServiceDeleteIn {
+	#[serde(rename = "188")]
+	pub _format: i64,
+	#[serde(rename = "189")]
+	pub file: IdTupleGenerated,
+}
+
+impl Entity for DriveFileShareServiceDeleteIn {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(187),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct BlobServerUrl {
+	#[serde(rename = "192")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "193")]
+	pub url: String,
+}
+
+impl Entity for BlobServerUrl {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(191),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct BlobServerAccessInfo {
+	#[serde(rename = "195")]
+	pub _id: Option<CustomId>,
+	#[serde(rename = "196")]
+	pub blobAccessToken: String,
+	#[serde(rename = "197")]
+	pub expires: DateTime,
+	#[serde(rename = "198")]
+	pub tokenKind: i64,
+	#[serde(rename = "199")]
+	pub servers: Vec<BlobServerUrl>,
+}
+
+impl Entity for BlobServerAccessInfo {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(194),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShareTokenServicePostIn {
+	#[serde(rename = "201")]
+	pub _format: i64,
+	#[serde(rename = "202")]
+	pub file: IdTupleGenerated,
+}
+
+impl Entity for DriveFileShareTokenServicePostIn {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(200),
+		}
+	}
+}
+
+#[derive(uniffi::Record, Clone, Serialize, Deserialize)]
+#[cfg_attr(any(test, feature = "testing"), derive(PartialEq, Debug))]
+pub struct DriveFileShareTokenServicePostOut {
+	#[serde(rename = "204")]
+	pub _format: i64,
+	#[serde(rename = "205")]
+	pub blobAccessInfo: BlobServerAccessInfo,
+}
+
+impl Entity for DriveFileShareTokenServicePostOut {
+	fn type_ref() -> TypeRef {
+		TypeRef {
+			app: AppName::Drive,
+			type_id: TypeId::from(203),
 		}
 	}
 }

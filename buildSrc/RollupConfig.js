@@ -342,7 +342,7 @@ export function getChunkName(moduleId, { getModuleInfo }) {
 		moduleId.includes(path.normalize("src/usagetests")) ||
 		moduleId.includes("NotificationContentSelector") ||
 		moduleId.includes("NotificationPermissionsDialog") ||
-		moduleId.includes("SettingsBannerButton")
+		moduleId.includes("SetupWizardButton")
 	) {
 		// Things which we always need for main thread anyway, at least currently
 		return "main"
@@ -355,7 +355,7 @@ export function getChunkName(moduleId, { getModuleInfo }) {
 		isIn("src/applications/calendar-app/worker") ||
 		isIn("src/applications/mail-app/workerUtils/offline") ||
 		isIn("src/applications/drive-app/workerUtils") ||
-		isIn("src/applications/mail-app/workerUtils/imapimport")
+		isIn("src/applications/mail-app/workerUtils/migration")
 	) {
 		return "worker"
 	} else if (moduleId.includes("pow-worker") || moduleId.includes("ProofOfWorkCaptchaUtils")) {
@@ -376,6 +376,9 @@ export function getChunkName(moduleId, { getModuleInfo }) {
 		// Perhaps contact form should be separate
 		// Recover things depends on HtmlEditor which we don't want to load on each login
 		return "ui-extra"
+	} else if (isIn("src/applications/common/signup/PlanSelectorPage.ts") || isIn("src/applications/common/signup/InvoiceAndPaymentDataPage.ts")) {
+		// These pages are shared by signup and subscription settings.
+		return "settings"
 	} else if (isIn("src/applications/common/signup")) {
 		return "signup"
 	} else if (isIn("src/applications/common/login") || isIn("src/applications/calendar/login")) {

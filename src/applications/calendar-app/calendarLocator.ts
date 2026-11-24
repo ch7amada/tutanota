@@ -36,7 +36,7 @@ import {
 	ContactSuggestion,
 	DesktopSystemFacade,
 	ExternalCalendarFacade,
-	ImapSyncFacade,
+	MigrationSyncFacade,
 	MobileContactsFacade,
 	MobilePaymentsFacade,
 	MobileSystemFacade,
@@ -128,7 +128,6 @@ import { CalendarSearchViewModel } from "./calendar/search/view/CalendarSearchVi
 import { CalendarSearchModel } from "./search/model/CalendarSearchModel"
 import { PluginManager } from "../../plugin-kit/plugin-manager/PluginManager"
 import { PluginConfigurationProvider } from "../common/plugin/PluginConfigurationProvider"
-import { HttpClientJavascript } from "@tutao/http-client"
 
 EnvProvider.assertMainOrNode()
 
@@ -189,7 +188,7 @@ class CalendarLocator implements CommonLocator {
 	whitelabelThemeGenerator!: WhitelabelThemeGenerator
 	driveFacade!: DriveFacade
 	transferProgressDispatcher!: TransferProgressDispatcher
-	imapImporter!: ImapSyncFacade
+	mailboxImporter!: MigrationSyncFacade
 
 	private nativeInterfaces: NativeInterfaces | null = null
 	private entropyFacade!: EntropyFacade
@@ -373,6 +372,10 @@ class CalendarLocator implements CommonLocator {
 		const { RecipientsSearchModel } = await import("../common/misc/RecipientsSearchModel.js")
 		const suggestionsProvider = await this.contactSuggestionProvider()
 		return new RecipientsSearchModel(await this.recipientsModel(), this.contactModel, suggestionsProvider, this.entityClient)
+	}
+
+	async inboxRuleModel(): Promise<null> {
+		return null
 	}
 
 	private async contactSuggestionProvider(): Promise<ContactSuggestionProvider> {
@@ -606,7 +609,6 @@ class CalendarLocator implements CommonLocator {
 			sqlCipherFacade,
 			contactFacade,
 			identityKeyCreator,
-			driveFacade,
 		} = this.worker.getWorkerInterface()
 		this.loginFacade = loginFacade
 		this.customerFacade = customerFacade
@@ -626,7 +628,6 @@ class CalendarLocator implements CommonLocator {
 		this.userManagementFacade = userManagementFacade
 		this.recoverCodeFacade = recoverCodeFacade
 		this.contactFacade = contactFacade
-		this.driveFacade = driveFacade
 		this.serviceExecutor = serviceExecutor
 		this.sqlCipherFacade = sqlCipherFacade
 		this.identityKeyCreator = identityKeyCreator
@@ -703,7 +704,7 @@ class CalendarLocator implements CommonLocator {
 			this.transferProgressDispatcher = new TransferProgressDispatcher()
 
 			// TODO: it would be nice to move this facade out of the ApplicationWindow
-			this.imapImporter = {} as ImapSyncFacade
+			this.mailboxImporter = {} as MigrationSyncFacade
 			this.webMobileFacade = new WebMobileFacade(this.connectivityModel, CALENDAR_PREFIX)
 			this.nativeInterfaces = createNativeInterfaces(
 				this.webMobileFacade,
@@ -712,7 +713,7 @@ class CalendarLocator implements CommonLocator {
 					async () => this.native,
 					() => this.desktopSettingsFacade,
 				),
-				this.imapImporter,
+				this.mailboxImporter,
 				new WebInterWindowEventFacade(this.logins, windowFacade, deviceConfig),
 				new WebCommonNativeFacade(
 					this.logins,
@@ -1029,7 +1030,6 @@ class CalendarLocator implements CommonLocator {
 			this.customerFacade,
 			this.themeController,
 			this.syncTracker,
-			this.configFacade,
 			() => this.showSetupWizard(),
 			() => this.updateClients(),
 			this.loginFacade,

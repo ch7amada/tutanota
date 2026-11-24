@@ -9,7 +9,7 @@ const typeModels = {
 	11: {
 		name: "Subfiles",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 11,
@@ -17,6 +17,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			12: {
 				final: true,
@@ -25,6 +26,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -36,13 +38,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	13: {
 		name: "File",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "LIST_ELEMENT_TYPE",
 		id: 13,
@@ -50,6 +53,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			15: {
 				final: true,
@@ -58,6 +62,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			16: {
 				final: true,
@@ -66,6 +71,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			17: {
 				final: false,
@@ -74,6 +80,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			18: {
 				final: true,
@@ -82,6 +89,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			21: {
 				final: false,
@@ -90,6 +98,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			22: {
 				final: true,
@@ -98,6 +107,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			23: {
 				final: true,
@@ -106,6 +116,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			580: {
 				final: true,
@@ -114,6 +125,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			924: {
 				final: true,
@@ -122,6 +134,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1391: {
 				final: true,
@@ -130,6 +143,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1831: {
 				final: true,
@@ -138,6 +152,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -149,6 +164,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			26: {
 				final: true,
@@ -158,6 +174,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 11,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1225: {
 				final: true,
@@ -167,13 +184,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1882,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	28: {
 		name: "FileSystem",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "ELEMENT_TYPE",
 		id: 28,
@@ -181,6 +199,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			30: {
 				final: true,
@@ -189,6 +208,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			31: {
 				final: true,
@@ -197,6 +217,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			32: {
 				final: false,
@@ -205,6 +226,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			581: {
 				final: true,
@@ -213,6 +235,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			582: {
 				final: true,
@@ -221,6 +244,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1392: {
 				final: true,
@@ -229,6 +253,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1834: {
 				final: true,
@@ -237,6 +262,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -248,13 +274,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	44: {
 		name: "ContactMailAddress",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 44,
@@ -262,6 +289,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			45: {
 				final: true,
@@ -270,6 +298,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			46: {
 				final: false,
@@ -278,6 +307,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			47: {
 				final: false,
@@ -286,6 +316,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			48: {
 				final: false,
@@ -294,6 +325,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -301,7 +333,7 @@ const typeModels = {
 	49: {
 		name: "ContactPhoneNumber",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 49,
@@ -309,6 +341,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			50: {
 				final: true,
@@ -317,6 +350,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			51: {
 				final: false,
@@ -325,6 +359,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			52: {
 				final: false,
@@ -333,6 +368,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			53: {
 				final: false,
@@ -341,6 +377,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -348,7 +385,7 @@ const typeModels = {
 	54: {
 		name: "ContactAddress",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 54,
@@ -356,6 +393,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			55: {
 				final: true,
@@ -364,6 +402,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			56: {
 				final: false,
@@ -372,6 +411,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			57: {
 				final: false,
@@ -380,6 +420,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			58: {
 				final: false,
@@ -388,6 +429,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -395,7 +437,7 @@ const typeModels = {
 	59: {
 		name: "ContactSocialId",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 59,
@@ -403,6 +445,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			60: {
 				final: true,
@@ -411,6 +454,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			61: {
 				final: false,
@@ -419,6 +463,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			62: {
 				final: false,
@@ -427,6 +472,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			63: {
 				final: false,
@@ -435,6 +481,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -442,7 +489,7 @@ const typeModels = {
 	64: {
 		name: "Contact",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "LIST_ELEMENT_TYPE",
 		id: 64,
@@ -450,6 +497,7 @@ const typeModels = {
 		versioned: true,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			66: {
 				final: true,
@@ -458,6 +506,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			67: {
 				final: true,
@@ -466,6 +515,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			68: {
 				final: false,
@@ -474,6 +524,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			69: {
 				final: true,
@@ -482,6 +533,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			72: {
 				final: false,
@@ -490,6 +542,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			73: {
 				final: false,
@@ -498,6 +551,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			74: {
 				final: false,
@@ -506,6 +560,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			75: {
 				final: false,
@@ -514,6 +569,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			76: {
 				final: false,
@@ -522,6 +578,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			77: {
 				final: false,
@@ -530,6 +587,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			79: {
 				final: false,
@@ -538,6 +596,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			585: {
 				final: true,
@@ -546,6 +605,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			849: {
 				final: false,
@@ -554,6 +614,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			850: {
 				final: false,
@@ -562,6 +623,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1083: {
 				final: false,
@@ -570,6 +632,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1380: {
 				final: false,
@@ -578,6 +641,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1381: {
 				final: false,
@@ -586,6 +650,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1382: {
 				final: false,
@@ -594,6 +659,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1383: {
 				final: false,
@@ -602,6 +668,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1384: {
 				final: false,
@@ -610,6 +677,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1385: {
 				final: false,
@@ -618,6 +686,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1394: {
 				final: true,
@@ -626,6 +695,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1837: {
 				final: true,
@@ -634,6 +704,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -645,6 +716,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 44,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			81: {
 				final: false,
@@ -654,6 +726,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 49,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			82: {
 				final: false,
@@ -663,6 +736,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 54,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			83: {
 				final: false,
@@ -672,6 +746,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 59,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			851: {
 				final: false,
@@ -681,6 +756,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 844,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			852: {
 				final: false,
@@ -690,6 +766,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1386: {
 				final: false,
@@ -699,6 +776,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1356,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1387: {
 				final: false,
@@ -708,6 +786,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1361,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1388: {
 				final: false,
@@ -717,6 +796,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1366,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1389: {
 				final: false,
@@ -726,6 +806,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1371,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1390: {
 				final: false,
@@ -735,13 +816,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1376,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	84: {
 		name: "ConversationEntry",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "LIST_ELEMENT_TYPE",
 		id: 84,
@@ -749,6 +831,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			118: {
 				final: true,
@@ -757,6 +840,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			119: {
 				final: true,
@@ -765,6 +849,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			120: {
 				final: false,
@@ -773,6 +858,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			121: {
 				final: true,
@@ -781,6 +867,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			122: {
 				final: true,
@@ -789,6 +876,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			588: {
 				final: true,
@@ -797,6 +885,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -808,6 +897,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 84,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			124: {
 				final: true,
@@ -817,13 +907,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	92: {
 		name: "MailAddress",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 92,
@@ -831,6 +922,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			93: {
 				final: true,
@@ -839,6 +931,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			94: {
 				final: true,
@@ -847,6 +940,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			95: {
 				final: true,
@@ -855,6 +949,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -866,13 +961,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 64,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	97: {
 		name: "Mail",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "LIST_ELEMENT_TYPE",
 		id: 97,
@@ -880,6 +976,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			99: {
 				final: true,
@@ -888,6 +985,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			100: {
 				final: true,
@@ -896,6 +994,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			101: {
 				final: false,
@@ -904,6 +1003,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			102: {
 				final: true,
@@ -912,6 +1012,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			105: {
 				final: true,
@@ -920,6 +1021,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			107: {
 				final: true,
@@ -928,6 +1030,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			108: {
 				final: true,
@@ -936,6 +1039,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			109: {
 				final: false,
@@ -944,6 +1048,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			426: {
 				final: true,
@@ -952,6 +1057,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			466: {
 				final: false,
@@ -960,6 +1066,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			587: {
 				final: true,
@@ -968,6 +1075,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			617: {
 				final: true,
@@ -976,6 +1084,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			866: {
 				final: false,
@@ -984,6 +1093,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			896: {
 				final: true,
@@ -992,6 +1102,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1021: {
 				final: false,
@@ -1000,6 +1111,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1022: {
 				final: false,
@@ -1008,6 +1120,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1120: {
 				final: true,
@@ -1016,6 +1129,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1307: {
 				final: true,
@@ -1024,6 +1138,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1346: {
 				final: true,
@@ -1032,6 +1147,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1395: {
 				final: true,
@@ -1040,6 +1156,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1728: {
 				final: false,
@@ -1048,6 +1165,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1769: {
 				final: false,
@@ -1056,6 +1174,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1784: {
 				final: true,
@@ -1064,6 +1183,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1814: {
 				final: true,
@@ -1072,6 +1192,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1839: {
 				final: true,
@@ -1080,6 +1201,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1091,6 +1213,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			115: {
 				final: true,
@@ -1100,6 +1223,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			117: {
 				final: true,
@@ -1109,6 +1233,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 84,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1306: {
 				final: true,
@@ -1118,6 +1243,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1308: {
 				final: true,
@@ -1127,6 +1253,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1298,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1309: {
 				final: true,
@@ -1136,6 +1263,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1290,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1310: {
 				final: true,
@@ -1145,6 +1273,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 2043,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 			1465: {
 				final: false,
@@ -1154,6 +1283,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1729: {
 				final: false,
@@ -1163,13 +1293,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1724,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	125: {
 		name: "MailBox",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "ELEMENT_TYPE",
 		id: 125,
@@ -1177,6 +1308,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			127: {
 				final: true,
@@ -1185,6 +1317,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			128: {
 				final: true,
@@ -1193,6 +1326,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			129: {
 				final: false,
@@ -1201,6 +1335,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			569: {
 				final: true,
@@ -1209,6 +1344,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			590: {
 				final: true,
@@ -1217,6 +1353,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			591: {
 				final: true,
@@ -1225,6 +1362,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1396: {
 				final: true,
@@ -1233,6 +1371,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1840: {
 				final: true,
@@ -1241,6 +1380,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1252,6 +1392,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			134: {
 				final: true,
@@ -1261,6 +1402,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			443: {
 				final: true,
@@ -1270,6 +1412,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 440,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1220: {
 				final: true,
@@ -1279,6 +1422,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1217,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1318: {
 				final: false,
@@ -1288,6 +1432,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1315,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1463: {
 				final: false,
@@ -1297,6 +1442,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1460,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1464: {
 				final: false,
@@ -1306,6 +1452,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1460,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1512: {
 				final: true,
@@ -1315,6 +1462,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1585: {
 				final: true,
@@ -1324,6 +1472,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1559,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1710: {
 				final: true,
@@ -1333,6 +1482,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1678,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1754: {
 				final: true,
@@ -1342,6 +1492,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1736,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1755: {
 				final: true,
@@ -1351,15 +1502,17 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1747,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1962: {
 				final: true,
-				name: "imapAccountSyncStates",
+				name: "mailboxMigrationSyncStates",
 				id: 1962,
 				type: "LIST_ASSOCIATION",
 				cardinality: "ZeroOrOne",
 				refTypeId: 1911,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1963: {
 				final: true,
@@ -1369,13 +1522,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1883,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	138: {
 		name: "CreateExternalUserGroupData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 138,
@@ -1383,6 +1537,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			139: {
 				final: true,
@@ -1391,6 +1546,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			141: {
 				final: false,
@@ -1399,6 +1555,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			142: {
 				final: false,
@@ -1407,6 +1564,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			143: {
 				final: false,
@@ -1415,6 +1573,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1433: {
 				final: false,
@@ -1423,6 +1582,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -1430,7 +1590,7 @@ const typeModels = {
 	145: {
 		name: "ExternalUserData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "DATA_TRANSFER_TYPE",
 		id: 145,
@@ -1438,6 +1598,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			146: {
 				final: false,
@@ -1446,6 +1607,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			148: {
 				final: false,
@@ -1454,6 +1616,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			149: {
 				final: false,
@@ -1462,6 +1625,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			150: {
 				final: false,
@@ -1470,6 +1634,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			412: {
 				final: false,
@@ -1478,6 +1643,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			669: {
 				final: false,
@@ -1486,6 +1652,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			670: {
 				final: false,
@@ -1494,6 +1661,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			671: {
 				final: false,
@@ -1502,6 +1670,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			672: {
 				final: false,
@@ -1510,6 +1679,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			673: {
 				final: false,
@@ -1518,6 +1688,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1323: {
 				final: false,
@@ -1526,6 +1697,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1429: {
 				final: false,
@@ -1534,6 +1706,61 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2105: {
+				final: false,
+				name: "externalMailEncMailGroupInfoInstanceKey",
+				id: 2105,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2106: {
+				final: false,
+				name: "externalMailGroupInfoInstanceKeyVersion",
+				id: 2106,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2107: {
+				final: false,
+				name: "externalUserEncUserGroupInfoInstanceKey",
+				id: 2107,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2108: {
+				final: false,
+				name: "externalUserGroupInfoInstanceKeyVersion",
+				id: 2108,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2109: {
+				final: false,
+				name: "externalUserGroupInfoKdfNonce",
+				id: 2109,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2110: {
+				final: false,
+				name: "externalMailGroupInfoKdfNonce",
+				id: 2110,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1545,13 +1772,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 138,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	153: {
 		name: "ContactList",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "ELEMENT_TYPE",
 		id: 153,
@@ -1559,6 +1787,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			155: {
 				final: true,
@@ -1567,6 +1796,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			156: {
 				final: true,
@@ -1575,6 +1805,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			157: {
 				final: false,
@@ -1583,6 +1814,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			592: {
 				final: true,
@@ -1591,6 +1823,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			593: {
 				final: true,
@@ -1599,6 +1832,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1397: {
 				final: true,
@@ -1607,6 +1841,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1843: {
 				final: true,
@@ -1615,6 +1850,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1626,6 +1862,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 64,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			856: {
 				final: false,
@@ -1635,13 +1872,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 853,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	183: {
 		name: "RemoteImapSyncInfo",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "LIST_ELEMENT_TYPE",
 		id: 183,
@@ -1649,6 +1887,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			185: {
 				final: true,
@@ -1657,6 +1896,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			186: {
 				final: true,
@@ -1665,6 +1905,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			187: {
 				final: false,
@@ -1673,6 +1914,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			189: {
 				final: false,
@@ -1681,6 +1923,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			594: {
 				final: true,
@@ -1689,6 +1932,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1700,13 +1944,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	190: {
 		name: "ImapFolder",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 190,
@@ -1714,6 +1959,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			191: {
 				final: true,
@@ -1722,6 +1968,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			192: {
 				final: false,
@@ -1730,6 +1977,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			193: {
 				final: false,
@@ -1738,6 +1986,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			194: {
 				final: false,
@@ -1746,6 +1995,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1757,13 +2007,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 183,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	196: {
 		name: "ImapSyncState",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "ELEMENT_TYPE",
 		id: 196,
@@ -1771,6 +2022,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			198: {
 				final: true,
@@ -1779,6 +2031,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			199: {
 				final: true,
@@ -1787,6 +2040,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			200: {
 				final: false,
@@ -1795,6 +2049,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			595: {
 				final: true,
@@ -1803,6 +2058,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1814,13 +2070,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 190,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	209: {
 		name: "ImapSyncConfiguration",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 209,
@@ -1828,6 +2085,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			210: {
 				final: true,
@@ -1836,6 +2094,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			211: {
 				final: false,
@@ -1844,6 +2103,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			212: {
 				final: false,
@@ -1852,6 +2112,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			213: {
 				final: false,
@@ -1860,6 +2121,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			214: {
 				final: false,
@@ -1868,6 +2130,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -1879,13 +2142,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 196,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	216: {
 		name: "TutanotaProperties",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "ELEMENT_TYPE",
 		id: 216,
@@ -1893,6 +2157,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			218: {
 				final: true,
@@ -1901,6 +2166,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			219: {
 				final: true,
@@ -1909,6 +2175,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			220: {
 				final: false,
@@ -1917,6 +2184,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			410: {
 				final: false,
@@ -1925,6 +2193,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			418: {
 				final: false,
@@ -1933,6 +2202,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			469: {
 				final: false,
@@ -1941,6 +2211,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			470: {
 				final: false,
@@ -1949,6 +2220,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			471: {
 				final: false,
@@ -1957,6 +2229,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			472: {
 				final: false,
@@ -1965,6 +2238,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			568: {
 				final: false,
@@ -1973,6 +2247,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			597: {
 				final: true,
@@ -1981,6 +2256,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			598: {
 				final: true,
@@ -1989,6 +2265,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			676: {
 				final: false,
@@ -1997,6 +2274,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			897: {
 				final: false,
@@ -2005,6 +2283,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1398: {
 				final: true,
@@ -2013,6 +2292,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1434: {
 				final: false,
@@ -2021,6 +2301,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1510: {
 				final: false,
@@ -2029,6 +2310,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1851: {
 				final: true,
@@ -2037,6 +2319,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2048,6 +2331,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			222: {
 				final: false,
@@ -2057,6 +2341,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 209,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			578: {
 				final: false,
@@ -2066,13 +2351,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 573,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	223: {
 		name: "NotificationMail",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 1,
 		type: "AGGREGATED_TYPE",
 		id: 223,
@@ -2080,6 +2366,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			224: {
 				final: true,
@@ -2088,6 +2375,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			225: {
 				final: false,
@@ -2096,6 +2384,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			226: {
 				final: false,
@@ -2104,6 +2393,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			227: {
 				final: false,
@@ -2112,6 +2402,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			228: {
 				final: false,
@@ -2120,6 +2411,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			417: {
 				final: false,
@@ -2128,6 +2420,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -2135,7 +2428,7 @@ const typeModels = {
 	419: {
 		name: "DeleteMailData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 5,
 		type: "DATA_TRANSFER_TYPE",
 		id: 419,
@@ -2143,6 +2436,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			420: {
 				final: false,
@@ -2151,6 +2445,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2162,6 +2457,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			724: {
 				final: true,
@@ -2171,13 +2467,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	429: {
 		name: "MailSet",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 7,
 		type: "LIST_ELEMENT_TYPE",
 		id: 429,
@@ -2185,6 +2482,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			431: {
 				final: true,
@@ -2193,6 +2491,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			432: {
 				final: true,
@@ -2201,6 +2500,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			433: {
 				final: false,
@@ -2209,6 +2509,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			434: {
 				final: true,
@@ -2217,6 +2518,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			435: {
 				final: false,
@@ -2225,6 +2527,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			436: {
 				final: true,
@@ -2233,6 +2536,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			589: {
 				final: true,
@@ -2241,6 +2545,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1399: {
 				final: true,
@@ -2249,6 +2554,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1479: {
 				final: false,
@@ -2257,6 +2563,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1847: {
 				final: true,
@@ -2265,6 +2572,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2276,6 +2584,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1459: {
 				final: true,
@@ -2285,13 +2594,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1450,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	440: {
 		name: "MailSetRef",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 7,
 		type: "AGGREGATED_TYPE",
 		id: 440,
@@ -2299,6 +2609,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			441: {
 				final: true,
@@ -2307,6 +2618,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2318,13 +2630,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	445: {
 		name: "MoveMailData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 7,
 		type: "DATA_TRANSFER_TYPE",
 		id: 445,
@@ -2332,6 +2645,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			446: {
 				final: false,
@@ -2340,6 +2654,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1714: {
 				final: false,
@@ -2348,6 +2663,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2359,6 +2675,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			448: {
 				final: false,
@@ -2368,6 +2685,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1644: {
 				final: false,
@@ -2377,13 +2695,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	450: {
 		name: "CreateMailFolderData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 7,
 		type: "DATA_TRANSFER_TYPE",
 		id: 450,
@@ -2391,6 +2710,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			451: {
 				final: false,
@@ -2399,22 +2719,25 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			453: {
 				final: true,
 				name: "folderName",
 				id: 453,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			454: {
 				final: true,
 				name: "ownerEncSessionKey",
 				id: 454,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1268: {
 				final: true,
@@ -2423,14 +2746,16 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1414: {
 				final: true,
 				name: "ownerKeyVersion",
 				id: 1414,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2442,13 +2767,24 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2079: {
+				final: true,
+				name: "mailSet",
+				id: 2079,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2071,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	455: {
 		name: "CreateMailFolderReturn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 7,
 		type: "DATA_TRANSFER_TYPE",
 		id: 455,
@@ -2456,6 +2792,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			456: {
 				final: false,
@@ -2464,6 +2801,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2475,20 +2813,22 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	458: {
 		name: "DeleteMailFolderData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 7,
 		type: "DATA_TRANSFER_TYPE",
 		id: 458,
 		rootId: "CHR1dGFub3RhAAHK",
 		versioned: false,
-		encrypted: true,
+		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			459: {
 				final: false,
@@ -2497,6 +2837,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2508,13 +2849,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	473: {
 		name: "EncryptTutanotaPropertiesData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 9,
 		type: "DATA_TRANSFER_TYPE",
 		id: 473,
@@ -2522,6 +2864,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			474: {
 				final: false,
@@ -2530,6 +2873,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			476: {
 				final: false,
@@ -2538,6 +2882,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1428: {
 				final: false,
@@ -2546,6 +2891,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2557,13 +2903,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 216,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	482: {
 		name: "DraftRecipient",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 482,
@@ -2571,6 +2918,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			483: {
 				final: true,
@@ -2579,6 +2927,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			484: {
 				final: true,
@@ -2587,6 +2936,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			485: {
 				final: true,
@@ -2595,6 +2945,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -2602,7 +2953,7 @@ const typeModels = {
 	486: {
 		name: "NewDraftAttachment",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 486,
@@ -2610,6 +2961,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			487: {
 				final: true,
@@ -2618,22 +2970,25 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			488: {
 				final: true,
 				name: "encFileName",
 				id: 488,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			489: {
 				final: true,
 				name: "encMimeType",
 				id: 489,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			925: {
 				final: true,
@@ -2642,6 +2997,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2653,13 +3009,24 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1990,
 				dependency: "sys",
+				transferredAttributeId: null,
+			},
+			2068: {
+				final: true,
+				name: "file",
+				id: 2068,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2021,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	491: {
 		name: "DraftAttachment",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 491,
@@ -2667,6 +3034,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			492: {
 				final: true,
@@ -2675,22 +3043,25 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			493: {
 				final: true,
 				name: "ownerEncFileSessionKey",
 				id: 493,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1430: {
 				final: true,
 				name: "ownerKeyVersion",
 				id: 1430,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2702,6 +3073,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 486,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			495: {
 				final: true,
@@ -2711,13 +3083,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	496: {
 		name: "DraftData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 496,
@@ -2725,6 +3098,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			497: {
 				final: true,
@@ -2733,54 +3107,61 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			498: {
 				final: true,
 				name: "subject",
 				id: 498,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			499: {
 				final: true,
 				name: "bodyText",
 				id: 499,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			500: {
 				final: true,
 				name: "senderMailAddress",
 				id: 500,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			501: {
 				final: true,
 				name: "senderName",
 				id: 501,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			502: {
 				final: true,
 				name: "confidential",
 				id: 502,
 				type: "Boolean",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1116: {
 				final: true,
 				name: "method",
 				id: 1116,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1194: {
 				final: true,
@@ -2789,6 +3170,7 @@ const typeModels = {
 				type: "CompressedString",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2800,6 +3182,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 482,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			504: {
 				final: true,
@@ -2809,6 +3192,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 482,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			505: {
 				final: true,
@@ -2818,6 +3202,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 482,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			506: {
 				final: true,
@@ -2827,6 +3212,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 491,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			507: {
 				final: true,
@@ -2836,6 +3222,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			819: {
 				final: false,
@@ -2845,13 +3232,34 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 612,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2069: {
+				final: true,
+				name: "mail",
+				id: 2069,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2058,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2070: {
+				final: true,
+				name: "mailDetailsBlob",
+				id: 2070,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2052,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	508: {
 		name: "DraftCreateData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "DATA_TRANSFER_TYPE",
 		id: 508,
@@ -2859,6 +3267,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			509: {
 				final: false,
@@ -2867,6 +3276,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			510: {
 				final: true,
@@ -2875,6 +3285,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			511: {
 				final: true,
@@ -2883,22 +3294,25 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			512: {
 				final: true,
 				name: "ownerEncSessionKey",
 				id: 512,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1427: {
 				final: false,
 				name: "ownerKeyVersion",
 				id: 1427,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2910,13 +3324,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 496,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	516: {
 		name: "DraftCreateReturn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "DATA_TRANSFER_TYPE",
 		id: 516,
@@ -2924,6 +3339,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			517: {
 				final: false,
@@ -2932,6 +3348,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2943,13 +3360,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	519: {
 		name: "DraftUpdateData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "DATA_TRANSFER_TYPE",
 		id: 519,
@@ -2957,6 +3375,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			520: {
 				final: false,
@@ -2965,6 +3384,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -2976,6 +3396,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 496,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			522: {
 				final: false,
@@ -2985,13 +3406,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	523: {
 		name: "DraftUpdateReturn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "DATA_TRANSFER_TYPE",
 		id: 523,
@@ -2999,6 +3421,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			524: {
 				final: false,
@@ -3007,6 +3430,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -3018,13 +3442,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	527: {
 		name: "InternalRecipientKeyData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 527,
@@ -3032,6 +3457,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			528: {
 				final: true,
@@ -3040,6 +3466,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			529: {
 				final: true,
@@ -3048,6 +3475,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			530: {
 				final: true,
@@ -3056,6 +3484,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			531: {
 				final: true,
@@ -3064,6 +3493,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1352: {
 				final: true,
@@ -3072,6 +3502,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1431: {
 				final: true,
@@ -3080,6 +3511,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -3087,7 +3519,7 @@ const typeModels = {
 	532: {
 		name: "SecureExternalRecipientKeyData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 532,
@@ -3095,6 +3527,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			533: {
 				final: true,
@@ -3103,6 +3536,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			534: {
 				final: true,
@@ -3111,6 +3545,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			536: {
 				final: true,
@@ -3119,6 +3554,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			538: {
 				final: true,
@@ -3127,6 +3563,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			539: {
 				final: true,
@@ -3135,6 +3572,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			540: {
 				final: true,
@@ -3143,6 +3581,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			599: {
 				final: true,
@@ -3151,6 +3590,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1324: {
 				final: true,
@@ -3159,6 +3599,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1417: {
 				final: true,
@@ -3167,6 +3608,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1445: {
 				final: false,
@@ -3175,6 +3617,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -3182,7 +3625,7 @@ const typeModels = {
 	542: {
 		name: "AttachmentKeyData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "AGGREGATED_TYPE",
 		id: 542,
@@ -3190,6 +3633,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			543: {
 				final: true,
@@ -3198,6 +3642,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			544: {
 				final: true,
@@ -3206,6 +3651,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			545: {
 				final: true,
@@ -3214,6 +3660,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -3225,13 +3672,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	547: {
 		name: "SendDraftData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "DATA_TRANSFER_TYPE",
 		id: 547,
@@ -3239,6 +3687,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			548: {
 				final: false,
@@ -3247,6 +3696,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			549: {
 				final: true,
@@ -3255,6 +3705,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			550: {
 				final: true,
@@ -3263,6 +3714,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			551: {
 				final: true,
@@ -3271,6 +3723,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			552: {
 				final: true,
@@ -3279,6 +3732,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			675: {
 				final: true,
@@ -3287,6 +3741,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1117: {
 				final: false,
@@ -3295,6 +3750,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1444: {
 				final: true,
@@ -3303,6 +3759,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1809: {
 				final: false,
@@ -3311,6 +3768,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1822: {
 				final: true,
@@ -3319,6 +3777,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -3330,6 +3789,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 527,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			554: {
 				final: true,
@@ -3339,6 +3799,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 532,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			555: {
 				final: true,
@@ -3348,6 +3809,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 542,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			556: {
 				final: true,
@@ -3357,6 +3819,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1353: {
 				final: true,
@@ -3366,6 +3829,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1347,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1810: {
 				final: false,
@@ -3375,13 +3839,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1788,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	557: {
 		name: "SendDraftReturn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 11,
 		type: "DATA_TRANSFER_TYPE",
 		id: 557,
@@ -3389,6 +3854,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			558: {
 				final: false,
@@ -3397,6 +3863,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			559: {
 				final: false,
@@ -3405,6 +3872,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			560: {
 				final: false,
@@ -3413,6 +3881,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -3424,6 +3893,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 223,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			562: {
 				final: true,
@@ -3433,6 +3903,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1823: {
 				final: true,
@@ -3442,13 +3913,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 906,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	570: {
 		name: "ReceiveInfoServiceData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 12,
 		type: "DATA_TRANSFER_TYPE",
 		id: 570,
@@ -3456,6 +3928,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			571: {
 				final: false,
@@ -3464,6 +3937,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1121: {
 				final: true,
@@ -3472,6 +3946,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -3479,7 +3954,7 @@ const typeModels = {
 	573: {
 		name: "InboxRule",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 12,
 		type: "AGGREGATED_TYPE",
 		id: 573,
@@ -3487,6 +3962,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			574: {
 				final: true,
@@ -3495,6 +3971,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			575: {
 				final: false,
@@ -3503,6 +3980,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			576: {
 				final: false,
@@ -3511,6 +3989,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1783: {
 				final: false,
@@ -3519,6 +3998,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -3530,13 +4010,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	612: {
 		name: "EncryptedMailAddress",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 14,
 		type: "AGGREGATED_TYPE",
 		id: 612,
@@ -3544,6 +4025,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			613: {
 				final: true,
@@ -3552,6 +4034,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			614: {
 				final: true,
@@ -3560,6 +4043,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			615: {
 				final: true,
@@ -3568,6 +4052,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -3575,7 +4060,7 @@ const typeModels = {
 	622: {
 		name: "UserAccountUserData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 16,
 		type: "AGGREGATED_TYPE",
 		id: 622,
@@ -3583,6 +4068,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			623: {
 				final: true,
@@ -3591,6 +4077,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			624: {
 				final: false,
@@ -3599,6 +4086,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			625: {
 				final: false,
@@ -3607,6 +4095,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			626: {
 				final: false,
@@ -3615,6 +4104,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			627: {
 				final: false,
@@ -3623,6 +4113,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			629: {
 				final: false,
@@ -3631,6 +4122,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			630: {
 				final: false,
@@ -3639,6 +4131,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			631: {
 				final: false,
@@ -3647,6 +4140,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			632: {
 				final: false,
@@ -3655,6 +4149,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			633: {
 				final: false,
@@ -3663,6 +4158,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			634: {
 				final: false,
@@ -3671,6 +4167,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			635: {
 				final: false,
@@ -3679,6 +4176,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			636: {
 				final: false,
@@ -3687,6 +4185,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			637: {
 				final: false,
@@ -3695,6 +4194,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			638: {
 				final: false,
@@ -3703,6 +4203,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			639: {
 				final: false,
@@ -3711,6 +4212,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			640: {
 				final: false,
@@ -3719,6 +4221,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			641: {
 				final: false,
@@ -3727,6 +4230,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			892: {
 				final: false,
@@ -3735,6 +4239,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			893: {
 				final: false,
@@ -3743,6 +4248,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			894: {
 				final: false,
@@ -3751,6 +4257,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1322: {
 				final: false,
@@ -3759,6 +4266,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1426: {
 				final: false,
@@ -3767,6 +4275,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -3774,7 +4283,7 @@ const typeModels = {
 	642: {
 		name: "InternalGroupData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 16,
 		type: "AGGREGATED_TYPE",
 		id: 642,
@@ -3782,6 +4291,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			643: {
 				final: true,
@@ -3790,6 +4300,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			644: {
 				final: false,
@@ -3798,6 +4309,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			645: {
 				final: false,
@@ -3806,6 +4318,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			646: {
 				final: false,
@@ -3814,6 +4327,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			647: {
 				final: false,
@@ -3822,6 +4336,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1342: {
 				final: true,
@@ -3830,6 +4345,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1343: {
 				final: true,
@@ -3838,6 +4354,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1344: {
 				final: true,
@@ -3846,6 +4363,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1345: {
 				final: true,
@@ -3854,6 +4372,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1415: {
 				final: false,
@@ -3862,6 +4381,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1416: {
 				final: false,
@@ -3870,6 +4390,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -3881,13 +4402,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	648: {
 		name: "CustomerAccountCreateData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 16,
 		type: "DATA_TRANSFER_TYPE",
 		id: 648,
@@ -3895,6 +4417,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			649: {
 				final: false,
@@ -3903,6 +4426,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			650: {
 				final: false,
@@ -3911,6 +4435,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			651: {
 				final: false,
@@ -3919,6 +4444,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			652: {
 				final: false,
@@ -3927,6 +4453,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			654: {
 				final: false,
@@ -3935,6 +4462,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			655: {
 				final: false,
@@ -3943,6 +4471,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			659: {
 				final: false,
@@ -3951,6 +4480,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			660: {
 				final: false,
@@ -3959,6 +4489,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			661: {
 				final: false,
@@ -3967,6 +4498,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			873: {
 				final: false,
@@ -3975,6 +4507,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1355: {
 				final: true,
@@ -3983,6 +4516,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1421: {
 				final: false,
@@ -3991,6 +4525,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1422: {
 				final: false,
@@ -3999,6 +4534,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1511: {
 				final: false,
@@ -4007,6 +4543,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4018,6 +4555,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 622,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			656: {
 				final: false,
@@ -4027,6 +4565,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 642,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			657: {
 				final: false,
@@ -4036,6 +4575,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 642,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			658: {
 				final: false,
@@ -4045,13 +4585,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 642,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	663: {
 		name: "UserAccountCreateData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 16,
 		type: "DATA_TRANSFER_TYPE",
 		id: 663,
@@ -4059,6 +4600,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			664: {
 				final: false,
@@ -4067,6 +4609,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			665: {
 				final: false,
@@ -4075,6 +4618,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4086,6 +4630,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 622,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			667: {
 				final: false,
@@ -4095,13 +4640,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 642,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	677: {
 		name: "MailboxServerProperties",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 18,
 		type: "ELEMENT_TYPE",
 		id: 677,
@@ -4109,6 +4655,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			679: {
 				final: true,
@@ -4117,6 +4664,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			680: {
 				final: true,
@@ -4125,6 +4673,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			681: {
 				final: false,
@@ -4133,6 +4682,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			682: {
 				final: true,
@@ -4141,6 +4691,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -4148,7 +4699,7 @@ const typeModels = {
 	693: {
 		name: "MailboxGroupRoot",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 18,
 		type: "ELEMENT_TYPE",
 		id: 693,
@@ -4156,6 +4707,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			695: {
 				final: true,
@@ -4164,6 +4716,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			696: {
 				final: true,
@@ -4172,6 +4725,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			697: {
 				final: false,
@@ -4180,6 +4734,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			698: {
 				final: true,
@@ -4188,6 +4743,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4199,6 +4755,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 125,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			700: {
 				final: true,
@@ -4208,6 +4765,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 677,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1119: {
 				final: true,
@@ -4217,6 +4775,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1113,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1150: {
 				final: true,
@@ -4226,6 +4785,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1131,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1151: {
 				final: true,
@@ -4235,6 +4795,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1147,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1203: {
 				final: true,
@@ -4244,6 +4805,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1195,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			2019: {
 				final: true,
@@ -4253,13 +4815,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 2016,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	707: {
 		name: "CreateMailGroupData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 19,
 		type: "DATA_TRANSFER_TYPE",
 		id: 707,
@@ -4267,6 +4830,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			708: {
 				final: false,
@@ -4275,6 +4839,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			709: {
 				final: false,
@@ -4283,6 +4848,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			710: {
 				final: false,
@@ -4291,6 +4857,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			711: {
 				final: false,
@@ -4299,6 +4866,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4310,13 +4878,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 642,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	713: {
 		name: "DeleteGroupData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 19,
 		type: "DATA_TRANSFER_TYPE",
 		id: 713,
@@ -4324,6 +4893,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			714: {
 				final: false,
@@ -4332,6 +4902,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			715: {
 				final: false,
@@ -4340,6 +4911,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4351,13 +4923,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	844: {
 		name: "Birthday",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 23,
 		type: "AGGREGATED_TYPE",
 		id: 844,
@@ -4365,6 +4938,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			845: {
 				final: true,
@@ -4373,6 +4947,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			846: {
 				final: false,
@@ -4381,6 +4956,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			847: {
 				final: false,
@@ -4389,6 +4965,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			848: {
 				final: false,
@@ -4397,6 +4974,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -4404,7 +4982,7 @@ const typeModels = {
 	853: {
 		name: "PhotosRef",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 23,
 		type: "AGGREGATED_TYPE",
 		id: 853,
@@ -4412,6 +4990,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			854: {
 				final: true,
@@ -4420,6 +4999,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4431,13 +5011,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	867: {
 		name: "ListUnsubscribeData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 24,
 		type: "DATA_TRANSFER_TYPE",
 		id: 867,
@@ -4445,6 +5026,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			868: {
 				final: false,
@@ -4453,6 +5035,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			871: {
 				final: false,
@@ -4461,6 +5044,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4472,13 +5056,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	926: {
 		name: "CalendarRepeatRule",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 33,
 		type: "AGGREGATED_TYPE",
 		id: 926,
@@ -4486,6 +5071,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			927: {
 				final: true,
@@ -4494,6 +5080,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			928: {
 				final: false,
@@ -4502,6 +5089,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			929: {
 				final: false,
@@ -4510,6 +5098,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			930: {
 				final: false,
@@ -4518,6 +5107,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			931: {
 				final: false,
@@ -4526,6 +5116,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			932: {
 				final: false,
@@ -4534,6 +5125,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4545,6 +5137,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 2073,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 			1590: {
 				final: false,
@@ -4554,13 +5147,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1586,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	933: {
 		name: "CalendarEvent",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 33,
 		type: "LIST_ELEMENT_TYPE",
 		id: 933,
@@ -4568,6 +5162,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			935: {
 				final: true,
@@ -4576,6 +5171,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			936: {
 				final: true,
@@ -4584,6 +5180,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			937: {
 				final: false,
@@ -4592,6 +5189,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			938: {
 				final: true,
@@ -4600,6 +5198,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			939: {
 				final: true,
@@ -4608,6 +5207,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			940: {
 				final: false,
@@ -4616,6 +5216,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			941: {
 				final: false,
@@ -4624,6 +5225,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			942: {
 				final: false,
@@ -4632,6 +5234,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			943: {
 				final: false,
@@ -4640,6 +5243,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			944: {
 				final: false,
@@ -4648,6 +5252,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			988: {
 				final: false,
@@ -4656,6 +5261,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1088: {
 				final: false,
@@ -4664,6 +5270,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1089: {
 				final: false,
@@ -4672,6 +5279,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1090: {
 				final: false,
@@ -4680,6 +5288,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1320: {
 				final: false,
@@ -4688,6 +5297,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1401: {
 				final: true,
@@ -4696,6 +5306,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1812: {
 				final: false,
@@ -4704,6 +5315,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1813: {
 				final: false,
@@ -4712,6 +5324,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1845: {
 				final: true,
@@ -4720,6 +5333,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1984: {
 				final: false,
@@ -4728,6 +5342,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1985: {
 				final: false,
@@ -4736,6 +5351,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4747,6 +5363,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 926,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			946: {
 				final: false,
@@ -4756,6 +5373,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1541,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 			1091: {
 				final: false,
@@ -4765,6 +5383,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1084,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1092: {
 				final: false,
@@ -4774,13 +5393,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 612,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	947: {
 		name: "CalendarGroupRoot",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 33,
 		type: "ELEMENT_TYPE",
 		id: 947,
@@ -4788,6 +5408,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			949: {
 				final: true,
@@ -4796,6 +5417,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			950: {
 				final: true,
@@ -4804,6 +5426,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			951: {
 				final: false,
@@ -4812,6 +5435,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			952: {
 				final: true,
@@ -4820,6 +5444,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			953: {
 				final: true,
@@ -4828,6 +5453,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1402: {
 				final: true,
@@ -4836,6 +5462,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1848: {
 				final: true,
@@ -4844,6 +5471,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4855,6 +5483,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 933,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			955: {
 				final: true,
@@ -4864,6 +5493,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 933,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1103: {
 				final: true,
@@ -4873,13 +5503,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1100,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	956: {
 		name: "UserAreaGroupData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 33,
 		type: "AGGREGATED_TYPE",
 		id: 956,
@@ -4887,6 +5518,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			957: {
 				final: true,
@@ -4895,6 +5527,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			958: {
 				final: false,
@@ -4903,6 +5536,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			959: {
 				final: false,
@@ -4911,6 +5545,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			960: {
 				final: false,
@@ -4919,6 +5554,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			961: {
 				final: false,
@@ -4927,6 +5563,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			962: {
 				final: false,
@@ -4935,6 +5572,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1423: {
 				final: false,
@@ -4943,6 +5581,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1424: {
 				final: false,
@@ -4951,6 +5590,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1425: {
 				final: false,
@@ -4959,6 +5599,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -4970,13 +5611,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	964: {
 		name: "UserAreaGroupPostData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 33,
 		type: "DATA_TRANSFER_TYPE",
 		id: 964,
@@ -4984,6 +5626,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			965: {
 				final: false,
@@ -4992,6 +5635,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5003,13 +5647,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 956,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	968: {
 		name: "GroupSettings",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 34,
 		type: "AGGREGATED_TYPE",
 		id: 968,
@@ -5017,6 +5662,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			969: {
 				final: true,
@@ -5025,6 +5671,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			971: {
 				final: false,
@@ -5033,6 +5680,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1020: {
 				final: false,
@@ -5041,6 +5689,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1468: {
 				final: false,
@@ -5049,6 +5698,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5060,6 +5710,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 			1449: {
 				final: false,
@@ -5069,13 +5720,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1446,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	972: {
 		name: "UserSettingsGroupRoot",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 34,
 		type: "ELEMENT_TYPE",
 		id: 972,
@@ -5083,6 +5735,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			974: {
 				final: true,
@@ -5091,6 +5744,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			975: {
 				final: true,
@@ -5099,6 +5753,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			976: {
 				final: false,
@@ -5107,6 +5762,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			977: {
 				final: true,
@@ -5115,6 +5771,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			978: {
 				final: true,
@@ -5123,6 +5780,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			980: {
 				final: false,
@@ -5131,6 +5789,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			981: {
 				final: false,
@@ -5139,6 +5798,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1234: {
 				final: false,
@@ -5147,6 +5807,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1403: {
 				final: true,
@@ -5155,6 +5816,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1735: {
 				final: false,
@@ -5163,6 +5825,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1850: {
 				final: true,
@@ -5171,6 +5834,16 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2224: {
+				final: false,
+				name: "satisfactionDialogDisabled",
+				id: 2224,
+				type: "Boolean",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5182,13 +5855,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 968,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	982: {
 		name: "CalendarDeleteIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 34,
 		type: "DATA_TRANSFER_TYPE",
 		id: 982,
@@ -5196,6 +5870,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			983: {
 				final: false,
@@ -5204,6 +5879,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5215,13 +5891,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 947,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	985: {
 		name: "CreateGroupPostReturn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 34,
 		type: "DATA_TRANSFER_TYPE",
 		id: 985,
@@ -5229,6 +5906,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			986: {
 				final: false,
@@ -5237,6 +5915,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5248,13 +5927,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	992: {
 		name: "SharedGroupData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 38,
 		type: "AGGREGATED_TYPE",
 		id: 992,
@@ -5262,6 +5942,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			993: {
 				final: true,
@@ -5270,6 +5951,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			994: {
 				final: false,
@@ -5278,6 +5960,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			995: {
 				final: false,
@@ -5286,6 +5969,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			996: {
 				final: false,
@@ -5294,6 +5978,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			997: {
 				final: false,
@@ -5302,6 +5987,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			998: {
 				final: false,
@@ -5310,22 +5996,25 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			999: {
 				final: true,
-				name: "sharedGroupEncInviterGroupInfoKey",
+				name: "sharedGroupEncInviterGroupInfoSessionKey",
 				id: 999,
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1000: {
 				final: true,
-				name: "sharedGroupEncSharedGroupInfoKey",
+				name: "sharedGroupEncSharedGroupInfoSessionKey",
 				id: 1000,
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1001: {
 				final: false,
@@ -5334,6 +6023,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1420: {
 				final: true,
@@ -5342,6 +6032,43 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2099: {
+				final: true,
+				name: "sharedGroupEncInviterGroupInfoInstanceKey",
+				id: 2099,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2100: {
+				final: true,
+				name: "inviterGroupInfoInstanceKeyVersion",
+				id: 2100,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2101: {
+				final: true,
+				name: "sharedGroupEncSharedGroupInfoInstanceKey",
+				id: 2101,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2102: {
+				final: true,
+				name: "sharedGroupInfoInstanceKeyVersion",
+				id: 2102,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -5349,7 +6076,7 @@ const typeModels = {
 	1002: {
 		name: "GroupInvitationPostData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 38,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1002,
@@ -5357,6 +6084,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1003: {
 				final: false,
@@ -5365,6 +6093,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5376,6 +6105,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 992,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1005: {
 				final: false,
@@ -5385,13 +6115,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 527,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1006: {
 		name: "GroupInvitationPostReturn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 38,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1006,
@@ -5399,6 +6130,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1007: {
 				final: false,
@@ -5407,6 +6139,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5418,6 +6151,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1009: {
 				final: false,
@@ -5427,6 +6161,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1010: {
 				final: false,
@@ -5436,13 +6171,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1011: {
 		name: "GroupInvitationPutData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 38,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1011,
@@ -5450,6 +6186,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1012: {
 				final: false,
@@ -5458,6 +6195,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1013: {
 				final: true,
@@ -5466,14 +6204,16 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1014: {
 				final: true,
-				name: "sharedGroupEncInviteeGroupInfoKey",
+				name: "sharedGroupEncInviteeGroupInfoSessionKey",
 				id: 1014,
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1418: {
 				final: false,
@@ -5482,6 +6222,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1419: {
 				final: true,
@@ -5490,6 +6231,25 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2103: {
+				final: true,
+				name: "sharedGroupEncInviteeGroupInfoInstanceKey",
+				id: 2103,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2104: {
+				final: true,
+				name: "inviteeGroupInfoInstanceKeyVersion",
+				id: 2104,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5501,13 +6261,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1602,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1016: {
 		name: "GroupInvitationDeleteData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 38,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1016,
@@ -5515,6 +6276,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1017: {
 				final: false,
@@ -5523,6 +6285,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5534,13 +6297,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1602,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1023: {
 		name: "ReportedMailFieldMarker",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 40,
 		type: "AGGREGATED_TYPE",
 		id: 1023,
@@ -5548,6 +6312,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1024: {
 				final: true,
@@ -5556,6 +6321,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1025: {
 				final: false,
@@ -5564,6 +6330,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1026: {
 				final: false,
@@ -5572,6 +6339,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -5579,7 +6347,7 @@ const typeModels = {
 	1034: {
 		name: "PhishingMarkerWebsocketData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 40,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1034,
@@ -5587,6 +6355,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1035: {
 				final: false,
@@ -5595,6 +6364,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1036: {
 				final: false,
@@ -5603,6 +6373,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1652: {
 				final: false,
@@ -5611,6 +6382,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1653: {
 				final: false,
@@ -5619,6 +6391,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5630,13 +6403,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1023,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1066: {
 		name: "ReportMailPostData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 40,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1066,
@@ -5644,6 +6418,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1067: {
 				final: false,
@@ -5652,6 +6427,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1068: {
 				final: false,
@@ -5660,6 +6436,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1082: {
 				final: false,
@@ -5668,6 +6445,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5679,13 +6457,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1084: {
 		name: "CalendarEventAttendee",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 42,
 		type: "AGGREGATED_TYPE",
 		id: 1084,
@@ -5693,6 +6472,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1085: {
 				final: true,
@@ -5701,6 +6481,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1086: {
 				final: false,
@@ -5709,6 +6490,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5720,13 +6502,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 612,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1093: {
 		name: "CalendarEventUidIndex",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 42,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1093,
@@ -5734,6 +6517,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1095: {
 				final: true,
@@ -5742,6 +6526,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1096: {
 				final: true,
@@ -5750,6 +6535,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1097: {
 				final: false,
@@ -5758,6 +6544,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1098: {
 				final: true,
@@ -5766,6 +6553,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5777,6 +6565,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 933,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1321: {
 				final: false,
@@ -5786,13 +6575,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 933,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1100: {
 		name: "CalendarEventIndexRef",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 42,
 		type: "AGGREGATED_TYPE",
 		id: 1100,
@@ -5800,6 +6590,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1101: {
 				final: true,
@@ -5808,6 +6599,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5819,13 +6611,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1093,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1104: {
 		name: "CalendarEventUpdate",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 42,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1104,
@@ -5833,6 +6626,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1106: {
 				final: true,
@@ -5841,6 +6635,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1107: {
 				final: true,
@@ -5849,6 +6644,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1108: {
 				final: false,
@@ -5857,6 +6653,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1109: {
 				final: true,
@@ -5865,6 +6662,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1110: {
 				final: true,
@@ -5873,6 +6671,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1111: {
 				final: true,
@@ -5881,6 +6680,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1405: {
 				final: true,
@@ -5889,6 +6689,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1838: {
 				final: true,
@@ -5897,6 +6698,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5908,13 +6710,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1113: {
 		name: "CalendarEventUpdateList",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 42,
 		type: "AGGREGATED_TYPE",
 		id: 1113,
@@ -5922,6 +6725,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1114: {
 				final: true,
@@ -5930,6 +6734,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -5941,13 +6746,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1104,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1122: {
 		name: "EntropyData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 43,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1122,
@@ -5955,6 +6761,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1123: {
 				final: false,
@@ -5963,6 +6770,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1124: {
 				final: false,
@@ -5971,6 +6779,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1432: {
 				final: false,
@@ -5979,6 +6788,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -5986,7 +6796,7 @@ const typeModels = {
 	1126: {
 		name: "OutOfOfficeNotificationMessage",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 44,
 		type: "AGGREGATED_TYPE",
 		id: 1126,
@@ -5994,6 +6804,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1127: {
 				final: true,
@@ -6002,6 +6813,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1128: {
 				final: false,
@@ -6010,6 +6822,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1129: {
 				final: false,
@@ -6018,6 +6831,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1130: {
 				final: false,
@@ -6026,6 +6840,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6033,7 +6848,7 @@ const typeModels = {
 	1131: {
 		name: "OutOfOfficeNotification",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 44,
 		type: "ELEMENT_TYPE",
 		id: 1131,
@@ -6041,6 +6856,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1133: {
 				final: true,
@@ -6049,6 +6865,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1134: {
 				final: true,
@@ -6057,6 +6874,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1135: {
 				final: false,
@@ -6065,6 +6883,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1136: {
 				final: true,
@@ -6073,6 +6892,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1137: {
 				final: false,
@@ -6081,6 +6901,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1138: {
 				final: false,
@@ -6089,6 +6910,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1139: {
 				final: false,
@@ -6097,6 +6919,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6108,13 +6931,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1126,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1141: {
 		name: "OutOfOfficeNotificationRecipient",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 44,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1141,
@@ -6122,6 +6946,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1143: {
 				final: true,
@@ -6130,6 +6955,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1144: {
 				final: true,
@@ -6138,6 +6964,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1145: {
 				final: false,
@@ -6146,6 +6973,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1146: {
 				final: true,
@@ -6154,6 +6982,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6161,7 +6990,7 @@ const typeModels = {
 	1147: {
 		name: "OutOfOfficeNotificationRecipientList",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 44,
 		type: "AGGREGATED_TYPE",
 		id: 1147,
@@ -6169,6 +6998,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1148: {
 				final: true,
@@ -6177,6 +7007,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6188,13 +7019,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1141,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1154: {
 		name: "EmailTemplateContent",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 45,
 		type: "AGGREGATED_TYPE",
 		id: 1154,
@@ -6202,6 +7034,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1155: {
 				final: true,
@@ -6210,6 +7043,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1156: {
 				final: false,
@@ -6218,6 +7052,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1157: {
 				final: false,
@@ -6226,6 +7061,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6233,7 +7069,7 @@ const typeModels = {
 	1158: {
 		name: "EmailTemplate",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 45,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1158,
@@ -6241,6 +7077,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1160: {
 				final: true,
@@ -6249,6 +7086,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1161: {
 				final: true,
@@ -6257,6 +7095,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1162: {
 				final: false,
@@ -6265,6 +7104,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1163: {
 				final: true,
@@ -6273,6 +7113,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1164: {
 				final: true,
@@ -6281,6 +7122,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1165: {
 				final: false,
@@ -6289,6 +7131,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1166: {
 				final: false,
@@ -6297,6 +7140,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1406: {
 				final: true,
@@ -6305,6 +7149,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1841: {
 				final: true,
@@ -6313,6 +7158,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6324,13 +7170,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1154,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1168: {
 		name: "KnowledgeBaseEntryKeyword",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 45,
 		type: "AGGREGATED_TYPE",
 		id: 1168,
@@ -6338,6 +7185,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1169: {
 				final: true,
@@ -6346,6 +7194,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1170: {
 				final: false,
@@ -6354,6 +7203,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6361,7 +7211,7 @@ const typeModels = {
 	1171: {
 		name: "KnowledgeBaseEntry",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 45,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1171,
@@ -6369,6 +7219,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1173: {
 				final: true,
@@ -6377,6 +7228,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1174: {
 				final: true,
@@ -6385,6 +7237,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1175: {
 				final: false,
@@ -6393,6 +7246,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1176: {
 				final: true,
@@ -6401,6 +7255,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1177: {
 				final: true,
@@ -6409,6 +7264,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1178: {
 				final: false,
@@ -6417,6 +7273,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1179: {
 				final: false,
@@ -6425,6 +7282,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1413: {
 				final: true,
@@ -6433,6 +7291,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1842: {
 				final: true,
@@ -6441,6 +7300,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6452,13 +7312,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1168,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1181: {
 		name: "TemplateGroupRoot",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 45,
 		type: "ELEMENT_TYPE",
 		id: 1181,
@@ -6466,6 +7327,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1183: {
 				final: true,
@@ -6474,6 +7336,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1184: {
 				final: true,
@@ -6482,6 +7345,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1185: {
 				final: false,
@@ -6490,6 +7354,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1186: {
 				final: true,
@@ -6498,6 +7363,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1187: {
 				final: true,
@@ -6506,6 +7372,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1412: {
 				final: true,
@@ -6514,6 +7381,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1844: {
 				final: true,
@@ -6522,6 +7390,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6533,6 +7402,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1158,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1189: {
 				final: true,
@@ -6542,13 +7412,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1171,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1190: {
 		name: "UserAreaGroupDeleteData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 45,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1190,
@@ -6556,6 +7427,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1191: {
 				final: false,
@@ -6564,6 +7436,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6575,13 +7448,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1195: {
 		name: "MailboxProperties",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 47,
 		type: "ELEMENT_TYPE",
 		id: 1195,
@@ -6589,6 +7463,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1197: {
 				final: true,
@@ -6597,6 +7472,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1198: {
 				final: true,
@@ -6605,6 +7481,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1199: {
 				final: false,
@@ -6613,6 +7490,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1200: {
 				final: true,
@@ -6621,6 +7499,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1201: {
 				final: true,
@@ -6629,6 +7508,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1202: {
 				final: false,
@@ -6637,6 +7517,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1411: {
 				final: true,
@@ -6645,6 +7526,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1846: {
 				final: true,
@@ -6653,6 +7535,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6664,6 +7547,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1263,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			2020: {
 				final: false,
@@ -6673,13 +7557,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 2315,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1217: {
 		name: "SpamResults",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 48,
 		type: "AGGREGATED_TYPE",
 		id: 1217,
@@ -6687,6 +7572,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1218: {
 				final: true,
@@ -6695,6 +7581,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6706,13 +7593,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1208,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1245: {
 		name: "NewsId",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 55,
 		type: "AGGREGATED_TYPE",
 		id: 1245,
@@ -6720,6 +7608,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1246: {
 				final: true,
@@ -6728,6 +7617,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1247: {
 				final: false,
@@ -6736,6 +7626,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1248: {
 				final: false,
@@ -6744,6 +7635,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6751,7 +7643,7 @@ const typeModels = {
 	1256: {
 		name: "NewsOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 55,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1256,
@@ -6759,6 +7651,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1257: {
 				final: false,
@@ -6767,6 +7660,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6778,13 +7672,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1245,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1259: {
 		name: "NewsIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 55,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1259,
@@ -6792,6 +7687,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1260: {
 				final: false,
@@ -6800,6 +7696,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1261: {
 				final: false,
@@ -6808,6 +7705,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6815,7 +7713,7 @@ const typeModels = {
 	1263: {
 		name: "MailAddressProperties",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 56,
 		type: "AGGREGATED_TYPE",
 		id: 1263,
@@ -6823,6 +7721,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1264: {
 				final: true,
@@ -6831,6 +7730,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1265: {
 				final: true,
@@ -6839,6 +7739,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1266: {
 				final: false,
@@ -6847,6 +7748,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6854,7 +7756,7 @@ const typeModels = {
 	1269: {
 		name: "Header",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 58,
 		type: "AGGREGATED_TYPE",
 		id: 1269,
@@ -6862,6 +7764,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1270: {
 				final: true,
@@ -6870,6 +7773,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1271: {
 				final: true,
@@ -6878,6 +7782,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1272: {
 				final: true,
@@ -6886,6 +7791,7 @@ const typeModels = {
 				type: "CompressedString",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6893,7 +7799,7 @@ const typeModels = {
 	1273: {
 		name: "Body",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 58,
 		type: "AGGREGATED_TYPE",
 		id: 1273,
@@ -6901,6 +7807,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1274: {
 				final: true,
@@ -6909,6 +7816,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1275: {
 				final: true,
@@ -6917,6 +7825,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1276: {
 				final: true,
@@ -6925,6 +7834,7 @@ const typeModels = {
 				type: "CompressedString",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -6932,7 +7842,7 @@ const typeModels = {
 	1277: {
 		name: "Recipients",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 58,
 		type: "AGGREGATED_TYPE",
 		id: 1277,
@@ -6940,6 +7850,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1278: {
 				final: true,
@@ -6948,6 +7859,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -6959,6 +7871,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1280: {
 				final: true,
@@ -6968,6 +7881,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1281: {
 				final: true,
@@ -6977,13 +7891,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1282: {
 		name: "MailDetails",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 58,
 		type: "AGGREGATED_TYPE",
 		id: 1282,
@@ -6991,6 +7906,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1283: {
 				final: true,
@@ -6999,6 +7915,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1284: {
 				final: true,
@@ -7007,6 +7924,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1289: {
 				final: false,
@@ -7015,6 +7933,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7026,6 +7945,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 612,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1286: {
 				final: true,
@@ -7035,6 +7955,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1277,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1287: {
 				final: true,
@@ -7044,6 +7965,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1269,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1288: {
 				final: true,
@@ -7053,13 +7975,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1273,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1290: {
 		name: "MailDetailsDraft",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 58,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1290,
@@ -7067,6 +7990,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1292: {
 				final: true,
@@ -7075,6 +7999,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1293: {
 				final: true,
@@ -7083,6 +8008,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1294: {
 				final: false,
@@ -7091,6 +8017,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1295: {
 				final: true,
@@ -7099,6 +8026,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1296: {
 				final: true,
@@ -7107,6 +8035,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1407: {
 				final: true,
@@ -7115,6 +8044,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1830: {
 				final: true,
@@ -7123,6 +8053,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7134,13 +8065,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1282,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1298: {
 		name: "MailDetailsBlob",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 58,
 		type: "BLOB_ELEMENT_TYPE",
 		id: 1298,
@@ -7148,6 +8080,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1300: {
 				final: true,
@@ -7156,6 +8089,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1301: {
 				final: true,
@@ -7164,6 +8098,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1302: {
 				final: false,
@@ -7172,6 +8107,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1303: {
 				final: true,
@@ -7180,6 +8116,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1304: {
 				final: true,
@@ -7188,6 +8125,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1408: {
 				final: true,
@@ -7196,6 +8134,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1833: {
 				final: true,
@@ -7204,6 +8143,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7215,13 +8155,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1282,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1311: {
 		name: "UpdateMailFolderData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 59,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1311,
@@ -7229,6 +8170,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1312: {
 				final: false,
@@ -7237,6 +8179,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7248,6 +8191,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1314: {
 				final: false,
@@ -7257,13 +8201,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1315: {
 		name: "MailDetailsDraftsRef",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 60,
 		type: "AGGREGATED_TYPE",
 		id: 1315,
@@ -7271,6 +8216,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1316: {
 				final: true,
@@ -7279,6 +8225,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7290,13 +8237,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1290,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1325: {
 		name: "ContactListEntry",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 64,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1325,
@@ -7304,6 +8252,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1327: {
 				final: true,
@@ -7312,6 +8261,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1328: {
 				final: true,
@@ -7320,6 +8270,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1329: {
 				final: false,
@@ -7328,6 +8279,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1330: {
 				final: true,
@@ -7336,6 +8288,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1331: {
 				final: true,
@@ -7344,6 +8297,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1332: {
 				final: false,
@@ -7352,6 +8306,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1409: {
 				final: true,
@@ -7360,6 +8315,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1835: {
 				final: true,
@@ -7368,6 +8324,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7375,7 +8332,7 @@ const typeModels = {
 	1333: {
 		name: "ContactListGroupRoot",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 64,
 		type: "ELEMENT_TYPE",
 		id: 1333,
@@ -7383,6 +8340,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1335: {
 				final: true,
@@ -7391,6 +8349,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1336: {
 				final: true,
@@ -7399,6 +8358,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1337: {
 				final: false,
@@ -7407,6 +8367,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1338: {
 				final: true,
@@ -7415,6 +8376,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1339: {
 				final: true,
@@ -7423,6 +8385,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1410: {
 				final: true,
@@ -7431,6 +8394,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1836: {
 				final: true,
@@ -7439,6 +8403,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7450,13 +8415,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1325,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1347: {
 		name: "SymEncInternalRecipientKeyData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 66,
 		type: "AGGREGATED_TYPE",
 		id: 1347,
@@ -7464,6 +8430,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1348: {
 				final: true,
@@ -7472,6 +8439,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1349: {
 				final: true,
@@ -7480,6 +8448,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1350: {
 				final: true,
@@ -7488,6 +8457,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1435: {
 				final: false,
@@ -7496,6 +8466,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7507,13 +8478,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1356: {
 		name: "ContactCustomDate",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 67,
 		type: "AGGREGATED_TYPE",
 		id: 1356,
@@ -7521,6 +8493,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1357: {
 				final: true,
@@ -7529,6 +8502,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1358: {
 				final: false,
@@ -7537,6 +8511,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1359: {
 				final: false,
@@ -7545,6 +8520,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1360: {
 				final: false,
@@ -7553,6 +8529,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7560,7 +8537,7 @@ const typeModels = {
 	1361: {
 		name: "ContactWebsite",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 67,
 		type: "AGGREGATED_TYPE",
 		id: 1361,
@@ -7568,6 +8545,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1362: {
 				final: true,
@@ -7576,6 +8554,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1363: {
 				final: false,
@@ -7584,6 +8563,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1364: {
 				final: false,
@@ -7592,6 +8572,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1365: {
 				final: false,
@@ -7600,6 +8581,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7607,7 +8589,7 @@ const typeModels = {
 	1366: {
 		name: "ContactRelationship",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 67,
 		type: "AGGREGATED_TYPE",
 		id: 1366,
@@ -7615,6 +8597,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1367: {
 				final: true,
@@ -7623,6 +8606,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1368: {
 				final: false,
@@ -7631,6 +8615,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1369: {
 				final: false,
@@ -7639,6 +8624,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1370: {
 				final: false,
@@ -7647,6 +8633,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7654,7 +8641,7 @@ const typeModels = {
 	1371: {
 		name: "ContactMessengerHandle",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 67,
 		type: "AGGREGATED_TYPE",
 		id: 1371,
@@ -7662,6 +8649,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1372: {
 				final: true,
@@ -7670,6 +8658,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1373: {
 				final: false,
@@ -7678,6 +8667,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1374: {
 				final: false,
@@ -7686,6 +8676,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1375: {
 				final: false,
@@ -7694,6 +8685,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7701,7 +8693,7 @@ const typeModels = {
 	1376: {
 		name: "ContactPronouns",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 67,
 		type: "AGGREGATED_TYPE",
 		id: 1376,
@@ -7709,6 +8701,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1377: {
 				final: true,
@@ -7717,6 +8710,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1378: {
 				final: false,
@@ -7725,6 +8719,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1379: {
 				final: false,
@@ -7733,6 +8728,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7740,7 +8736,7 @@ const typeModels = {
 	1436: {
 		name: "TranslationGetIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 70,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1436,
@@ -7748,6 +8744,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1437: {
 				final: false,
@@ -7756,6 +8753,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1438: {
 				final: true,
@@ -7764,6 +8762,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7771,7 +8770,7 @@ const typeModels = {
 	1439: {
 		name: "TranslationGetOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 70,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1439,
@@ -7779,6 +8778,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1440: {
 				final: false,
@@ -7787,6 +8787,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1441: {
 				final: false,
@@ -7795,6 +8796,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1442: {
 				final: false,
@@ -7803,6 +8805,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7810,7 +8813,7 @@ const typeModels = {
 	1446: {
 		name: "DefaultAlarmInfo",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 74,
 		type: "AGGREGATED_TYPE",
 		id: 1446,
@@ -7818,6 +8821,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1447: {
 				final: true,
@@ -7826,6 +8830,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1448: {
 				final: true,
@@ -7834,6 +8839,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -7841,7 +8847,7 @@ const typeModels = {
 	1450: {
 		name: "MailSetEntry",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 74,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1450,
@@ -7849,6 +8855,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1452: {
 				final: true,
@@ -7857,6 +8864,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1453: {
 				final: true,
@@ -7865,6 +8873,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1454: {
 				final: false,
@@ -7873,6 +8882,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1455: {
 				final: true,
@@ -7881,6 +8891,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7892,13 +8903,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1460: {
 		name: "MailBag",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 74,
 		type: "AGGREGATED_TYPE",
 		id: 1460,
@@ -7906,6 +8918,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1461: {
 				final: true,
@@ -7914,6 +8927,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7925,13 +8939,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1469: {
 		name: "SimpleMoveMailPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 76,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1469,
@@ -7939,6 +8954,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1470: {
 				final: false,
@@ -7947,6 +8963,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1472: {
 				final: false,
@@ -7955,6 +8972,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1713: {
 				final: false,
@@ -7963,6 +8981,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -7974,13 +8993,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1474: {
 		name: "UnreadMailStatePostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 76,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1474,
@@ -7988,6 +9008,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1475: {
 				final: false,
@@ -7996,6 +9017,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1477: {
 				final: false,
@@ -8004,6 +9026,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8015,13 +9038,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1480: {
 		name: "ManageLabelServiceLabelData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 77,
 		type: "AGGREGATED_TYPE",
 		id: 1480,
@@ -8029,6 +9053,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1481: {
 				final: true,
@@ -8037,6 +9062,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1482: {
 				final: false,
@@ -8045,6 +9071,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1483: {
 				final: false,
@@ -8053,6 +9080,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8064,13 +9092,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1484: {
 		name: "ManageLabelServicePostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 77,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1484,
@@ -8078,6 +9107,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1485: {
 				final: false,
@@ -8086,30 +9116,34 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1486: {
 				final: false,
 				name: "ownerEncSessionKey",
 				id: 1486,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1487: {
 				final: false,
 				name: "ownerKeyVersion",
 				id: 1487,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1488: {
 				final: false,
 				name: "ownerGroup",
 				id: 1488,
 				type: "GeneratedId",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8118,16 +9152,27 @@ const typeModels = {
 				name: "data",
 				id: 1489,
 				type: "AGGREGATION",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				refTypeId: 1480,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2098: {
+				final: true,
+				name: "mailSet",
+				id: 2098,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2088,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1490: {
 		name: "ManageLabelServicePostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 77,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1490,
@@ -8135,6 +9180,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1491: {
 				final: false,
@@ -8143,6 +9189,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8154,13 +9201,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1493: {
 		name: "ManageLabelServicePutIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 77,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1493,
@@ -8168,6 +9216,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1494: {
 				final: false,
@@ -8176,6 +9225,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8187,22 +9237,34 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1499: {
 				final: false,
 				name: "data",
 				id: 1499,
 				type: "AGGREGATION",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				refTypeId: 1480,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2097: {
+				final: true,
+				name: "mailSet",
+				id: 2097,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2080,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1500: {
 		name: "ManageLabelServiceDeleteIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 77,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1500,
@@ -8210,6 +9272,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1501: {
 				final: false,
@@ -8218,6 +9281,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8229,13 +9293,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1504: {
 		name: "ApplyLabelServicePostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 77,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1504,
@@ -8243,6 +9308,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1505: {
 				final: false,
@@ -8251,6 +9317,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8262,6 +9329,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1507: {
 				final: false,
@@ -8271,6 +9339,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1508: {
 				final: false,
@@ -8280,13 +9349,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1513: {
 		name: "ImportMailDataMailReference",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "AGGREGATED_TYPE",
 		id: 1513,
@@ -8294,6 +9364,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1514: {
 				final: true,
@@ -8302,6 +9373,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1515: {
 				final: false,
@@ -8310,6 +9382,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -8317,7 +9390,7 @@ const typeModels = {
 	1516: {
 		name: "NewImportAttachment",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "AGGREGATED_TYPE",
 		id: 1516,
@@ -8325,6 +9398,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1517: {
 				final: true,
@@ -8333,6 +9407,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1518: {
 				final: true,
@@ -8341,6 +9416,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1519: {
 				final: true,
@@ -8349,22 +9425,25 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1520: {
 				final: true,
 				name: "encFileName",
 				id: 1520,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1521: {
 				final: true,
 				name: "encMimeType",
 				id: 1521,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1522: {
 				final: true,
@@ -8373,6 +9452,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1894: {
 				final: true,
@@ -8381,6 +9461,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8392,13 +9473,34 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1990,
 				dependency: "sys",
+				transferredAttributeId: null,
+			},
+			2204: {
+				final: true,
+				name: "deduplicatedImportedAttachment",
+				id: 2204,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2198,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2205: {
+				final: true,
+				name: "file",
+				id: 2205,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2021,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1524: {
 		name: "ImportAttachment",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "AGGREGATED_TYPE",
 		id: 1524,
@@ -8406,6 +9508,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1525: {
 				final: true,
@@ -8414,22 +9517,25 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1526: {
 				final: true,
 				name: "ownerEncFileSessionKey",
 				id: 1526,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1527: {
 				final: false,
 				name: "ownerFileKeyVersion",
 				id: 1527,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8441,6 +9547,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1516,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1529: {
 				final: true,
@@ -8450,13 +9557,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1530: {
 		name: "ImportMailData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1530,
@@ -8464,6 +9572,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1531: {
 				final: false,
@@ -8472,6 +9581,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1532: {
 				final: false,
@@ -8480,6 +9590,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1533: {
 				final: false,
@@ -8488,6 +9599,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1534: {
 				final: true,
@@ -8496,6 +9608,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1535: {
 				final: true,
@@ -8504,6 +9617,7 @@ const typeModels = {
 				type: "CompressedString",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1536: {
 				final: true,
@@ -8512,6 +9626,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1537: {
 				final: true,
@@ -8520,6 +9635,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1538: {
 				final: true,
@@ -8528,6 +9644,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1539: {
 				final: true,
@@ -8536,6 +9653,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1540: {
 				final: true,
@@ -8544,6 +9662,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1541: {
 				final: true,
@@ -8552,6 +9671,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1542: {
 				final: true,
@@ -8560,6 +9680,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1543: {
 				final: false,
@@ -8568,6 +9689,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1544: {
 				final: true,
@@ -8576,6 +9698,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1545: {
 				final: true,
@@ -8584,6 +9707,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1546: {
 				final: true,
@@ -8592,6 +9716,7 @@ const typeModels = {
 				type: "CompressedString",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1965: {
 				final: false,
@@ -8600,6 +9725,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1966: {
 				final: false,
@@ -8608,6 +9734,16 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2254: {
+				final: false,
+				name: "sourceId",
+				id: 2254,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8619,6 +9755,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1513,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1548: {
 				final: true,
@@ -8628,6 +9765,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 92,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1549: {
 				final: false,
@@ -8637,6 +9775,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 612,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1550: {
 				final: true,
@@ -8646,6 +9785,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1277,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1551: {
 				final: true,
@@ -8655,6 +9795,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1524,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1993: {
 				final: false,
@@ -8664,13 +9805,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1552: {
 		name: "ImportedFileMail",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1552,
@@ -8678,6 +9820,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1554: {
 				final: true,
@@ -8686,6 +9829,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1555: {
 				final: true,
@@ -8694,6 +9838,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1556: {
 				final: false,
@@ -8702,6 +9847,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1557: {
 				final: true,
@@ -8710,6 +9856,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8721,13 +9868,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1450,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1559: {
 		name: "ImportFileMailState",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1559,
@@ -8735,6 +9883,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1561: {
 				final: true,
@@ -8743,6 +9892,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1562: {
 				final: true,
@@ -8751,6 +9901,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1563: {
 				final: false,
@@ -8759,6 +9910,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1564: {
 				final: true,
@@ -8767,6 +9919,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1565: {
 				final: false,
@@ -8775,6 +9928,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1566: {
 				final: false,
@@ -8783,6 +9937,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1567: {
 				final: false,
@@ -8791,6 +9946,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1600: {
 				final: false,
@@ -8799,6 +9955,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8810,6 +9967,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1552,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1569: {
 				final: true,
@@ -8819,13 +9977,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1570: {
 		name: "ImportMailPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1570,
@@ -8833,6 +9992,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1571: {
 				final: false,
@@ -8841,6 +10001,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8852,6 +10013,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 1559,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1578: {
 				final: false,
@@ -8861,22 +10023,34 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 728,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 			1964: {
 				final: false,
-				name: "imapFolderSyncState",
+				name: "mailboxMigrationFolderSyncState",
 				id: 1964,
 				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
 				cardinality: "ZeroOrOne",
 				refTypeId: 1895,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2216: {
+				final: true,
+				name: "encImports2",
+				id: 2216,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 728,
+				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1579: {
 		name: "ImportMailPostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1579,
@@ -8884,6 +10058,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1580: {
 				final: false,
@@ -8892,6 +10067,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -8899,7 +10075,7 @@ const typeModels = {
 	1582: {
 		name: "ImportMailGetIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 79,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1582,
@@ -8907,6 +10083,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1583: {
 				final: false,
@@ -8915,6 +10092,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1594: {
 				final: false,
@@ -8923,6 +10101,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1595: {
 				final: false,
@@ -8931,6 +10110,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1596: {
 				final: false,
@@ -8939,6 +10119,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1597: {
 				final: false,
@@ -8947,6 +10128,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1598: {
 				final: false,
@@ -8955,6 +10137,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -8966,13 +10149,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1586: {
 		name: "AdvancedRepeatRule",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 80,
 		type: "AGGREGATED_TYPE",
 		id: 1586,
@@ -8980,6 +10164,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1587: {
 				final: true,
@@ -8988,6 +10173,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1588: {
 				final: false,
@@ -8996,6 +10182,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1589: {
 				final: false,
@@ -9004,6 +10191,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9011,7 +10199,7 @@ const typeModels = {
 	1591: {
 		name: "ImportMailGetOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 80,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1591,
@@ -9019,6 +10207,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1592: {
 				final: false,
@@ -9027,6 +10216,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9038,13 +10228,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1559,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1605: {
 		name: "MailExportTokenServicePostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 81,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1605,
@@ -9052,6 +10243,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1606: {
 				final: false,
@@ -9060,6 +10252,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1607: {
 				final: false,
@@ -9068,6 +10261,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9075,7 +10269,7 @@ const typeModels = {
 	1618: {
 		name: "SupportTopic",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 82,
 		type: "AGGREGATED_TYPE",
 		id: 1618,
@@ -9083,6 +10277,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1619: {
 				final: true,
@@ -9091,6 +10286,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1620: {
 				final: false,
@@ -9099,6 +10295,7 @@ const typeModels = {
 				type: "Date",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1621: {
 				final: false,
@@ -9107,6 +10304,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1622: {
 				final: false,
@@ -9115,6 +10313,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1623: {
 				final: false,
@@ -9123,6 +10322,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1624: {
 				final: false,
@@ -9131,6 +10331,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1625: {
 				final: false,
@@ -9139,6 +10340,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1654: {
 				final: false,
@@ -9147,6 +10349,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1655: {
 				final: false,
@@ -9155,6 +10358,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1656: {
 				final: false,
@@ -9163,6 +10367,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1657: {
 				final: false,
@@ -9171,6 +10376,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1658: {
 				final: false,
@@ -9179,6 +10385,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1659: {
 				final: false,
@@ -9187,6 +10394,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9194,7 +10402,7 @@ const typeModels = {
 	1626: {
 		name: "SupportCategory",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 82,
 		type: "AGGREGATED_TYPE",
 		id: 1626,
@@ -9202,6 +10410,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1627: {
 				final: true,
@@ -9210,6 +10419,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1628: {
 				final: false,
@@ -9218,6 +10428,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1629: {
 				final: false,
@@ -9226,6 +10437,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1630: {
 				final: false,
@@ -9234,6 +10446,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1631: {
 				final: false,
@@ -9242,6 +10455,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1632: {
 				final: false,
@@ -9250,6 +10464,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1660: {
 				final: false,
@@ -9258,6 +10473,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1661: {
 				final: false,
@@ -9266,6 +10482,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1662: {
 				final: false,
@@ -9274,6 +10491,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1663: {
 				final: false,
@@ -9282,6 +10500,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9293,13 +10512,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1618,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1634: {
 		name: "SupportData",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 82,
 		type: "ELEMENT_TYPE",
 		id: 1634,
@@ -9307,6 +10527,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1636: {
 				final: true,
@@ -9315,6 +10536,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1637: {
 				final: true,
@@ -9323,6 +10545,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1638: {
 				final: false,
@@ -9331,6 +10554,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1639: {
 				final: true,
@@ -9339,6 +10563,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9350,13 +10575,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1626,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1641: {
 		name: "ReceiveInfoServicePostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 84,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1641,
@@ -9364,6 +10590,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1642: {
 				final: false,
@@ -9372,6 +10599,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1643: {
 				final: true,
@@ -9380,6 +10608,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9387,7 +10616,7 @@ const typeModels = {
 	1645: {
 		name: "ResolveConversationsServiceGetIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 85,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1645,
@@ -9395,6 +10624,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1646: {
 				final: false,
@@ -9403,6 +10633,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9414,13 +10645,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1349,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1648: {
 		name: "ResolveConversationsServiceGetOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 85,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1648,
@@ -9428,6 +10660,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1649: {
 				final: false,
@@ -9436,6 +10669,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9447,13 +10681,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 2315,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1664: {
 		name: "UserAccountPostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 88,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1664,
@@ -9461,6 +10696,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1665: {
 				final: false,
@@ -9469,6 +10705,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1666: {
 				final: false,
@@ -9477,6 +10714,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1667: {
 				final: false,
@@ -9485,6 +10723,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9492,7 +10731,7 @@ const typeModels = {
 	1668: {
 		name: "MailGroupPostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 88,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1668,
@@ -9500,6 +10739,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1669: {
 				final: false,
@@ -9508,6 +10748,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9519,13 +10760,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 5,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1671: {
 		name: "ChangePrimaryAddressServicePutIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 90,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1671,
@@ -9533,6 +10775,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1672: {
 				final: false,
@@ -9541,6 +10784,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1674: {
 				final: false,
@@ -9549,6 +10793,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9560,13 +10805,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 84,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1716: {
 		name: "MovedMails",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 95,
 		type: "AGGREGATED_TYPE",
 		id: 1716,
@@ -9574,6 +10820,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1717: {
 				final: true,
@@ -9582,6 +10829,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9593,6 +10841,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1719: {
 				final: false,
@@ -9602,6 +10851,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1720: {
 				final: true,
@@ -9611,13 +10861,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 2315,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1721: {
 		name: "MoveMailPostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 95,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1721,
@@ -9625,6 +10876,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1722: {
 				final: false,
@@ -9633,6 +10885,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9644,13 +10897,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1716,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1724: {
 		name: "ClientSpamClassifierResult",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 96,
 		type: "AGGREGATED_TYPE",
 		id: 1724,
@@ -9658,6 +10912,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1725: {
 				final: true,
@@ -9666,6 +10921,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1726: {
 				final: false,
@@ -9674,6 +10930,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1727: {
 				final: false,
@@ -9682,6 +10939,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9689,7 +10947,7 @@ const typeModels = {
 	1730: {
 		name: "ClientClassifierResultPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 96,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1730,
@@ -9697,6 +10955,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1731: {
 				final: false,
@@ -9705,6 +10964,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1733: {
 				final: false,
@@ -9713,6 +10973,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9724,13 +10985,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1736: {
 		name: "ClientSpamTrainingDatum",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 98,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1736,
@@ -9738,6 +11000,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1738: {
 				final: true,
@@ -9746,6 +11009,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1739: {
 				final: true,
@@ -9754,6 +11018,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1740: {
 				final: false,
@@ -9762,6 +11027,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1741: {
 				final: true,
@@ -9770,6 +11036,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1742: {
 				final: true,
@@ -9778,6 +11045,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1743: {
 				final: true,
@@ -9786,6 +11054,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1744: {
 				final: false,
@@ -9794,6 +11063,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1745: {
 				final: false,
@@ -9802,6 +11072,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1746: {
 				final: true,
@@ -9810,6 +11081,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1817: {
 				final: true,
@@ -9818,6 +11090,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1849: {
 				final: true,
@@ -9826,6 +11099,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9833,7 +11107,7 @@ const typeModels = {
 	1747: {
 		name: "ClientSpamTrainingDatumIndexEntry",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 98,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1747,
@@ -9841,6 +11115,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1749: {
 				final: true,
@@ -9849,6 +11124,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1750: {
 				final: true,
@@ -9857,6 +11133,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1751: {
 				final: false,
@@ -9865,6 +11142,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1752: {
 				final: true,
@@ -9873,6 +11151,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1753: {
 				final: false,
@@ -9881,6 +11160,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -9888,7 +11168,7 @@ const typeModels = {
 	1756: {
 		name: "ProcessInboxDatum",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 98,
 		type: "AGGREGATED_TYPE",
 		id: 1756,
@@ -9896,6 +11176,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1757: {
 				final: true,
@@ -9904,6 +11185,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1758: {
 				final: false,
@@ -9912,6 +11194,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1759: {
 				final: false,
@@ -9920,6 +11203,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1762: {
 				final: false,
@@ -9928,6 +11212,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1763: {
 				final: true,
@@ -9936,6 +11221,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1815: {
 				final: true,
@@ -9944,6 +11230,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -9955,6 +11242,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1761: {
 				final: false,
@@ -9964,6 +11252,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1811: {
 				final: true,
@@ -9973,13 +11262,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 2037,
 				dependency: "sys",
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1764: {
 		name: "ProcessInboxPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 98,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1764,
@@ -9987,6 +11277,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1765: {
 				final: false,
@@ -9995,6 +11286,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1766: {
 				final: false,
@@ -10003,6 +11295,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10014,13 +11307,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1756,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1770: {
 		name: "PopulateClientSpamTrainingDatum",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 98,
 		type: "AGGREGATED_TYPE",
 		id: 1770,
@@ -10028,6 +11322,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1771: {
 				final: true,
@@ -10036,6 +11331,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1772: {
 				final: false,
@@ -10044,6 +11340,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1773: {
 				final: false,
@@ -10052,6 +11349,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1775: {
 				final: false,
@@ -10060,6 +11358,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1776: {
 				final: false,
@@ -10068,6 +11367,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1777: {
 				final: true,
@@ -10076,6 +11376,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1816: {
 				final: true,
@@ -10084,6 +11385,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10095,13 +11397,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1778: {
 		name: "PopulateClientSpamTrainingDataPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 98,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1778,
@@ -10109,6 +11412,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1779: {
 				final: false,
@@ -10117,6 +11421,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1780: {
 				final: false,
@@ -10125,6 +11430,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10136,13 +11442,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1770,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1785: {
 		name: "SendDraftDeleteIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 101,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1785,
@@ -10150,6 +11457,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1786: {
 				final: false,
@@ -10158,6 +11466,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10169,6 +11478,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1824: {
 				final: false,
@@ -10178,13 +11488,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 906,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1788: {
 		name: "SendDraftParameters",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 101,
 		type: "AGGREGATED_TYPE",
 		id: 1788,
@@ -10192,6 +11503,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1789: {
 				final: true,
@@ -10200,6 +11512,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1791: {
 				final: true,
@@ -10208,6 +11521,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1792: {
 				final: true,
@@ -10216,6 +11530,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1793: {
 				final: true,
@@ -10224,6 +11539,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1794: {
 				final: true,
@@ -10232,6 +11548,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1795: {
 				final: true,
@@ -10240,6 +11557,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1796: {
 				final: false,
@@ -10248,6 +11566,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1801: {
 				final: true,
@@ -10256,6 +11575,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10267,6 +11587,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 97,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1797: {
 				final: true,
@@ -10276,6 +11597,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 527,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1798: {
 				final: true,
@@ -10285,6 +11607,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 532,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1799: {
 				final: true,
@@ -10294,6 +11617,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1347,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1800: {
 				final: true,
@@ -10303,13 +11627,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 542,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1860: {
-		name: "OAuthTokenEndpointResponse",
+		name: "OAuthTokenEndpointResponseLegacy",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "AGGREGATED_TYPE",
 		id: 1860,
@@ -10317,6 +11642,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1861: {
 				final: true,
@@ -10325,6 +11651,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1862: {
 				final: false,
@@ -10333,6 +11660,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1863: {
 				final: false,
@@ -10341,6 +11669,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1864: {
 				final: false,
@@ -10349,6 +11678,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1865: {
 				final: false,
@@ -10357,14 +11687,15 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
 	},
 	1866: {
-		name: "ImapAccount",
+		name: "MailboxMigrationImapConfiguration",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "AGGREGATED_TYPE",
 		id: 1866,
@@ -10372,6 +11703,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1867: {
 				final: true,
@@ -10380,6 +11712,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1868: {
 				final: false,
@@ -10388,6 +11721,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1869: {
 				final: false,
@@ -10396,22 +11730,25 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1870: {
 				final: true,
-				name: "username",
+				name: "sharedUsername",
 				id: 1870,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1871: {
 				final: false,
-				name: "password",
+				name: "sharedPassword",
 				id: 1871,
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1987: {
 				final: false,
@@ -10420,6 +11757,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1988: {
 				final: false,
@@ -10428,6 +11766,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1994: {
 				final: false,
@@ -10436,24 +11775,26 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
 			1872: {
 				final: false,
-				name: "oAuthTokenEndpointResponse",
+				name: "legacyOauthToken",
 				id: 1872,
 				type: "AGGREGATION",
 				cardinality: "ZeroOrOne",
 				refTypeId: 1860,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1873: {
-		name: "ImportedImapMail",
+		name: "ImportedMigrationMail",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1873,
@@ -10461,6 +11802,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1875: {
 				final: true,
@@ -10469,6 +11811,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1876: {
 				final: true,
@@ -10477,6 +11820,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1877: {
 				final: false,
@@ -10485,6 +11829,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1878: {
 				final: true,
@@ -10493,14 +11838,16 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1879: {
 				final: true,
-				name: "imapUid",
+				name: "sourceId",
 				id: 1879,
-				type: "Number",
+				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1880: {
 				final: true,
@@ -10509,6 +11856,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1881: {
 				final: true,
@@ -10517,6 +11865,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10528,13 +11877,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1450,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1883: {
 		name: "DeduplicatedImportedAttachment",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1883,
@@ -10542,6 +11892,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1885: {
 				final: true,
@@ -10550,6 +11901,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1886: {
 				final: true,
@@ -10558,6 +11910,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1887: {
 				final: false,
@@ -10566,6 +11919,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1888: {
 				final: true,
@@ -10574,6 +11928,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1889: {
 				final: true,
@@ -10582,6 +11937,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1890: {
 				final: true,
@@ -10590,6 +11946,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1891: {
 				final: true,
@@ -10598,6 +11955,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1892: {
 				final: true,
@@ -10606,6 +11964,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10617,13 +11976,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 13,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1895: {
-		name: "ImapFolderSyncState",
+		name: "MailboxMigrationFolderSyncState",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1895,
@@ -10631,6 +11991,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1897: {
 				final: true,
@@ -10639,6 +12000,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1898: {
 				final: true,
@@ -10647,6 +12009,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1899: {
 				final: false,
@@ -10655,6 +12018,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1900: {
 				final: true,
@@ -10663,6 +12027,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1901: {
 				final: true,
@@ -10671,6 +12036,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1902: {
 				final: true,
@@ -10679,6 +12045,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1903: {
 				final: true,
@@ -10687,14 +12054,16 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1904: {
 				final: false,
-				name: "path",
+				name: "sourceId",
 				id: 1904,
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1908: {
 				final: false,
@@ -10703,6 +12072,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1976: {
 				final: false,
@@ -10711,6 +12081,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1977: {
 				final: false,
@@ -10719,6 +12090,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1978: {
 				final: false,
@@ -10727,14 +12099,16 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1990: {
 				final: true,
-				name: "imapSpecialUse",
+				name: "specialUse",
 				id: 1990,
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10746,6 +12120,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1873,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1910: {
 				final: true,
@@ -10755,22 +12130,24 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1928: {
 				final: true,
-				name: "imapAccountSyncState",
+				name: "mailboxMigrationSyncState",
 				id: 1928,
 				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
 				cardinality: "One",
 				refTypeId: 1911,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1911: {
-		name: "ImapAccountSyncState",
+		name: "MailboxMigrationSyncState",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "LIST_ELEMENT_TYPE",
 		id: 1911,
@@ -10778,6 +12155,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1913: {
 				final: true,
@@ -10786,6 +12164,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1914: {
 				final: true,
@@ -10794,6 +12173,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1915: {
 				final: false,
@@ -10802,6 +12182,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1916: {
 				final: true,
@@ -10810,6 +12191,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1917: {
 				final: true,
@@ -10818,6 +12200,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1918: {
 				final: true,
@@ -10826,6 +12209,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1919: {
 				final: true,
@@ -10834,14 +12218,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
-			},
-			1920: {
-				final: false,
-				name: "maxQuota",
-				id: 1920,
-				type: "Number",
-				cardinality: "One",
-				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1921: {
 				final: false,
@@ -10850,14 +12227,16 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1922: {
 				final: true,
-				name: "provider",
+				name: "legacyProvider",
 				id: 1922,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1923: {
 				final: false,
@@ -10866,6 +12245,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1968: {
 				final: true,
@@ -10874,26 +12254,29 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
 			1924: {
 				final: true,
-				name: "imapFolderSyncStateList",
+				name: "mailboxMigrationFolderSyncStates",
 				id: 1924,
 				type: "LIST_ASSOCIATION",
 				cardinality: "One",
 				refTypeId: 1895,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1925: {
 				final: false,
-				name: "imapAccount",
+				name: "imapConfiguration",
 				id: 1925,
 				type: "AGGREGATION",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				refTypeId: 1866,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1926: {
 				final: true,
@@ -10903,22 +12286,24 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1927: {
 				final: true,
-				name: "imapSyncLabel",
+				name: "syncLabel",
 				id: 1927,
 				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1929: {
 		name: "ImapFolderPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1929,
@@ -10926,6 +12311,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1930: {
 				final: false,
@@ -10934,38 +12320,43 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1931: {
 				final: true,
 				name: "ownerEncSessionKey",
 				id: 1931,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1932: {
 				final: true,
 				name: "ownerKeyVersion",
 				id: 1932,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1933: {
 				final: true,
 				name: "ownerGroup",
 				id: 1933,
 				type: "GeneratedId",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1934: {
 				final: true,
 				name: "path",
 				id: 1934,
 				type: "String",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1991: {
 				final: false,
@@ -10974,6 +12365,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1992: {
 				final: false,
@@ -10982,6 +12374,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -10993,6 +12386,7 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1911,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1936: {
 				final: true,
@@ -11002,13 +12396,24 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2120: {
+				final: true,
+				name: "imapFolderSyncState",
+				id: 2120,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2111,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1937: {
 		name: "ImapFolderPostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1937,
@@ -11016,6 +12421,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1938: {
 				final: false,
@@ -11024,6 +12430,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11035,13 +12442,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1895,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1940: {
 		name: "ImapFolderDeleteIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1940,
@@ -11049,6 +12457,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1941: {
 				final: false,
@@ -11057,6 +12466,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11068,13 +12478,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1895,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1944: {
 		name: "ImapPostIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1944,
@@ -11082,6 +12493,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1945: {
 				final: false,
@@ -11090,54 +12502,61 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1946: {
 				final: true,
 				name: "ownerEncSessionKey",
 				id: 1946,
 				type: "Bytes",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1947: {
 				final: true,
 				name: "ownerKeyVersion",
 				id: 1947,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1948: {
 				final: true,
 				name: "ownerGroup",
 				id: 1948,
 				type: "GeneratedId",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1949: {
 				final: true,
 				name: "maxQuota",
 				id: 1949,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1950: {
 				final: true,
 				name: "postponedUntil",
 				id: 1950,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1951: {
 				final: true,
 				name: "provider",
 				id: 1951,
 				type: "Number",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11146,9 +12565,10 @@ const typeModels = {
 				name: "imapAccount",
 				id: 1952,
 				type: "AGGREGATION",
-				cardinality: "One",
+				cardinality: "ZeroOrOne",
 				refTypeId: 1866,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1954: {
 				final: true,
@@ -11158,6 +12578,7 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			1967: {
 				final: true,
@@ -11167,13 +12588,24 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2149: {
+				final: true,
+				name: "imapAccountSyncState",
+				id: 2149,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2137,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1955: {
 		name: "ImapPostOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1955,
@@ -11181,6 +12613,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1956: {
 				final: false,
@@ -11189,6 +12622,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11200,13 +12634,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1911,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1958: {
 		name: "ImapDeleteIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 110,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1958,
@@ -11214,6 +12649,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1959: {
 				final: false,
@@ -11222,6 +12658,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11233,13 +12670,14 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1911,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1969: {
-		name: "ImapOauthConfigGetIn",
+		name: "MailboxMigrationOauthConfigGetIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 111,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1969,
@@ -11247,6 +12685,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1970: {
 				final: false,
@@ -11255,6 +12694,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1971: {
 				final: true,
@@ -11263,14 +12703,15 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
 	},
 	1972: {
-		name: "ImapOauthConfigGetOut",
+		name: "MailboxMigrationOauthConfigGetOut",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 111,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1972,
@@ -11278,6 +12719,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1973: {
 				final: false,
@@ -11286,6 +12728,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1974: {
 				final: false,
@@ -11294,6 +12737,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -11301,14 +12745,15 @@ const typeModels = {
 	1979: {
 		name: "ImapPutIn",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 112,
 		type: "DATA_TRANSFER_TYPE",
 		id: 1979,
 		rootId: "CHR1dGFub3RhAAe7",
 		versioned: false,
-		encrypted: false,
+		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1980: {
 				final: false,
@@ -11317,6 +12762,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1982: {
 				final: false,
@@ -11325,6 +12771,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1983: {
 				final: false,
@@ -11333,6 +12780,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1986: {
 				final: false,
@@ -11341,6 +12789,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "ZeroOrOne",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11352,13 +12801,24 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 1911,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+			2223: {
+				final: true,
+				name: "imapAccountSyncStateWithNewPostponedUntil",
+				id: 2223,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2217,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	1995: {
 		name: "InboxRuleCondition",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 115,
 		type: "AGGREGATED_TYPE",
 		id: 1995,
@@ -11366,6 +12826,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			1996: {
 				final: true,
@@ -11374,6 +12835,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			1997: {
 				final: false,
@@ -11382,6 +12844,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			1998: {
 				final: false,
@@ -11390,6 +12853,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {},
@@ -11397,7 +12861,7 @@ const typeModels = {
 	1999: {
 		name: "InboxRuleAction",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 115,
 		type: "AGGREGATED_TYPE",
 		id: 1999,
@@ -11405,6 +12869,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			2000: {
 				final: true,
@@ -11413,6 +12878,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2001: {
 				final: false,
@@ -11421,6 +12887,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11432,13 +12899,14 @@ const typeModels = {
 				cardinality: "ZeroOrOne",
 				refTypeId: 429,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	2003: {
 		name: "ExpandedInboxRule",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 115,
 		type: "LIST_ELEMENT_TYPE",
 		id: 2003,
@@ -11446,6 +12914,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: true,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			2005: {
 				final: true,
@@ -11454,6 +12923,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2006: {
 				final: true,
@@ -11462,6 +12932,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2007: {
 				final: false,
@@ -11470,6 +12941,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2008: {
 				final: true,
@@ -11478,6 +12950,7 @@ const typeModels = {
 				type: "GeneratedId",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2009: {
 				final: true,
@@ -11486,6 +12959,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2010: {
 				final: true,
@@ -11494,6 +12968,7 @@ const typeModels = {
 				type: "Number",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2011: {
 				final: true,
@@ -11502,6 +12977,7 @@ const typeModels = {
 				type: "Bytes",
 				cardinality: "ZeroOrOne",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 			2012: {
 				final: false,
@@ -11510,6 +12986,7 @@ const typeModels = {
 				type: "String",
 				cardinality: "One",
 				encrypted: true,
+				transferredAttributeId: null,
 			},
 			2013: {
 				final: false,
@@ -11518,6 +12995,7 @@ const typeModels = {
 				type: "Boolean",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11529,6 +13007,7 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1995,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 			2015: {
 				final: false,
@@ -11538,13 +13017,14 @@ const typeModels = {
 				cardinality: "Any",
 				refTypeId: 1999,
 				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},
 	2016: {
 		name: "ExpandedInboxRuleList",
 		app: "tutanota",
-		version: 115,
+		version: 118,
 		since: 115,
 		type: "AGGREGATED_TYPE",
 		id: 2016,
@@ -11552,6 +13032,7 @@ const typeModels = {
 		versioned: false,
 		encrypted: false,
 		isPublic: true,
+		targetTypeId: null,
 		values: {
 			2017: {
 				final: true,
@@ -11560,6 +13041,7 @@ const typeModels = {
 				type: "CustomId",
 				cardinality: "One",
 				encrypted: false,
+				transferredAttributeId: null,
 			},
 		},
 		associations: {
@@ -11571,6 +13053,2159 @@ const typeModels = {
 				cardinality: "One",
 				refTypeId: 2003,
 				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2021: {
+		name: "FileTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2021,
+		rootId: "CHR1dGFub3RhAAfl",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 13,
+		values: {
+			2022: {
+				final: true,
+				name: "_id",
+				id: 2022,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2023: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2023,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 18,
+			},
+			2024: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2024,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1391,
+			},
+			2025: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2025,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1831,
+			},
+			2026: {
+				final: false,
+				name: "name",
+				id: 2026,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 21,
+			},
+			2027: {
+				final: true,
+				name: "mimeType",
+				id: 2027,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 23,
+			},
+			2028: {
+				final: true,
+				name: "cid",
+				id: 2028,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 924,
+			},
+		},
+		associations: {},
+	},
+	2029: {
+		name: "MailAddressTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2029,
+		rootId: "CHR1dGFub3RhAAft",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 92,
+		values: {
+			2030: {
+				final: true,
+				name: "_id",
+				id: 2030,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2031: {
+				final: true,
+				name: "name",
+				id: 2031,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 94,
+			},
+			2032: {
+				final: true,
+				name: "address",
+				id: 2032,
+				type: "String",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 95,
+			},
+		},
+		associations: {
+			2033: {
+				final: false,
+				name: "contact",
+				id: 2033,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 64,
+				dependency: null,
+				transferredAttributeId: 96,
+			},
+		},
+	},
+	2034: {
+		name: "EncryptedMailAddressTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2034,
+		rootId: "CHR1dGFub3RhAAfy",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 612,
+		values: {
+			2035: {
+				final: true,
+				name: "_id",
+				id: 2035,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2036: {
+				final: true,
+				name: "name",
+				id: 2036,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 614,
+			},
+			2037: {
+				final: true,
+				name: "address",
+				id: 2037,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 615,
+			},
+		},
+		associations: {},
+	},
+	2038: {
+		name: "BodyTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2038,
+		rootId: "CHR1dGFub3RhAAf2",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1273,
+		values: {
+			2039: {
+				final: true,
+				name: "_id",
+				id: 2039,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2040: {
+				final: true,
+				name: "text",
+				id: 2040,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1275,
+			},
+			2041: {
+				final: true,
+				name: "compressedText",
+				id: 2041,
+				type: "CompressedString",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1276,
+			},
+		},
+		associations: {},
+	},
+	2042: {
+		name: "RecipientsTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2042,
+		rootId: "CHR1dGFub3RhAAf6",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1277,
+		values: {
+			2043: {
+				final: true,
+				name: "_id",
+				id: 2043,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2044: {
+				final: true,
+				name: "toRecipients",
+				id: 2044,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2029,
+				dependency: null,
+				transferredAttributeId: 1279,
+			},
+			2045: {
+				final: true,
+				name: "ccRecipients",
+				id: 2045,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2029,
+				dependency: null,
+				transferredAttributeId: 1280,
+			},
+			2046: {
+				final: true,
+				name: "bccRecipients",
+				id: 2046,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2029,
+				dependency: null,
+				transferredAttributeId: 1281,
+			},
+		},
+	},
+	2047: {
+		name: "MailDetailsTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2047,
+		rootId: "CHR1dGFub3RhAAf_",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1282,
+		values: {
+			2048: {
+				final: true,
+				name: "_id",
+				id: 2048,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2049: {
+				final: true,
+				name: "replyTos",
+				id: 2049,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2034,
+				dependency: null,
+				transferredAttributeId: 1285,
+			},
+			2050: {
+				final: true,
+				name: "recipients",
+				id: 2050,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2042,
+				dependency: null,
+				transferredAttributeId: 1286,
+			},
+			2051: {
+				final: true,
+				name: "body",
+				id: 2051,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2038,
+				dependency: null,
+				transferredAttributeId: 1288,
+			},
+		},
+	},
+	2052: {
+		name: "MailDetailsBlobTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2052,
+		rootId: "CHR1dGFub3RhAAgE",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1298,
+		values: {
+			2053: {
+				final: true,
+				name: "_id",
+				id: 2053,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2054: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2054,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1304,
+			},
+			2055: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2055,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1408,
+			},
+			2056: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2056,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1833,
+			},
+		},
+		associations: {
+			2057: {
+				final: true,
+				name: "details",
+				id: 2057,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2047,
+				dependency: null,
+				transferredAttributeId: 1305,
+			},
+		},
+	},
+	2058: {
+		name: "MailTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2058,
+		rootId: "CHR1dGFub3RhAAgK",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 97,
+		values: {
+			2059: {
+				final: true,
+				name: "_id",
+				id: 2059,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2060: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2060,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 102,
+			},
+			2061: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2061,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1395,
+			},
+			2062: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2062,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1839,
+			},
+			2063: {
+				final: true,
+				name: "subject",
+				id: 2063,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 105,
+			},
+			2064: {
+				final: true,
+				name: "confidential",
+				id: 2064,
+				type: "Boolean",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 426,
+			},
+			2065: {
+				final: true,
+				name: "method",
+				id: 2065,
+				type: "Number",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1120,
+			},
+		},
+		associations: {
+			2066: {
+				final: true,
+				name: "sender",
+				id: 2066,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2029,
+				dependency: null,
+				transferredAttributeId: 111,
+			},
+			2067: {
+				final: true,
+				name: "firstRecipient",
+				id: 2067,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2029,
+				dependency: null,
+				transferredAttributeId: 1306,
+			},
+		},
+	},
+	2071: {
+		name: "MailSetTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2071,
+		rootId: "CHR1dGFub3RhAAgX",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 429,
+		values: {
+			2072: {
+				final: true,
+				name: "_id",
+				id: 2072,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2073: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2073,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 434,
+			},
+			2074: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2074,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1399,
+			},
+			2075: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2075,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1847,
+			},
+			2076: {
+				final: true,
+				name: "_ownerGroup",
+				id: 2076,
+				type: "GeneratedId",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 589,
+			},
+			2077: {
+				final: false,
+				name: "name",
+				id: 2077,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 435,
+			},
+		},
+		associations: {
+			2078: {
+				final: true,
+				name: "parentFolder",
+				id: 2078,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: 439,
+			},
+		},
+	},
+	2080: {
+		name: "LabelPutTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2080,
+		rootId: "CHR1dGFub3RhAAgg",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 429,
+		values: {
+			2081: {
+				final: true,
+				name: "_id",
+				id: 2081,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2082: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2082,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 434,
+			},
+			2083: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2083,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1399,
+			},
+			2084: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2084,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1847,
+			},
+			2085: {
+				final: false,
+				name: "name",
+				id: 2085,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 435,
+			},
+			2087: {
+				final: false,
+				name: "color",
+				id: 2087,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1479,
+			},
+		},
+		associations: {
+			2086: {
+				final: true,
+				name: "parentFolder",
+				id: 2086,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: 439,
+			},
+		},
+	},
+	2088: {
+		name: "LabelPostTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2088,
+		rootId: "CHR1dGFub3RhAAgo",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 429,
+		values: {
+			2089: {
+				final: true,
+				name: "_id",
+				id: 2089,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2090: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2090,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 434,
+			},
+			2091: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2091,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1399,
+			},
+			2092: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2092,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1847,
+			},
+			2093: {
+				final: true,
+				name: "_ownerGroup",
+				id: 2093,
+				type: "GeneratedId",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 589,
+			},
+			2094: {
+				final: false,
+				name: "name",
+				id: 2094,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 435,
+			},
+			2096: {
+				final: false,
+				name: "color",
+				id: 2096,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1479,
+			},
+		},
+		associations: {
+			2095: {
+				final: true,
+				name: "parentFolder",
+				id: 2095,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: 439,
+			},
+		},
+	},
+	2111: {
+		name: "MailboxMigrationFolderSyncStateTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2111,
+		rootId: "CHR1dGFub3RhAAg_",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1895,
+		values: {
+			2112: {
+				final: true,
+				name: "_id",
+				id: 2112,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2113: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2113,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1901,
+			},
+			2114: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2114,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1902,
+			},
+			2115: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2115,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1903,
+			},
+			2116: {
+				final: true,
+				name: "_ownerGroup",
+				id: 2116,
+				type: "GeneratedId",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1900,
+			},
+			2117: {
+				final: false,
+				name: "sourceId",
+				id: 2117,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1904,
+			},
+			2118: {
+				final: true,
+				name: "specialUse",
+				id: 2118,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1990,
+			},
+		},
+		associations: {
+			2119: {
+				final: true,
+				name: "mailSet",
+				id: 2119,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: 1910,
+			},
+		},
+	},
+	2121: {
+		name: "OAuthTokenEndpointResponseLegacyTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2121,
+		rootId: "CHR1dGFub3RhAAhJ",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1860,
+		values: {
+			2122: {
+				final: true,
+				name: "_id",
+				id: 2122,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2123: {
+				final: false,
+				name: "accessToken",
+				id: 2123,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1862,
+			},
+			2124: {
+				final: false,
+				name: "refreshToken",
+				id: 2124,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1863,
+			},
+			2125: {
+				final: false,
+				name: "expiresIn",
+				id: 2125,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1864,
+			},
+			2126: {
+				final: false,
+				name: "tokenType",
+				id: 2126,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1865,
+			},
+		},
+		associations: {},
+	},
+	2127: {
+		name: "MailboxMigrationImapConfigurationTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2127,
+		rootId: "CHR1dGFub3RhAAhP",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1866,
+		values: {
+			2128: {
+				final: true,
+				name: "_id",
+				id: 2128,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2129: {
+				final: false,
+				name: "host",
+				id: 2129,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1868,
+			},
+			2130: {
+				final: false,
+				name: "port",
+				id: 2130,
+				type: "Number",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1869,
+			},
+			2131: {
+				final: true,
+				name: "sharedUsername",
+				id: 2131,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1870,
+			},
+			2132: {
+				final: false,
+				name: "sharedPassword",
+				id: 2132,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1871,
+			},
+			2133: {
+				final: false,
+				name: "ignoreCertificateErrors",
+				id: 2133,
+				type: "Boolean",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 1987,
+			},
+			2134: {
+				final: false,
+				name: "customCertificateData",
+				id: 2134,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1988,
+			},
+			2135: {
+				final: false,
+				name: "useSSL",
+				id: 2135,
+				type: "Boolean",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1994,
+			},
+		},
+		associations: {
+			2136: {
+				final: false,
+				name: "legacyOauthToken",
+				id: 2136,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2121,
+				dependency: null,
+				transferredAttributeId: 1872,
+			},
+		},
+	},
+	2137: {
+		name: "MailboxMigrationSyncStateTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2137,
+		rootId: "CHR1dGFub3RhAAhZ",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1911,
+		values: {
+			2138: {
+				final: true,
+				name: "_id",
+				id: 2138,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2139: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2139,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1917,
+			},
+			2140: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2140,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1918,
+			},
+			2141: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2141,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1919,
+			},
+			2142: {
+				final: true,
+				name: "_ownerGroup",
+				id: 2142,
+				type: "GeneratedId",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1916,
+			},
+			2144: {
+				final: false,
+				name: "postponedUntil",
+				id: 2144,
+				type: "Number",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1921,
+			},
+			2145: {
+				final: true,
+				name: "legacyProvider",
+				id: 2145,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1922,
+			},
+		},
+		associations: {
+			2146: {
+				final: false,
+				name: "imapConfiguration",
+				id: 2146,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2127,
+				dependency: null,
+				transferredAttributeId: 1925,
+			},
+			2147: {
+				final: true,
+				name: "rootImportMailSet",
+				id: 2147,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: 1926,
+			},
+			2148: {
+				final: true,
+				name: "syncLabel",
+				id: 2148,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "ZeroOrOne",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: 1927,
+			},
+		},
+	},
+	2150: {
+		name: "ImportedMailAddress",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2150,
+		rootId: "CHR1dGFub3RhAAhm",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 92,
+		values: {
+			2151: {
+				final: true,
+				name: "_id",
+				id: 2151,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2152: {
+				final: true,
+				name: "name",
+				id: 2152,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 94,
+			},
+			2153: {
+				final: true,
+				name: "address",
+				id: 2153,
+				type: "String",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 95,
+			},
+		},
+		associations: {},
+	},
+	2154: {
+		name: "ImportedRecipients",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2154,
+		rootId: "CHR1dGFub3RhAAhq",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1277,
+		values: {
+			2155: {
+				final: true,
+				name: "_id",
+				id: 2155,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2156: {
+				final: true,
+				name: "toRecipients",
+				id: 2156,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2150,
+				dependency: null,
+				transferredAttributeId: 1279,
+			},
+			2157: {
+				final: true,
+				name: "ccRecipients",
+				id: 2157,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2150,
+				dependency: null,
+				transferredAttributeId: 1280,
+			},
+			2158: {
+				final: true,
+				name: "bccRecipients",
+				id: 2158,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 2150,
+				dependency: null,
+				transferredAttributeId: 1281,
+			},
+		},
+	},
+	2159: {
+		name: "ImportedHeader",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2159,
+		rootId: "CHR1dGFub3RhAAhv",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1269,
+		values: {
+			2160: {
+				final: true,
+				name: "_id",
+				id: 2160,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2161: {
+				final: true,
+				name: "compressedHeaders",
+				id: 2161,
+				type: "CompressedString",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1272,
+			},
+		},
+		associations: {},
+	},
+	2162: {
+		name: "ImportedBody",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2162,
+		rootId: "CHR1dGFub3RhAAhy",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1273,
+		values: {
+			2163: {
+				final: true,
+				name: "_id",
+				id: 2163,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2164: {
+				final: true,
+				name: "compressedText",
+				id: 2164,
+				type: "CompressedString",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 1276,
+			},
+		},
+		associations: {},
+	},
+	2165: {
+		name: "ImportedMailDetails",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2165,
+		rootId: "CHR1dGFub3RhAAh1",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1282,
+		values: {
+			2166: {
+				final: true,
+				name: "_id",
+				id: 2166,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2167: {
+				final: true,
+				name: "sentDate",
+				id: 2167,
+				type: "Date",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 1284,
+			},
+		},
+		associations: {
+			2168: {
+				final: true,
+				name: "replyTos",
+				id: 2168,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 612,
+				dependency: null,
+				transferredAttributeId: 1285,
+			},
+			2169: {
+				final: true,
+				name: "recipients",
+				id: 2169,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2154,
+				dependency: null,
+				transferredAttributeId: 1286,
+			},
+			2170: {
+				final: true,
+				name: "headers",
+				id: 2170,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2159,
+				dependency: null,
+				transferredAttributeId: 1287,
+			},
+			2171: {
+				final: true,
+				name: "body",
+				id: 2171,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2162,
+				dependency: null,
+				transferredAttributeId: 1288,
+			},
+		},
+	},
+	2172: {
+		name: "ImportedMailDetailsBlob",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2172,
+		rootId: "CHR1dGFub3RhAAh8",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1298,
+		values: {
+			2173: {
+				final: true,
+				name: "_id",
+				id: 2173,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2174: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2174,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1304,
+			},
+			2175: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2175,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1408,
+			},
+			2176: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2176,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1833,
+			},
+		},
+		associations: {
+			2177: {
+				final: true,
+				name: "details",
+				id: 2177,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2165,
+				dependency: null,
+				transferredAttributeId: 1305,
+			},
+		},
+	},
+	2178: {
+		name: "ImportedMail",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2178,
+		rootId: "CHR1dGFub3RhAAiC",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 97,
+		values: {
+			2179: {
+				final: true,
+				name: "_id",
+				id: 2179,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2180: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2180,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 102,
+			},
+			2181: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2181,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1395,
+			},
+			2182: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2182,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1839,
+			},
+			2183: {
+				final: true,
+				name: "subject",
+				id: 2183,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 105,
+			},
+			2184: {
+				final: true,
+				name: "receivedDate",
+				id: 2184,
+				type: "Date",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 107,
+			},
+			2185: {
+				final: true,
+				name: "state",
+				id: 2185,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 108,
+			},
+			2186: {
+				final: false,
+				name: "unread",
+				id: 2186,
+				type: "Boolean",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 109,
+			},
+			2187: {
+				final: true,
+				name: "confidential",
+				id: 2187,
+				type: "Boolean",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 426,
+			},
+			2188: {
+				final: false,
+				name: "replyType",
+				id: 2188,
+				type: "Number",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 466,
+			},
+			2189: {
+				final: true,
+				name: "differentEnvelopeSender",
+				id: 2189,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: true,
+				transferredAttributeId: 617,
+			},
+			2190: {
+				final: false,
+				name: "phishingStatus",
+				id: 2190,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 1021,
+			},
+			2191: {
+				final: true,
+				name: "method",
+				id: 2191,
+				type: "Number",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1120,
+			},
+		},
+		associations: {
+			2192: {
+				final: true,
+				name: "sender",
+				id: 2192,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2150,
+				dependency: null,
+				transferredAttributeId: 111,
+			},
+			2193: {
+				final: true,
+				name: "firstRecipient",
+				id: 2193,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2150,
+				dependency: null,
+				transferredAttributeId: 1306,
+			},
+		},
+	},
+	2194: {
+		name: "ImportedImportedMigrationMail",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2194,
+		rootId: "CHR1dGFub3RhAAiS",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1873,
+		values: {
+			2195: {
+				final: true,
+				name: "_id",
+				id: 2195,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2196: {
+				final: true,
+				name: "sourceId",
+				id: 2196,
+				type: "String",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: 1879,
+			},
+			2197: {
+				final: true,
+				name: "imapModSeq",
+				id: 2197,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1880,
+			},
+		},
+		associations: {},
+	},
+	2198: {
+		name: "ImportedDeduplicatedImportedAttachment",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2198,
+		rootId: "CHR1dGFub3RhAAiW",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1883,
+		values: {
+			2199: {
+				final: true,
+				name: "_id",
+				id: 2199,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2200: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2200,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1889,
+			},
+			2201: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2201,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1890,
+			},
+			2202: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2202,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1891,
+			},
+			2203: {
+				final: true,
+				name: "attachmentHash",
+				id: 2203,
+				type: "String",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1892,
+			},
+		},
+		associations: {},
+	},
+	2206: {
+		name: "ImportMailData2",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2206,
+		rootId: "CHR1dGFub3RhAAie",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2207: {
+				final: false,
+				name: "_format",
+				id: 2207,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2208: {
+				final: true,
+				name: "messageId",
+				id: 2208,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2209: {
+				final: true,
+				name: "inReplyTo",
+				id: 2209,
+				type: "String",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2255: {
+				final: true,
+				name: "imapUid",
+				id: 2255,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2210: {
+				final: false,
+				name: "labels",
+				id: 2210,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "Any",
+				refTypeId: 429,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2211: {
+				final: true,
+				name: "references",
+				id: 2211,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 1513,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2212: {
+				final: true,
+				name: "mail",
+				id: 2212,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2178,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2213: {
+				final: true,
+				name: "mailDetailsBlob",
+				id: 2213,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2172,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2214: {
+				final: true,
+				name: "importAttachments",
+				id: 2214,
+				type: "AGGREGATION",
+				cardinality: "Any",
+				refTypeId: 1524,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2215: {
+				final: true,
+				name: "importedMigrationMail",
+				id: 2215,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2194,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2217: {
+		name: "UpdateMailboxMigrationSyncStateTransferAggregatedType",
+		app: "tutanota",
+		version: 118,
+		since: 116,
+		type: "AGGREGATED_TYPE",
+		id: 2217,
+		rootId: "CHR1dGFub3RhAAip",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: 1911,
+		values: {
+			2218: {
+				final: true,
+				name: "_id",
+				id: 2218,
+				type: "CustomId",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2219: {
+				final: true,
+				name: "_ownerEncSessionKey",
+				id: 2219,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1917,
+			},
+			2220: {
+				final: true,
+				name: "_ownerKeyVersion",
+				id: 2220,
+				type: "Number",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1918,
+			},
+			2221: {
+				final: true,
+				name: "_kdfNonce",
+				id: 2221,
+				type: "Bytes",
+				cardinality: "ZeroOrOne",
+				encrypted: false,
+				transferredAttributeId: 1919,
+			},
+			2222: {
+				final: false,
+				name: "postponedUntil",
+				id: 2222,
+				type: "Number",
+				cardinality: "One",
+				encrypted: true,
+				transferredAttributeId: 1921,
+			},
+		},
+		associations: {},
+	},
+	2225: {
+		name: "MailboxMigrationFolderPostIn",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2225,
+		rootId: "CHR1dGFub3RhAAix",
+		versioned: false,
+		encrypted: true,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2226: {
+				final: false,
+				name: "_format",
+				id: 2226,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2227: {
+				final: false,
+				name: "shouldSync",
+				id: 2227,
+				type: "Boolean",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2228: {
+				final: true,
+				name: "mailboxMigrationSyncState",
+				id: 2228,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 1911,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2229: {
+				final: false,
+				name: "mailboxMigrationFolderSyncState",
+				id: 2229,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2111,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2230: {
+		name: "MailboxMigrationFolderPostOut",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2230,
+		rootId: "CHR1dGFub3RhAAi2",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2231: {
+				final: false,
+				name: "_format",
+				id: 2231,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2232: {
+				final: false,
+				name: "mailboxMigrationFolderSyncState",
+				id: 2232,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 1895,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2233: {
+		name: "MailboxMigrationFolderDeleteIn",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2233,
+		rootId: "CHR1dGFub3RhAAi5",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2234: {
+				final: false,
+				name: "_format",
+				id: 2234,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2235: {
+				final: false,
+				name: "mailboxMigrationFolderSyncState",
+				id: 2235,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 1895,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2237: {
+		name: "MailboxMigrationPostIn",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2237,
+		rootId: "CHR1dGFub3RhAAi9",
+		versioned: false,
+		encrypted: true,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2238: {
+				final: false,
+				name: "_format",
+				id: 2238,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2239: {
+				final: false,
+				name: "userMigrationInfo",
+				id: 2239,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 2959,
+				dependency: "sys",
+				transferredAttributeId: null,
+			},
+			2240: {
+				final: false,
+				name: "mailboxMigrationSyncState",
+				id: 2240,
+				type: "AGGREGATION",
+				cardinality: "One",
+				refTypeId: 2137,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2241: {
+		name: "MailboxMigrationPostOut",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2241,
+		rootId: "CHR1dGFub3RhAAjB",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2242: {
+				final: false,
+				name: "_format",
+				id: 2242,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2243: {
+				final: false,
+				name: "mailboxMigrationSyncState",
+				id: 2243,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 1911,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2244: {
+		name: "MailboxMigrationDeleteIn",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2244,
+		rootId: "CHR1dGFub3RhAAjE",
+		versioned: false,
+		encrypted: false,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2245: {
+				final: false,
+				name: "_format",
+				id: 2245,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2246: {
+				final: false,
+				name: "mailboxMigrationSyncState",
+				id: 2246,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 1911,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+		},
+	},
+	2247: {
+		name: "MailboxMigrationPutIn",
+		app: "tutanota",
+		version: 118,
+		since: 118,
+		type: "DATA_TRANSFER_TYPE",
+		id: 2247,
+		rootId: "CHR1dGFub3RhAAjH",
+		versioned: false,
+		encrypted: true,
+		isPublic: true,
+		targetTypeId: null,
+		values: {
+			2248: {
+				final: false,
+				name: "_format",
+				id: 2248,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2250: {
+				final: false,
+				name: "newMailboxMigrationSyncStatus",
+				id: 2250,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+			2251: {
+				final: false,
+				name: "newMailboxMigrationFolderSyncStatus",
+				id: 2251,
+				type: "Number",
+				cardinality: "One",
+				encrypted: false,
+				transferredAttributeId: null,
+			},
+		},
+		associations: {
+			2249: {
+				final: false,
+				name: "mailboxMigrationSyncState",
+				id: 2249,
+				type: "LIST_ELEMENT_ASSOCIATION_GENERATED",
+				cardinality: "One",
+				refTypeId: 1911,
+				dependency: null,
+				transferredAttributeId: null,
+			},
+			2252: {
+				final: false,
+				name: "mailboxMigrationSyncStateWithNewPostponedUntil",
+				id: 2252,
+				type: "AGGREGATION",
+				cardinality: "ZeroOrOne",
+				refTypeId: 2217,
+				dependency: null,
+				transferredAttributeId: null,
 			},
 		},
 	},

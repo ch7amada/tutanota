@@ -1,12 +1,13 @@
 import m, { Children } from "mithril"
-import { ApprovalStatus, Const, EnvProvider, PaymentSetup, UpgradePromptType } from "@tutao/app-env"
-import { elementIdToId, GENERATED_MAX_ID, getEtId, idToElementId } from "@tutao/meta"
+import { ApprovalStatus, Const, EnvProvider, PaymentSetup } from "@tutao/app-env"
+import { GENERATED_MAX_ID, getEtId, idToElementId } from "@tutao/meta"
 import { assertNotNull, base64ExtToBase64, base64ToUint8Array, downcast, getDayShifted, neverNull, promiseMap, stringToBase64 } from "@tutao/utils"
 import { InfoLink, lang, TranslationKey } from "../../../../ui/utils/LanguageViewModel"
 import { Icons } from "../../../../ui/base/icons/Icons"
 import { asPaymentInterval, formatPriceDataWithInfo, PaymentInterval } from "../../subscription/utils/PriceUtils"
 import { formatDate, formatStorageSize } from "../../../../ui/utils/Formatter"
-import { showUpgradeWizard } from "../../subscription/UpgradeSubscriptionWizard"
+import { UpgradeView, UpgradeViewAttrs } from "../../subscription/UpgradeView"
+import { UpgradeViewModel } from "../../subscription/UpgradeViewModel"
 import { showConfirmDowngradingToFreeDialog, showSwitchDialog } from "../../subscription/SwitchSubscriptionDialog"
 import stream from "mithril/stream"
 import Stream from "mithril/stream"
@@ -42,6 +43,7 @@ import {
 import {
 	externalStorePlanName,
 	getCurrentCount,
+	getExternalSubscriptionError,
 	getPaymentMethodType,
 	getTotalStorageCapacityPerCustomer,
 	hasMatchingExternalPaymentSetup,
@@ -75,7 +77,7 @@ import { PrimaryButton, SecondaryButton } from "../../../../ui/base/buttons/Vari
 import { showSubscriptionCancellationDialog } from "./SubscriptionCancellationDialog"
 import { showProgressDialog } from "../../../../ui/dialogs/ProgressDialog"
 import { MobilePaymentError } from "../../api/common/error/MobilePaymentError"
-import { showUserSatisfactionDialogAfterUpgrade } from "../../ratings/UserSatisfactionUtils"
+import { isEventHappyMoment, showUserSatisfactionDialogAfterUpgrade } from "../../ratings/UserSatisfactionUtils"
 import { EntityUpdateData, isUpdateForTypeRef } from "../../../../platform-kit/instance-pipeline/utils/EntityUpdateUtils"
 import { SubscriptionStateCellAttrs } from "../../subscription/components/SubscriptionStateCell"
 import { MessageBanner } from "../../../../ui/base/MessageBanner"
@@ -84,6 +86,9 @@ import { ClientDetector } from "../../../../platform-kit/app-env/boot/ClientDete
 import { UpdatableSettingsViewer } from "../Interfaces"
 import { openExternalSubscriptionPage, showDowngradeOrResubscribeDialog } from "../../misc/SubscriptionDialogs"
 import { InfoIconAttrs } from "../../../../ui/base/InfoIcon"
+import { showUserUpgradedDeclinedDialog } from "../../ratings/UserUpgradedDeclinedDialog"
+import { deviceConfig } from "../../misc/DeviceConfig"
+import { getCurrentDate } from "../../../mail-app/mail/MailUtils"
 
 EnvProvider.assertMainOrNode()
 export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
@@ -108,6 +113,11 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 	private _orderAgreement: OrderProcessingAgreement | null = null
 	private currentPlanType: PlanType | null = null
 	private _shownSatisfactionDialog = false
+	private upgradeView: UpgradeViewAttrs | null = null
+
+	get isUpgradeVisible(): boolean {
+		return this.upgradeView !== null
+	}
 
 	constructor(private readonly mobilePaymentsFacade: MobilePaymentsFacade | null) {
 		locator.logins
@@ -119,6 +129,9 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 			})
 
 		this.view = (): Children => {
+			if (this.upgradeView) {
+				return m(".fill-absolute.scroll.plr-24.pb-48.nav-bg", m(UpgradeView, this.upgradeView))
+			}
 			return m(
 				"#subscription-settings.fill-absolute.scroll.plr-24.pb-48",
 				{
@@ -131,7 +144,7 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 						".flex.col.gap-32",
 						m(TitleSection, {
 							icon: Icons.TrophyOutline,
-							title: lang.getTranslationText("adminSubscription_action"),
+							title: lang.getTranslationText("adminSubscription_label"),
 							subTitle: lang.getTranslationText("subscriptionSettingsSubtitle_label"),
 						}),
 						this._customerInfo !== null
@@ -267,7 +280,20 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 					m(SubscriptionStateCard, {
 						title: "subscriptionSettingCurrentSubscription_label",
 						cells: [
-							this.getPlanCellAttrs(planType),
+							this.getPlanCellAttrs(
+								planType,
+								//Don't show edit button next to plan for apple users -> managed by os
+								!isExternalSubscription
+									? {
+											icon: Icons.PenFilled,
+											label: "changePlan_action",
+											click: () => {
+												this.onSubscriptionClick()
+												m.redraw()
+											},
+										}
+									: undefined,
+							),
 							this.getStatusCellAttrs(
 								currentStateSubscription,
 								this.getSubscriptionStatusDescriptionText(currentStateSubscription)
@@ -298,20 +324,7 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 						m(SubscriptionStateCard, {
 							title: "subscriptionSettingNewSubscription_label",
 							cells: [
-								this.getPlanCellAttrs(
-									planType,
-									//Don't show edit button next to plan for apple users -> managed by os
-									!isExternalSubscription
-										? {
-												icon: Icons.PenFilled,
-												label: "changePlan_action",
-												click: () => {
-													this.onSubscriptionClick()
-													m.redraw()
-												},
-											}
-										: undefined,
-								),
+								this.getPlanCellAttrs(planType),
 								//Don't show interval edit button for apple users -> managed by os
 								!isExternalSubscription ? this.getPaymentPeriodAttrs(accountingInfo.paymentInterval) : null,
 								!isExternalSubscription ? this.getPriceCellAttrs(this._nextPriceFieldValue()) : null,
@@ -364,8 +377,21 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 				m(PrimaryButton, {
 					label: "subscriptionSettingsMoreFeatures_action",
 					width: "flex",
-					onclick: () => {
-						this.handleUpgradeSubscription()
+					onclick: async () => {
+						this.handleUpgradeSubscription().then(() => {
+							//Don't show if no plan set and if satisfactionDialog is triggered
+							if (!this._customerInfo?.plan || isEventHappyMoment(getCurrentDate(), deviceConfig)) {
+								return
+							}
+							//Check if the customer upgraded in the upgrade dialog
+							if (locator.logins.getUserController().isFreeAccount()) {
+								//Not upgraded
+								void showUserUpgradedDeclinedDialog("DeclineUpgrade")
+							} else {
+								//Upgraded
+								void showUserUpgradedDeclinedDialog("DidUpgrade")
+							}
+						})
 					},
 				}),
 			),
@@ -398,44 +424,7 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 		// Render external-store controls only when this client matches the subscription's store.
 		if (isExternalSubscription) {
 			const paymentMethod = this._accountingInfo ? getPaymentMethodType(this._accountingInfo) : null
-			return hasMatchingExternalPaymentSetup(paymentMethod)
-				? m(
-						".flex.justify-end.gap-8",
-
-						m(SecondaryButton, {
-							label:
-								EnvProvider.get().getPaymentSetup() === PaymentSetup.Appstore
-									? "subscriptionSettingManageSubscription_action"
-									: "subscriptionSettingManageSubscriptionGoogle_action",
-							width: "flex",
-							icon: Icons.OpenOutline,
-							onclick: async () => {
-								await locator.mobilePaymentsFacade.showSubscriptionConfigView()
-							},
-						}),
-						currentSubscriptionState !== "cancelled" &&
-							m(PrimaryButton, {
-								label: "subscriptionSettingSwitchPlan_action",
-								width: "flex",
-								onclick: () => {
-									this.onSubscriptionClick()
-								},
-							}),
-					)
-				: m(
-						".flex.justify-end.gap-8",
-						m(PrimaryButton, {
-							label:
-								paymentMethod === PaymentMethodType.AppStore
-									? "subscriptionSettingAppleWebsite_action"
-									: "subscriptionSettingGoogleWebsite_action",
-							width: "flex",
-							icon: Icons.OpenOutline,
-							onclick: () => {
-								this.onSubscriptionClick()
-							},
-						}),
-					)
+			return this.showExternalControls(paymentMethod, currentSubscriptionState)
 		}
 
 		//Show cancel button if renewal is enabled
@@ -473,6 +462,46 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 		}
 	}
 
+	private showExternalControls = (
+		paymentMethod: PaymentMethodType | null,
+		currentSubscriptionState: "active" | "revoked" | "planned" | "cancelled" | "unknown",
+	) => {
+		return hasMatchingExternalPaymentSetup(paymentMethod)
+			? m(
+					".flex.justify-end.gap-8",
+					m(SecondaryButton, {
+						label:
+							EnvProvider.get().getPaymentSetup() === PaymentSetup.Appstore
+								? "subscriptionSettingManageSubscription_action"
+								: "subscriptionSettingManageSubscriptionGoogle_action",
+						width: "flex",
+						icon: Icons.OpenOutline,
+						onclick: async () => {
+							await this.mobilePaymentsFacade?.showSubscriptionConfigView()
+						},
+					}),
+					currentSubscriptionState !== "cancelled" &&
+						m(PrimaryButton, {
+							label: "subscriptionSettingSwitchPlan_action",
+							width: "flex",
+							onclick: () => {
+								this.onSubscriptionClick()
+							},
+						}),
+				)
+			: m(
+					".flex.justify-end.gap-8",
+					m(PrimaryButton, {
+						label:
+							paymentMethod === PaymentMethodType.AppStore ? "subscriptionSettingAppleWebsite_action" : "subscriptionSettingGoogleWebsite_action",
+						width: "flex",
+						icon: Icons.OpenOutline,
+						onclick: () => {
+							this.onSubscriptionClick()
+						},
+					}),
+				)
+	}
 	//Handle the keep subscription button click. Calls renewalPreferenceService with isEnabled = true
 	//to keep the subscription from getting downgraded
 	private async handleKeepSubscriptionClick() {
@@ -545,19 +574,24 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 
 	private async handleUpgradeSubscription() {
 		if (EnvProvider.get().getPaymentSetup() !== PaymentSetup.Default) {
-			// We pass `null` because we expect no subscription when upgrading
-			const externalSubscriptionOwnership = await queryExternalSubscriptionOwnership(null)
-
-			if (externalSubscriptionOwnership !== MobilePaymentSubscriptionOwnership.NoSubscription) {
-				return Dialog.message(
-					lang.getTranslation("storeMultiSubscriptionError_msg", {
-						"{AppStorePayment}": InfoLink.AppStorePayment,
-					}),
-				)
+			const term = await getExternalSubscriptionError()
+			if (term) {
+				return Dialog.message(term)
 			}
 		}
 
-		await showUpgradeWizard({ upgradePromptType: UpgradePromptType.SUBSCRIPTION_VIEWER, logins: locator.logins })
+		const viewModel = await showProgressDialog("pleaseWait_msg", UpgradeViewModel.create(locator.logins))
+		await new Promise<void>((resolve) => {
+			this.upgradeView = {
+				viewModel,
+				onClose: () => {
+					this.upgradeView = null
+					resolve()
+					m.redraw()
+				},
+			}
+			m.redraw()
+		})
 	}
 
 	private async handleExternalSubscriptionChange() {
@@ -578,7 +612,10 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 			return
 		}
 
-		const externalSubscriptionOwnership = await queryExternalSubscriptionOwnership(base64ToUint8Array(base64ExtToBase64(elementIdToId(customer._id))))
+		const externalSubscriptionOwnership = await queryExternalSubscriptionOwnership(lastBooking.subscriptionReference.foreignKey)
+		if (externalSubscriptionOwnership === MobilePaymentSubscriptionOwnership.Unknown) {
+			return await Dialog.message("appStoreSubscriptionError_msg")
+		}
 		const userStatus = customer.approvalStatus
 		const isActiveSubscription = lastBooking.endDate && lastBooking.endDate?.getTime() > Date.now()
 
@@ -607,7 +644,9 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 			// User has no ongoing subscription, the old subscription is expired.
 			// We should allow them to downgrade their accounts or resubscribe and
 			// restart an Apple/Google subscription flow
-			const isResubscribe = await showDowngradeOrResubscribeDialog("storeDowngradeOrResubscribe_msg", { "{AppStoreDowngrade}": InfoLink.AppStorePayment })
+			const term =
+				getPaymentMethodType(accountingInfo) === PaymentMethodType.AppStore ? "storeDowngradeOrResubscribe_msg" : "storeDowngradeOrResubscribe_msg"
+			const isResubscribe = await showDowngradeOrResubscribeDialog(term, { "{AppStoreDowngrade}": InfoLink.AppStorePayment })
 			// User decided to resubscribe to the old plan
 			if (isResubscribe) {
 				const planType = await locator.logins.getUserController().getPlanType()
@@ -646,8 +685,8 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 		}
 	}
 
-	private async canManageExternalSubscriptionInApp(ownership: MobilePaymentSubscriptionOwnership): Promise<boolean> {
-		if (ownership === MobilePaymentSubscriptionOwnership.NotOwner) {
+	private async canManageExternalSubscriptionInApp(ownership: MobilePaymentSubscriptionOwnership | null): Promise<boolean> {
+		if (ownership == null || ownership === MobilePaymentSubscriptionOwnership.NotOwner) {
 			// we have a subscription with the external provider for this app (calendar / mail / drive), but it's for another tuta account.
 			// we could technically manage it from this tuta account, but we should not allow it because it's too easy to
 			// confuse which subscription belongs to which tuta account.
@@ -982,31 +1021,6 @@ export class SubscriptionSettingsViewer implements UpdatableSettingsViewer {
 				currentInterval === PaymentInterval.Monthly
 					? lang.getTranslation("pricing.monthly_label").text
 					: lang.getTranslation("pricing.yearly_label").text,
-			button: {
-				icon: Icons.Swap,
-				label: "changePaymentInterval_action",
-				click: async () => {
-					const message = lang.getTranslation("subscriptionChangeInterval_msg", {
-						"{period}":
-							currentInterval === PaymentInterval.Yearly
-								? lang.getTranslationText("pricing.monthly_label")
-								: lang.getTranslationText("pricing.yearly_label"),
-					})
-					Dialog.confirm(message).then(async (confirmed) => {
-						if (this._accountingInfo == null) {
-							return
-						}
-						if (confirmed) {
-							if (currentInterval === PaymentInterval.Yearly) {
-								await locator.customerFacade.changePaymentInterval(this._accountingInfo, PaymentInterval.Monthly)
-							} else {
-								await locator.customerFacade.changePaymentInterval(this._accountingInfo, PaymentInterval.Yearly)
-							}
-						}
-						m.redraw()
-					})
-				},
-			},
 		}
 	}
 

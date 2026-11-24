@@ -40,7 +40,8 @@ export class OutlineButton implements ClassComponent<OutlineButtonAttrs> {
 	private resolveClasses(expanded: boolean = true, disabled: boolean = false) {
 		let classes = [
 			"button-content",
-			"border-accent",
+			"border-color-accent",
+			"border-radius",
 			"shape-button",
 			"plr-8",
 			"limit-width",

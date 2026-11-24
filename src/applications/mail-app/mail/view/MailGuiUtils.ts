@@ -82,6 +82,7 @@ import { DriveModel } from "../../../drive-app/drive/model/DriveModel"
 import { PickedDestinationAction } from "../../../drive-app/drive/view/DriveItemPicker"
 import { DialogHeaderBarAttrs } from "../../../../ui/base/DialogHeaderBar"
 import { ButtonType } from "../../../../ui/base/Button"
+import { prependParentLabelNamesToLabel } from "./MailSetTreeUtils"
 
 const UNDO_SNACKBAR_SHOW_TIME = TimeConstants.secondsToMillis(10)
 
@@ -220,9 +221,9 @@ export async function showUndoMailSnackbar(
 
 async function warnUsersIfMovingContactMailToSpam(contactModel: ContactModel, mailModel: MailModel, mailIds: ReadonlyArray<IdTuple>) {
 	const { showContactSelectionDialog } = await import("../../contacts/view/ContactSelectionDialog")
-	const mailWithDetails = await mailModel.loadAllMailsWithDetails(mailIds)
-	const senderAddresses = mailWithDetails
-		.filter((mailWithMailDetails) => mailWithMailDetails.mailDetails.authStatus === MailAuthenticationStatus.AUTHENTICATED)
+	const { mailsWithDetails } = await mailModel.loadAllMailsWithDetails(mailIds)
+	const senderAddresses = mailsWithDetails
+		.filter((mailWithDetails) => mailWithDetails.mailDetails.authStatus === MailAuthenticationStatus.AUTHENTICATED)
 		.map((mailWithMailDetails) => mailWithMailDetails.mail.sender.address)
 
 	const loadedContacts = await contactModel.loadAllContacts()
@@ -907,27 +908,10 @@ export function showLabelsPopup(
 export function getLabelsWithParentLabelNamesPrepended(mailModel: MailModel, mail: Mail): ReadonlyArray<{ name: string; color: string | null }> {
 	const mailLabels = mailModel.getLabelsForMail(mail)
 	const allLabels = mailModel.getLabelsByGroupId(assertNotNull(mail._ownerGroup))
-	const labelsWithParentNamesPrepended: { name: string; color: string | null }[] = mailLabels.map((label) => {
-		const nameParts: string[] = []
-		let current = label
-
-		while (current) {
-			nameParts.push(current.name)
-			if (!current.parentFolder) {
-				break
-			}
-			const parentId = elementIdPart(current.parentFolder)
-			const parent = allLabels.get(parentId)
-			if (!parent) {
-				break
-			}
-			current = parent
-		}
-
-		const fullName = nameParts.reverse().join("/")
-		return { name: fullName, color: label.color }
-	})
-
+	const labelsWithParentNamesPrepended: { name: string; color: string | null }[] = mailLabels.map((label) => ({
+		name: prependParentLabelNamesToLabel(label, allLabels),
+		color: label.color,
+	}))
 	return labelsWithParentNamesPrepended.sort((labelA, labelB) => labelA.name.localeCompare(labelB.name))
 }
 
@@ -959,7 +943,7 @@ export async function showDownloadProgressDialog(
 	}
 	transferProgressDispatcher.addDownloadListener(listener)
 	try {
-		return await showProgressDialog("loading_msg", downloadReturn.promise, progressStream, headerBarAttrs)
+		return await showProgressDialog("loading_msg", downloadReturn.promise, { progressStream, headerBarAttrs })
 	} catch (e) {
 		// handle the user cancelling the dialog
 		if (e instanceof CancelledError) {
@@ -1193,8 +1177,8 @@ export class AttachmentDownloader {
 
 	canOpenAttachment(attachment: Attachment): boolean {
 		// Can Open: Desktop, Android, iOS
-		// Data files can only be downloaded
-		return (EnvProvider.get().isApp() || EnvProvider.get().isDesktop()) && !isDataFile(attachment)
+		// Data files are written to a temporary file and opened(on desktop & app, erroring on browser)
+		return EnvProvider.get().isApp() || EnvProvider.get().isDesktop()
 	}
 
 	canDownloadAttachment(attachment: Attachment): boolean {
@@ -1250,11 +1234,11 @@ export class AttachmentDownloader {
 					throw new ProgrammingError("File Reference cannot be downloaded")
 				}
 			} else if (isDataFile(attachment)) {
+				// the bytes are already in memory, no need to download anything
 				if (postDownload === DownloadPostProcessing.Write) {
-					// When it is a data file, only support downloading
 					await this.fileController.saveDataFile(attachment)
 				} else {
-					throw new ProgrammingError("Data File cannot be opened")
+					await this.fileController.openDataFile(attachment)
 				}
 			} else if (isTutanotaFile(attachment)) {
 				if (postDownload === DownloadPostProcessing.Open) {

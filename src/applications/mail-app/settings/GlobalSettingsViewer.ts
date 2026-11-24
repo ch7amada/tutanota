@@ -9,6 +9,7 @@ import {
 	CustomerServerPropertiesTypeRef,
 	CustomerTypeRef,
 	DomainInfo,
+	EmailSenderListElement,
 	GroupTypeRef,
 	RejectedSenderTypeRef,
 	UserTypeRef,
@@ -174,8 +175,12 @@ export class GlobalSettingsViewer implements UpdatableSettingsViewer {
 			this.props(props)
 
 			const fieldToName = getSpamRuleFieldToName()
+			let allSpamRulesWithIndex = new Map<number, EmailSenderListElement>()
 
 			this.spamRuleLines = props.emailSenderList.map((rule, index) => {
+				allSpamRulesWithIndex.set(index, rule)
+				const updateInstance = () => locator.entityClient.update(props).catch(ofClass(LockedError, noOp))
+
 				return {
 					cells: () => [
 						{
@@ -189,7 +194,7 @@ export class GlobalSettingsViewer implements UpdatableSettingsViewer {
 					actionButtonAttrs: createRowActions(
 						{
 							getArray: () => props.emailSenderList,
-							updateInstance: () => locator.entityClient.update(props).catch(ofClass(LockedError, noOp)),
+							updateInstance,
 						},
 						rule,
 						index,
@@ -200,6 +205,11 @@ export class GlobalSettingsViewer implements UpdatableSettingsViewer {
 							},
 						],
 					),
+				}
+			})
+			locator.customerFacade.updateIncorrectSpamRules(allSpamRulesWithIndex).then((updatedRuleCount) => {
+				if (updatedRuleCount > 0) {
+					console.info(`Fixed ${updatedRuleCount} spam rules with wrong hash.`)
 				}
 			})
 

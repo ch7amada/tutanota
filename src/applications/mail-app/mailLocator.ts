@@ -1,4 +1,4 @@
-import { AppType, Const, EnvProvider, FeatureType, ProgrammingError } from "@tutao/app-env"
+import { AppType, Const, EnvProvider, FeatureType, FULL_INDEXED_TIMESTAMP, METERED_CONNECTION_DOWNLOAD_LIMIT_IN_BYTES, ProgrammingError } from "@tutao/app-env"
 import { EventController } from "../common/api/main/EventController.js"
 import { MailSearchModel } from "./search/model/MailSearchModel.js"
 import { type MailboxDetail, MailboxModel } from "../common/mailFunctionality/MailboxModel.js"
@@ -57,14 +57,14 @@ import { WebsocketConnectivityModel } from "../common/misc/WebsocketConnectivity
 import { OperationProgressTracker } from "../common/api/main/OperationProgressTracker.js"
 import { InfoMessageHandler } from "../common/gui/InfoMessageHandler.js"
 import { EntropyFacade } from "../../platform-kit/base/facades/EntropyFacade.js"
-import { assert, assertNotNull, defer, DeferredObject, lazy, lazyAsync, LazyLoaded, lazyMemoized, noOp } from "@tutao/utils"
+import { assert, assertNotNull, defer, DeferredObject, lazy, lazyAsync, LazyLoaded, lazyMemoized, noOp, onceAsync } from "@tutao/utils"
 import { RecipientsModel } from "../common/api/main/RecipientsModel.js"
 import { NoZoneDateProvider } from "../../platform-kit/utils/NoZoneDateProvider.js"
 import { SendMailModel } from "../common/mailFunctionality/SendMailModel.js"
 import { OfflineIndicatorViewModel } from "../common/gui/base/OfflineIndicatorViewModel.js"
 import { Router, ScopedThrottledRouter, ThrottledRouter } from "../../ui/ScopedThrottledRouter.js"
-import { DeviceConfig, deviceConfig } from "../common/misc/DeviceConfig.js"
-import { InboxRuleHandler } from "./mail/model/InboxRuleHandler.js"
+import { DeviceConfig, deviceConfig, DownloadArchivesOnMeteredConnection } from "../common/misc/DeviceConfig.js"
+import { ExpandedInboxRuleHandler } from "./mail/model/ExpandedInboxRuleHandler.js"
 import { SearchRouter } from "../common/search/view/SearchRouter.js"
 import { MailOpenedListener, MailViewModel } from "./mail/view/MailViewModel.js"
 import { getEnabledMailAddressesWithUser } from "../common/mailFunctionality/SharedMailUtils.js"
@@ -153,11 +153,11 @@ import { CALENDAR_MIME_TYPE, MAIL_MIME_TYPES, VCARD_MIME_TYPES } from "../../pla
 import { CalendarEvent, CalendarEventAttendee, Contact, Mail, MailboxProperties } from "@tutao/entities/tutanota"
 import { GroupType, ShareableGroupType } from "../../entities/sys/Utils"
 import { ClientModelInfo } from "@tutao/instance-pipeline"
-import { ImapImporter } from "./workerUtils/imapimport/ImapImporter"
+import { MailboxImporter } from "./workerUtils/migration/MailboxImporter"
 
 import { ParsedEventAlarmTuple } from "../calendar-app/calendar/export/CalendarParser"
 import { showWindowCloseConfirmation } from "../../ui/base/GuiUtils"
-import type { ImapMailImportController } from "./settings/imapimport/ImapMailImportController"
+import type { MailboxMigrationController } from "./settings/migration/MailboxMigrationController"
 import type { AlarmInterval } from "../common/calendar/date/CalendarUtils"
 import { MailSearchViewModel } from "./search/view/MailSearchViewModel"
 import { ContactSearchViewModel } from "./search/view/ContactSearchViewModel"
@@ -171,9 +171,15 @@ import { registerIndexingNotAvailableHandler } from "../common/misc/ErrorHandler
 import { DriveModel } from "../drive-app/drive/model/DriveModel"
 import { ContactEditor } from "./contacts/ContactEditor"
 import { ContactViewModel } from "./contacts/view/ContactViewModel"
+import { DriveFileShareDialog } from "../drive-app/drive/view/DriveFileShareDialog"
 import { PluginManager } from "../../plugin-kit/plugin-manager/PluginManager"
 import { PluginConfigurationProvider } from "../common/plugin/PluginConfigurationProvider"
 import { MailPluginIntegrationAdapter } from "./plugin/MailPluginIntegrationAdapter"
+import { InboxRuleModel } from "./mail/model/InboxRuleModel"
+import { LegacyInboxRuleHandler } from "./mail/model/LegacyInboxRuleHandler"
+import { showMeteredConnectionWarningDialog } from "../common/gui/dialogs/MeteredConnectionWarningDialog"
+import { MailIndexingAbortReason } from "./workerUtils/index/MailIndexer"
+import { DriveFileSharingFacade } from "../common/api/worker/facades/lazy/DriveFileSharingFacade"
 
 EnvProvider.assertMainOrNode()
 
@@ -244,12 +250,13 @@ class MailLocator implements CommonLocator {
 	whitelabelThemeGenerator!: WhitelabelThemeGenerator
 	autosaveFacade!: AutosaveFacade
 	driveFacade!: DriveFacade
+	driveFileSharingFacade!: DriveFileSharingFacade
 	transferProgressDispatcher!: TransferProgressDispatcher
-	imapImporter!: ImapImporter
+	mailboxImporter!: MailboxImporter
 
 	private nativeInterfaces: NativeInterfaces | null = null
 	private fileMailImportController: FileMailImportController | null = null
-	private imapMailImportController: ImapMailImportController | null = null
+	private mailboxMigrationController: MailboxMigrationController | null = null
 	private entropyFacade!: EntropyFacade
 	private sqlCipherFacade!: SqlCipherFacade
 	private oauthFacade: OauthFacade | null = null
@@ -312,7 +319,7 @@ class MailLocator implements CommonLocator {
 			conversationViewModelFactory,
 			this.mailOpenedListener,
 			deviceConfig,
-			this.processInboxHandler(),
+			await this.processInboxHandler(),
 			router,
 			await this.redraw(),
 			this.syncTracker,
@@ -327,16 +334,29 @@ class MailLocator implements CommonLocator {
 		return new AffiliateViewModel()
 	})
 
-	readonly inboxRuleHandler = lazyMemoized(() => {
-		return new InboxRuleHandler(this.mailFacade, this.logins, this.mailModel)
+	readonly inboxRuleHandler = lazyMemoized(async () => {
+		const inboxRuleModel = await this.inboxRuleModel()
+		if (inboxRuleModel.isUsingLegacyInboxRules()) {
+			return new LegacyInboxRuleHandler(this.mailFacade, this.logins, this.mailModel)
+		} else {
+			return new ExpandedInboxRuleHandler(this.mailFacade, this.logins, this.mailModel, inboxRuleModel)
+		}
 	})
 
 	readonly spamClassificationHandler = lazyMemoized(() => {
 		return new SpamClassificationHandler(this.spamClassifier, this.contactModel, this.mailFacade, this.logins)
 	})
 
-	readonly processInboxHandler = lazyMemoized(() => {
-		return new ProcessInboxHandler(this.logins, this.mailFacade, this.cryptoFacade, this.spamClassificationHandler, this.inboxRuleHandler)
+	readonly processInboxHandler = lazyMemoized(async () => {
+		const inboxRuleModel = await this.inboxRuleModel()
+		return new ProcessInboxHandler(
+			this.logins,
+			this.mailFacade,
+			this.cryptoFacade,
+			this.spamClassificationHandler,
+			this.inboxRuleHandler,
+			inboxRuleModel.isUsingLegacyInboxRules(),
+		)
 	})
 
 	readonly throttledRouter: lazy<Router> = lazyMemoized(() => new ThrottledRouter())
@@ -528,6 +548,11 @@ class MailLocator implements CommonLocator {
 		return new RecipientsSearchModel(await this.recipientsModel(), this.contactModel, suggestionsProvider, this.entityClient)
 	}
 
+	readonly inboxRuleModel: lazyAsync<InboxRuleModel> = lazyMemoized(async () => {
+		const { InboxRuleModel } = await import("./mail/model/InboxRuleModel")
+		return new InboxRuleModel(this.entityClient, this.mailboxModel, this.mailModel)
+	})
+
 	private async contactSuggestionProvider(): Promise<ContactSuggestionProvider> {
 		if (EnvProvider.get().isApp()) {
 			const { MobileContactSuggestionProvider } = await import("../common/native/MobileContactSuggestionProvider.js")
@@ -583,6 +608,7 @@ class MailLocator implements CommonLocator {
 		const fileDownloader = new AttachmentDownloader(this.fileController, fileApp, this.transferProgressDispatcher, driveModel, (action) =>
 			mailLocator.showDriveDestinationPickerDialog(action),
 		)
+		const inboxRuleModel = await this.inboxRuleModel()
 
 		return ({ mail, showFolder, highlightedTokens }) =>
 			new MailViewerViewModel(
@@ -609,6 +635,7 @@ class MailLocator implements CommonLocator {
 				this.operationProgressTracker,
 				this.syncTracker,
 				this.pluginManager,
+				inboxRuleModel,
 			)
 	}
 
@@ -791,12 +818,12 @@ class MailLocator implements CommonLocator {
 		return this.fileMailImportController
 	}
 
-	public getImapMailImportController(): ImapMailImportController {
-		if (this.imapMailImportController == null) {
-			throw new ProgrammingError(`Tried to use imapImportController in web or mobile`)
+	public getMailboxMigrationController(): MailboxMigrationController {
+		if (this.mailboxMigrationController == null) {
+			throw new ProgrammingError(`Tried to use mailboxMigrationController in web or mobile`)
 		}
 
-		return this.imapMailImportController
+		return this.mailboxMigrationController
 	}
 
 	private readonly _workerDeferred: DeferredObject<WorkerClient>
@@ -864,7 +891,8 @@ class MailLocator implements CommonLocator {
 			autosaveFacade,
 			spamClassifier,
 			driveFacade,
-			imapImporter,
+			mailboxImporter,
+			driveFileSharingFacade,
 		} = this.worker.getWorkerInterface() as WorkerInterface
 		this.loginFacade = loginFacade
 		this.customerFacade = customerFacade
@@ -889,6 +917,7 @@ class MailLocator implements CommonLocator {
 		this.recoverCodeFacade = recoverCodeFacade
 		this.contactFacade = contactFacade
 		this.driveFacade = driveFacade
+		this.driveFileSharingFacade = driveFileSharingFacade
 		this.serviceExecutor = serviceExecutor
 		this.sqlCipherFacade = sqlCipherFacade
 		this.logins = new LoginController(
@@ -921,6 +950,7 @@ class MailLocator implements CommonLocator {
 			this.connectivityModel,
 			this.processInboxHandler,
 			this.bulkMailLoader,
+			this.inboxRuleModel,
 			registerIndexingNotAvailableHandler,
 		)
 		this.operationProgressTracker = new OperationProgressTracker()
@@ -928,7 +958,7 @@ class MailLocator implements CommonLocator {
 			this.mailSearchModel().then((model) => model.indexState(state))
 		})
 		this.autosaveFacade = autosaveFacade
-		this.imapImporter = imapImporter
+		this.mailboxImporter = mailboxImporter
 
 		this.usageTestModel = new UsageTestModel(
 			{
@@ -981,7 +1011,54 @@ class MailLocator implements CommonLocator {
 			const { OpenSettingsHandler } = await import("../common/native/OpenSettingsHandler.js")
 
 			const openSettingsHandler = new OpenSettingsHandler(this.logins)
-			this.webMobileFacade = new WebMobileFacade(this.connectivityModel, MAIL_PREFIX)
+
+			let isHandlingConnectionTypeUpdated = false
+
+			const handleConnectionTypeUpdated = async (isMetered: boolean) => {
+				// wait with indexing stuff until sync is done
+				if (!this.syncTracker.isSyncDone) return
+
+				// skip if fully indexed already
+				const indexState = (await this.mailSearchModel()).indexState()
+				if (indexState.currentMailIndexTimestamp === FULL_INDEXED_TIMESTAMP) return
+
+				// do not show two popups etc.
+				if (isHandlingConnectionTypeUpdated) {
+					return
+				} else {
+					isHandlingConnectionTypeUpdated = true
+				}
+
+				try {
+					const expectedDataInBytes = await indexerFacade.remainingDataInBytes()
+					const state = deviceConfig.getContinueDownloadArchivesOnMeteredConnection()
+					if (
+						isMetered &&
+						expectedDataInBytes > METERED_CONNECTION_DOWNLOAD_LIMIT_IN_BYTES &&
+						state !== DownloadArchivesOnMeteredConnection.ACCEPTED
+					) {
+						indexerFacade.cancelMailIndexing(MailIndexingAbortReason.Cancelled)
+
+						if (state === DownloadArchivesOnMeteredConnection.DECLINED) return
+
+						const choice = await showMeteredConnectionWarningDialog(expectedDataInBytes)
+						if (choice === "continueIndexing") {
+							deviceConfig.setContinueDownloadArchivesOnMeteredConnection(DownloadArchivesOnMeteredConnection.ACCEPTED)
+						} else {
+							deviceConfig.setContinueDownloadArchivesOnMeteredConnection(DownloadArchivesOnMeteredConnection.DECLINED)
+							return
+						}
+					}
+
+					if (indexState.autoRestartEnabled) {
+						// default: resume when indexing was not cancelled and just failed for another reason
+						void indexerFacade.extendMailIndex(FULL_INDEXED_TIMESTAMP)
+					}
+				} finally {
+					isHandlingConnectionTypeUpdated = false
+				}
+			}
+			this.webMobileFacade = new WebMobileFacade(this.connectivityModel, MAIL_PREFIX, handleConnectionTypeUpdated)
 
 			this.nativeInterfaces = createNativeInterfaces(
 				this.webMobileFacade,
@@ -990,7 +1067,7 @@ class MailLocator implements CommonLocator {
 					async () => this.native,
 					() => this.desktopSettingsFacade,
 				),
-				this.imapImporter,
+				this.mailboxImporter,
 				new WebInterWindowEventFacade(this.logins, windowFacade, deviceConfig),
 				new WebCommonNativeFacade(
 					this.logins,
@@ -1035,16 +1112,16 @@ class MailLocator implements CommonLocator {
 					this.exportFacade = desktopInterfaces.exportFacade
 					this.oauthFacade = desktopInterfaces.desktopOauthWindowFacade
 
-					const { ImapMailImportController } = await import("./settings/imapimport/ImapMailImportController.js")
-					const { ImapErrorHandler } = await import("./settings/imapimport/ImapErrorHandler.js")
-					this.imapMailImportController = new ImapMailImportController(
-						this.imapImporter,
+					const { MailboxMigrationController } = await import("./settings/migration/MailboxMigrationController.js")
+					const { MigrationErrorHandler } = await import("./settings/migration/MigrationErrorHandler.js")
+					this.mailboxMigrationController = new MailboxMigrationController(
+						this.mailboxImporter,
 						this.mailModel,
 						this.mailboxModel,
 						this.entityClient,
 						this.eventController,
 						this.oauthFacade,
-						new ImapErrorHandler(this.entityClient, this.serviceExecutor),
+						new MigrationErrorHandler(this.entityClient, this.serviceExecutor, this.logins),
 					)
 				}
 			} else if (EnvProvider.get().isAndroidApp() || EnvProvider.get().isIOSApp()) {
@@ -1370,7 +1447,6 @@ class MailLocator implements CommonLocator {
 			this.customerFacade,
 			this.themeController,
 			this.syncTracker,
-			this.configFacade,
 			() => this.showSetupWizard(),
 			() => this.updateClients(),
 			this.loginFacade,
@@ -1618,6 +1694,11 @@ class MailLocator implements CommonLocator {
 		const { ContactEditor } = await import("./contacts/ContactEditor.js")
 		return new ContactEditor(this.entityClient, contact)
 	}
+
+	readonly driveFileShareDialog: lazyAsync<DriveFileShareDialog> = onceAsync(async () => {
+		const { DriveFileShareDialog } = await import("../drive-app/drive/view/DriveFileShareDialog.js")
+		return new DriveFileShareDialog(this.driveFileSharingFacade, this.logins)
+	})
 }
 
 export type IMailLocator = Readonly<MailLocator>

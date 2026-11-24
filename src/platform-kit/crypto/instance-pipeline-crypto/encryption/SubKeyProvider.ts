@@ -1,10 +1,12 @@
 import { lazyMemoized, Nullable } from "@tutao/utils"
-import { InstanceTypeId, SymmetricKeyDeriver, SymmetricSubKeys } from "../../encryption/symmetric/SymmetricKeyDeriver"
+import { SymmetricKeyDeriver, SymmetricSubKeys } from "../../encryption/symmetric/SymmetricKeyDeriver"
 import { SymmetricCipherVersion } from "../../encryption/symmetric/SymmetricCipherVersion"
 import { KdfNonce } from "../../encryption/symmetric/SymmetricCipherUtils"
-import { VersionedKey } from "../../CryptoTypes"
+import { VersionedAes256Key, VersionedKey } from "../../CryptoTypes"
 import { ProgrammingError } from "@tutao/app-env"
 import { AesKey } from "../../encryption/symmetric/AesKey"
+import { KeyDerivationContext } from "../../encryption/symmetric/AssociatedData"
+import { SessionKeyDecryptor } from "./SessionKeyDecryptor"
 
 /**
  * Dummy class that can either hold SubKeyInfo or SubKeyProvider. As both are suitable to get the actual subkeys.
@@ -18,8 +20,62 @@ export abstract class SubKeyInfo extends SubKeyFactory {
 	}
 }
 
+export abstract class PartialSubKeyInfo extends SubKeyInfo {
+	protected constructor() {
+		super()
+	}
+}
+
+export abstract class PartialSubKeyInfoWithSessionKey extends PartialSubKeyInfo {
+	protected constructor(private readonly sessionKeyDecryptor: SessionKeyDecryptor) {
+		super()
+	}
+
+	protected decryptSessionKey(ownerEncSessionKey: Uint8Array<ArrayBuffer>): AesKey {
+		return this.sessionKeyDecryptor.decryptSessionKey(ownerEncSessionKey)
+	}
+
+	abstract complete(ownerEncSessionKey: Uint8Array<ArrayBuffer>): SubKeyInfoWithSessionKey
+}
+
+export class PartialSubKeyInfoAesCbcThenHmac extends PartialSubKeyInfoWithSessionKey {
+	public override readonly cipherVersion = SymmetricCipherVersion.AesCbcThenHmac
+	constructor(sessionKeyDecryptor: SessionKeyDecryptor) {
+		super(sessionKeyDecryptor)
+	}
+
+	override complete(ownerEncSessionKey: Uint8Array<ArrayBuffer>): SubKeyInfoWithSessionKeyCbcThenHmac {
+		return new SubKeyInfoWithSessionKeyCbcThenHmac(this.decryptSessionKey(ownerEncSessionKey))
+	}
+}
+
+export class PartialSubKeyInfoAeadWithSessionKey extends PartialSubKeyInfoWithSessionKey {
+	public override readonly cipherVersion = SymmetricCipherVersion.AeadWithSessionKey
+	constructor(sessionKeyDecryptor: SessionKeyDecryptor) {
+		super(sessionKeyDecryptor)
+	}
+
+	override complete(ownerEncSessionKey: Uint8Array<ArrayBuffer>): SubKeyInfoWithSessionKeyAead {
+		return new SubKeyInfoWithSessionKeyAead(this.decryptSessionKey(ownerEncSessionKey))
+	}
+}
+
+export class PartialSubKeyInfoAeadWithInstanceKey extends PartialSubKeyInfo {
+	public override readonly cipherVersion = SymmetricCipherVersion.AeadWithInstanceKey
+	constructor() {
+		super()
+	}
+}
+
 abstract class SubKeyInfoWithSessionKey extends SubKeyInfo {
 	protected constructor(public readonly sessionKey: AesKey) {
+		super()
+	}
+}
+
+abstract class SubKeyInfoAeadWithInstanceKey extends SubKeyInfo {
+	public override readonly cipherVersion = SymmetricCipherVersion.AeadWithInstanceKey
+	protected constructor() {
 		super()
 	}
 }
@@ -38,8 +94,7 @@ export class SubKeyInfoWithSessionKeyAead extends SubKeyInfoWithSessionKey {
 	}
 }
 
-export class SubKeyInfoWithGroupKeyAead extends SubKeyInfo {
-	public override readonly cipherVersion = SymmetricCipherVersion.AeadWithGroupKey
+export class SubKeyInfoAeadWithInstanceKeyFromGroupKey extends SubKeyInfoAeadWithInstanceKey {
 	constructor(
 		public readonly groupKey: VersionedKey,
 		public readonly kdfNonce: KdfNonce,
@@ -48,16 +103,25 @@ export class SubKeyInfoWithGroupKeyAead extends SubKeyInfo {
 	}
 }
 
+export class SubKeyInfoAeadWithInstanceKeyFromInstanceKey extends SubKeyInfoAeadWithInstanceKey {
+	constructor(public readonly instanceKey: VersionedAes256Key) {
+		super()
+	}
+}
+
 export class SubKeyProvider extends SubKeyFactory {
 	constructor(
-		private readonly subKeyInfo: SubKeyInfo,
+		public readonly subKeyInfo: SubKeyInfo,
 		private readonly symmetricKeyDeriver: SymmetricKeyDeriver,
-		private readonly instanceTypeId: InstanceTypeId,
+		private readonly keyDerivationContext: KeyDerivationContext,
 	) {
 		super()
 	}
 
 	getSubKeys = lazyMemoized((): SymmetricSubKeys => {
+		if (this.subKeyInfo instanceof PartialSubKeyInfo) {
+			throw new ProgrammingError(`Encrypting with missing sub-key information`)
+		}
 		switch (this.subKeyInfo.cipherVersion) {
 			case SymmetricCipherVersion.AesCbcThenHmac: {
 				if (this.subKeyInfo instanceof SubKeyInfoWithSessionKeyCbcThenHmac) {
@@ -65,29 +129,34 @@ export class SubKeyProvider extends SubKeyFactory {
 				}
 				break
 			}
-			case SymmetricCipherVersion.AeadWithGroupKey: {
-				if (this.subKeyInfo instanceof SubKeyInfoWithGroupKeyAead) {
-					return this.symmetricKeyDeriver.deriveSubKeysAeadFromGroupKey(this.subKeyInfo.groupKey, this.subKeyInfo.kdfNonce, this.instanceTypeId)
+			case SymmetricCipherVersion.AeadWithInstanceKey: {
+				if (this.subKeyInfo instanceof SubKeyInfoAeadWithInstanceKeyFromGroupKey) {
+					return this.symmetricKeyDeriver.deriveSubKeysAeadWithInstanceKeyFromGroupKey(
+						this.subKeyInfo.groupKey,
+						this.subKeyInfo.kdfNonce,
+						this.keyDerivationContext,
+					)
+				} else if (this.subKeyInfo instanceof SubKeyInfoAeadWithInstanceKeyFromInstanceKey) {
+					return this.symmetricKeyDeriver.deriveSubKeysAeadWithInstanceKeyFromInstanceKey(this.subKeyInfo.instanceKey, this.keyDerivationContext)
 				}
 				break
 			}
 			case SymmetricCipherVersion.AeadWithSessionKey: {
 				if (this.subKeyInfo instanceof SubKeyInfoWithSessionKeyAead) {
-					return this.symmetricKeyDeriver.deriveSubKeysAeadFromSessionKey(this.subKeyInfo.sessionKey, this.instanceTypeId)
+					return this.symmetricKeyDeriver.deriveSubKeysAeadWithSessionKey(this.subKeyInfo.sessionKey, this.keyDerivationContext)
 				}
 				break
 			}
 		}
 		throw new ProgrammingError(
-			`Encrypting ${this.instanceTypeId.app}/${this.instanceTypeId.name} with wrong subKeyInfo or with unsupported cipher version ${this.subKeyInfo.cipherVersion}`,
+			`Encrypting ${this.keyDerivationContext} with wrong subKeyInfo or with unsupported cipher version ${this.subKeyInfo.cipherVersion}`,
 		)
 	})
 }
 
-export function makeNullableSubKeyInfoWithSessionKeyCbcThenHmac(sessionKey: AesKey | null): Nullable<SubKeyInfoWithSessionKeyCbcThenHmac> {
-	if (sessionKey != null) {
-		return new SubKeyInfoWithSessionKeyCbcThenHmac(sessionKey)
-	} else {
+export function makeNullableSubKeyInfoWithSessionKeyCbcThenHmac(sessionKey: Nullable<AesKey>): Nullable<SubKeyInfoWithSessionKeyCbcThenHmac> {
+	if (sessionKey == null) {
 		return null
 	}
+	return new SubKeyInfoWithSessionKeyCbcThenHmac(sessionKey)
 }

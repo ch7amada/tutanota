@@ -1,5 +1,5 @@
 import { Styles } from "./styles"
-import { component_shape, component_size, font_size, layout_size, px, shape, size, type_scale, TypeRoleName } from "./size"
+import { component_shape, component_size, font_size, layout_size, px, rem, shape, size, type_scale, TypeRoleName } from "./size"
 import { EnvProvider } from "@tutao/app-env"
 import { lang } from "./utils/LanguageViewModel"
 import { noselect, position_absolute } from "./mixins"
@@ -94,6 +94,7 @@ function buttonPressMorphStyles(): Record<string, any> {
 	return styles
 }
 
+export const boxShadowInline = `0 0 20px rgba(0,0,0,0.20), 0 0 6px rgba(0,0,0,0.20)`
 export const boxShadowHigh = `0 10px 20px rgba(0,0,0,0.10), 0 6px 6px rgba(0,0,0,0.10)`
 export const boxShadowMedium = "0px 0px 4px 2px rgba(0, 0, 0, 0.12)"
 export const boxShadowLow = "0px 2px 4px rgb(0, 0, 0, 0.08)"
@@ -131,7 +132,7 @@ export class MainStyles {
 					EnvProvider.get().isDesktop() || EnvProvider.get().isAdminClient()
 						? {
 								"pointer-events": "none",
-								"font-size": px(font_size.small),
+								"font-size": rem(font_size.smaller_em),
 								"padding-left": px(size.spacing_4),
 								"padding-right": px(size.spacing_4),
 								"padding-top": px(size.spacing_4),
@@ -232,6 +233,17 @@ export class MainStyles {
 					"--safe-area-inset-top": EnvProvider.get().isAndroidApp() ? "var(--safe-area-inset-top)" : "env(safe-area-inset-top)",
 					"--safe-area-inset-right": EnvProvider.get().isAndroidApp() ? "var(--safe-area-inset-right)" : "env(safe-area-inset-right)",
 					"--safe-area-inset-left": EnvProvider.get().isAndroidApp() ? "var(--safe-area-inset-left)" : "env(safe-area-inset-left)",
+
+					// Setting "color-scheme" ensures that browser input dialogs -- such as those for date and time
+					// inputs -- do not get rendered as white-on-black or black-on-white when the browser or system
+					// theme does not match the Tuta theme.
+					//
+					// Unfortunately, as of writing, Firefox does not seem to respect "color-scheme" when rendering its
+					// inputs.
+					//
+					// On Android, input dialogs are not styled by the WebView and they must set to light- or dark-mode
+					// separately, such as by calling `AppCompatDelegate.setDefaultNightMode` (see AndroidThemeFacade.kt).
+					"color-scheme": isLightTheme() ? "light" : "dark",
 					// spring motion tokens (--motion-<token> and --motion-<token>-duration), see Motion.ts
 					...springCustomProperties("fallback"),
 				},
@@ -242,6 +254,11 @@ export class MainStyles {
 					height: "100%",
 					margin: 0,
 					width: "100%",
+				},
+				"@supports (font: -apple-system-body)": {
+					html: {
+						font: "-apple-system-body !important",
+					},
 				},
 				html: {
 					"-webkit-font-smoothing": "subpixel-antialiased",
@@ -268,19 +285,20 @@ export class MainStyles {
 					overflow: "hidden",
 					// see: https://www.smashingmagazine.com/2015/11/using-system-ui-fonts-practical-guide/ and github
 					"font-family": getFonts(),
-					"font-size": px(font_size.base),
+					"font-size": rem(font_size.base_em),
 					"line-height": font_size.line_height,
 					color: theme.on_surface,
 					"-webkit-text-size-adjust": "none", // fix for safari browser
 				},
 				"small, .small": {
-					"font-size": px(font_size.small),
+					"font-size": rem(font_size.small_em),
+					"line-height": "1.2",
 				},
 				".smaller": {
-					"font-size": px(font_size.smaller),
+					"font-size": rem(font_size.smaller_em),
 				},
 				".normal-font-size": {
-					"font-size": px(font_size.base),
+					"font-size": rem(font_size.base_em),
 				},
 				".b": {
 					"font-weight": "bold",
@@ -323,6 +341,13 @@ export class MainStyles {
 					"overflow-y": "scroll",
 					"webkit-overflow-scrolling": "touch",
 				},
+				".overflow-y-scroll-inbox-rules": {
+					// The scrollbar is always there with "overflow-y": "scroll",
+					// but displays little scrollbar arrows even when there is no scroll bar, which is not visually appealing
+					// this differs from ".scroll" as there is no hyphen in front of webkit
+					"overflow-y": ClientDetector.get().overflowAuto,
+					"webkit-overflow-scrolling": "touch",
+				},
 				".overflow-visible": {
 					overflow: "visible",
 				},
@@ -339,15 +364,19 @@ export class MainStyles {
 				".nota-bg": {
 					background: theme.tuta_color_nota,
 				},
-				".border-nota": {
-					"border-color": theme.tuta_color_nota,
-				},
-				".border-accent": {
+				".border-color-accent": {
 					"border-color": theme.primary,
+				},
+				".border-color-container-high": {
+					"border-color": theme.surface_container_high,
 				},
 				".border-sm": {
 					"border-style": "solid",
 					"border-width": "2px",
+				},
+				".border-md": {
+					"border-style": "solid",
+					"border-width": "4px",
 				},
 				".border-bottom-none": {
 					"border-bottom": "none",
@@ -366,7 +395,7 @@ export class MainStyles {
 					"border-left-width": "2px",
 				},
 				".big": {
-					"font-size": px(font_size.base * 2.5),
+					"font-size": rem(2.5),
 				},
 				// headings use the emphasized roles of the type scale
 				"h1, .h1": typeRoleStyle("headline-l", true),
@@ -790,6 +819,9 @@ export class MainStyles {
 				".min-width-0": {
 					"min-width": 0,
 				},
+				".min-width-fit": {
+					"min-width": "fit-content",
+				},
 				".min-width-full": {
 					"min-width": "100%",
 				},
@@ -821,6 +853,9 @@ export class MainStyles {
 				},
 				".uppercase": {
 					"text-transform": "uppercase",
+				},
+				".lowercase": {
+					"text-transform": "lowercase",
 				},
 				".line-break-anywhere": {
 					"line-break": "anywhere",
@@ -1127,6 +1162,9 @@ export class MainStyles {
 				".button-height": {
 					height: px(component_size.button_height),
 				},
+				".min-button-height": {
+					"min-height": px(component_size.button_height),
+				},
 				".min-height-0": {
 					"min-height": px(0),
 				},
@@ -1145,9 +1183,6 @@ export class MainStyles {
 				".large-button-width": {
 					width: px(component_size.button_floating_size),
 				},
-				".notification-min-width": {
-					"min-width": px(400),
-				},
 				// Stretch editor a little bit more than parent so that the content is visible
 				".full-height": {
 					"min-height": ClientDetector.get().isIos() ? "101%" : "100%",
@@ -1160,6 +1195,9 @@ export class MainStyles {
 				},
 				".half-width": {
 					width: "50%",
+				},
+				".three-quarter-width": {
+					width: "75%",
 				},
 				".block": {
 					display: "block",
@@ -1269,6 +1307,9 @@ export class MainStyles {
 				},
 				".gap-64": {
 					gap: px(size.spacing_64),
+				},
+				".row-gap-8": {
+					"row-gap": px(size.spacing_8),
 				},
 				".column-gap-12": {
 					"column-gap": px(size.spacing_12),
@@ -1666,6 +1707,13 @@ export class MainStyles {
 					"max-width": px(component_size.button_height_sm),
 					"max-height": px(component_size.button_height_sm),
 				},
+				".icon-button-extra-small": {
+					"border-radius": "25%",
+					width: px(component_size.button_height_xs),
+					height: px(component_size.button_height_xs),
+					"max-width": px(component_size.button_height_xs),
+					"max-height": px(component_size.button_height_xs),
+				},
 				".center-h": {
 					margin: "0 auto",
 				},
@@ -1681,6 +1729,9 @@ export class MainStyles {
 				},
 				".wizard-page-transition": {
 					opacity: 0,
+				},
+				"#upgrade-view .upgrade-dialog-content .plan-selector-wrapper": {
+					"justify-content": "center",
 				},
 				".wizard-next-button": {
 					"margin-top": "auto",
@@ -1896,7 +1947,7 @@ export class MainStyles {
             */
 					"box-sizing": "border-box",
 					"border-top": `1px solid ${theme.outline_variant}`,
-					height: `calc(${component_size.bottom_nav_bar}px + var(--safe-area-inset-bottom))`,
+					"padding-top": "2px",
 					background: theme.surface,
 					"padding-bottom": "var(--safe-area-inset-bottom)",
 					"z-index": 2,
@@ -2021,6 +2072,9 @@ export class MainStyles {
 				".dialog": {
 					"min-width": px(200),
 				},
+				".dialog-width-xl": {
+					"max-width": px(1000),
+				},
 				".dialog-width-l": {
 					"max-width": px(800),
 				},
@@ -2035,10 +2089,10 @@ export class MainStyles {
 				},
 				".dialog-header": {
 					"border-bottom": `1px solid ${theme.outline_variant}`,
-					height: px(component_size.button_height + 1),
+					height: rem(2.81),
 				},
 				".dialog-header-line-height": {
-					"line-height": px(component_size.button_height),
+					"line-height": rem(component_size.button_height_em),
 				},
 				".dialog-progress": {
 					"text-align": "center",
@@ -2072,6 +2126,9 @@ export class MainStyles {
 				},
 				".dialog-max-height": {
 					"max-height": "calc(100vh - 100px)",
+				},
+				".dialog-full-height": {
+					height: "100vh",
 				},
 				// mail folder view column
 				" .folder-column": {
@@ -2194,13 +2251,13 @@ export class MainStyles {
 					"-moz-osx-font-smoothing": "grayscale",
 				},
 				".badge-line-height": {
-					"line-height": px(18),
+					"line-height": rem(size.core_18_em),
 				},
 				".list-font-icons": {
 					"letter-spacing": "1px",
 					"text-align": "right",
 					"margin-right": "-3px",
-					"font-size": "18px",
+					"font-size": rem(size.core_18_em),
 				},
 				".monospace": {
 					"font-family": '"Lucida Console", Monaco, monospace',
@@ -2216,8 +2273,14 @@ export class MainStyles {
 				".ml-between-4 > :not(:first-child)": {
 					"margin-left": px(size.spacing_4),
 				},
+				".ml-between-8 > :not(:first-child)": {
+					"margin-left": px(size.spacing_8),
+				},
 				".mt-between-4 > :not(:first-child)": {
 					"margin-top": px(size.spacing_4),
+				},
+				".mr-between-8 > :not(:last-child)": {
+					"margin-right": px(size.spacing_8),
 				},
 				// dropdown
 				".dropdown-panel": {
@@ -2560,8 +2623,8 @@ export class MainStyles {
 					"line-height": px(16),
 					"font-size": px(12),
 					"font-weight": "bold",
-					width: px(16),
-					height: px(16),
+					width: rem(font_size.base_em),
+					height: rem(font_size.base_em),
 					"text-align": "center",
 					color: "white",
 					background: theme.on_surface_variant,
@@ -2681,10 +2744,10 @@ export class MainStyles {
 					// reset browser style
 					margin: "0",
 					display: "block",
-					width: px(component_size.checkbox_size),
-					height: px(component_size.checkbox_size),
-					"min-width": px(component_size.checkbox_size),
-					"min-height": px(component_size.checkbox_size),
+					width: rem(component_size.checkbox_size_em),
+					height: rem(component_size.checkbox_size_em),
+					"min-width": rem(component_size.checkbox_size_em),
+					"min-height": rem(component_size.checkbox_size_em),
 					border: `${px(component_size.checkbox_border_size)} solid ${theme.outline}`,
 					"border-radius": px(shape.extra_small),
 					position: "relative",
@@ -2706,17 +2769,17 @@ export class MainStyles {
 					content: `'${FontIcons.CheckboxCheckmark}'`,
 					position: "absolute",
 					display: "none",
-					"font-size": "12px",
+					"font-size": rem(font_size.small_em),
 					// related to border width
 					top: "-6px",
 					left: "-6px",
 					right: 0,
 					bottom: 0,
-					"line-height": "12px",
+					"line-height": rem(font_size.small_em),
 					color: theme.surface,
 					"align-items": "center",
-					width: "12px",
-					height: "12px",
+					width: rem(font_size.small_em),
+					height: rem(font_size.small_em),
 				},
 				".checkbox:before": {
 					content: "''",
@@ -2769,9 +2832,9 @@ export class MainStyles {
 				},
 				".calendar-day-indicator": {
 					// overridden for mobile
-					"line-height": px(layout_size.calendar_days_header_height),
+					"line-height": rem(layout_size.calendar_days_header_height_em),
 					"text-align": "center",
-					"font-size": "14px",
+					"font-size": rem(font_size.smaller_em),
 				},
 				".calendar-day .calendar-day-indicator:hover": {
 					background: theme.surface_container,
@@ -2779,7 +2842,7 @@ export class MainStyles {
 				},
 				".calendar-day-number": {
 					margin: "3px auto",
-					width: "22px",
+					width: rem(1.375),
 				},
 				".calendar-event": {
 					"border-radius": px(shape.extra_small),
@@ -2917,7 +2980,7 @@ export class MainStyles {
 					"border-bottom": `1px solid ${theme.outline_variant}`,
 				},
 				".calendar-month-week-number": {
-					"font-size": "12px",
+					"font-size": rem(font_size.small_em),
 					opacity: "0.8",
 					top: "8px",
 					left: "6px",
@@ -2976,9 +3039,17 @@ export class MainStyles {
 					"-moz-appearance": "textfield",
 					appearance: "none",
 				},
+				".notification-overlay": {
+					width: "fit-content",
+					"min-width": px(400),
+					"max-width": "100%",
+				},
 				// media query for small devices where elements should be arranged in one column
 				// also adaptions for table column widths
 				"@media (max-width: 400px)": {
+					".notification-overlay": {
+						"min-width": "0",
+					},
 					// currently used for the reminder dialog
 					".flex-direction-change": {
 						display: "flex",
@@ -3013,8 +3084,8 @@ export class MainStyles {
 					"box-shadow": "0 4px 5px 2px rgba(0,0,0,0.14), 0 4px 5px 2px rgba(0,0,0,0.14), 0 4px 5px 2px rgba(0,0,0,0.14)",
 				},
 				".big-input input": {
-					"font-size": px(font_size.base * 1.4),
-					"line-height": `${px(font_size.base * 1.4 + 2)} !important`,
+					"font-size": rem(1.4),
+					"line-height": `${rem(1.52)} !important`,
 				},
 				".hidden-until-focus": {
 					position: "absolute",
@@ -3044,19 +3115,19 @@ export class MainStyles {
 						"padding-top": px(size.spacing_8),
 					},
 					".calendar-day-indicator": {
-						"line-height": "20px",
+						"line-height": rem(size.core_20_em),
 						"text-align": "center",
-						"font-size": "14px",
+						"font-size": rem(font_size.smaller_em),
 					},
 					".calendar-day-number": {
 						margin: "2px auto",
-						width: "20px",
+						width: rem(size.core_20_em),
 					},
 					".calendar-hour-margin": {
 						"margin-left": px(layout_size.calendar_hour_width_mobile),
 					},
 					".calendar-month-week-number": {
-						"font-size": "10px",
+						"font-size": rem(0.625),
 						opacity: "0.8",
 						top: "3px",
 						left: "3px",
@@ -3064,6 +3135,12 @@ export class MainStyles {
 				},
 				".cursor-grabbing *": {
 					cursor: "grabbing !important",
+				},
+				".cursor-grab": {
+					cursor: "grab",
+				},
+				".cursor-grab:active": {
+					cursor: "grabbing",
 				},
 				// This is applied to elements that should indicate they will be draggable when some key is pressed.
 				// Ideally we would use cursor: grab here, but it doesn't seem to be supported in electron
@@ -3128,7 +3205,7 @@ export class MainStyles {
 						color: `${lightTheme.on_surface} !important`,
 						"background-color": `${lightTheme.surface}`,
 					},
-					"#mail-body": {
+					".mail-body": {
 						overflow: "visible !important",
 					},
 					"#login-view": {
@@ -3231,6 +3308,13 @@ export class MainStyles {
 				".svg-text-content-bg text": {
 					fill: theme.surface,
 				},
+				// IconButton only accepts ButtonColors, so we need to override it like this for black/white on labels
+				".icon-button-wrapper-black-icon .icon": {
+					fill: "black !important",
+				},
+				".icon-button-wrapper-white-icon .icon": {
+					fill: "white !important",
+				},
 				".overflow-auto": {
 					overflow: "auto",
 				},
@@ -3291,13 +3375,13 @@ export class MainStyles {
 				".tutaui-switch": {
 					display: "flex",
 					"align-items": "center",
-					gap: px(size.spacing_8),
+					gap: px(size.spacing_16),
 				},
 				".tutaui-toggle-pill": {
 					position: "relative",
 					display: "block",
 					width: "52px",
-					height: "32px",
+					height: px(component_size.button_height_bubble),
 					"background-color": theme.surface_container_high,
 					"border-radius": px(shape.full),
 					border: `2px solid ${theme.outline}`,
@@ -3501,7 +3585,7 @@ export class MainStyles {
 					background: theme.primary,
 					"border-radius": px(size.radius_12),
 					color: theme.on_primary,
-					"line-height": px(20),
+					"line-height": rem(size.core_20_em),
 				},
 				".interactable-cell:hover": {
 					background: theme.surface_container,
@@ -3666,6 +3750,47 @@ export class MainStyles {
 				},
 				".mr-auto": {
 					"margin-left": "auto",
+				},
+				".event-banner-grid-guest": {
+					display: "grid",
+					"grid-template-areas": `
+							"sidebar title title" 
+							"sidebar middle timeoverview";
+							`,
+					"grid-template-columns": "110px 2fr 3fr;",
+					"grid-template-rows": "auto 1fr;",
+					"max-width": px(900),
+				},
+
+				".event-banner-grid-guest-mobile": {
+					display: "grid",
+					"grid-template-areas": `
+							"sidebar title" 
+							"sidebar middle"
+							"sidebar timeoverview";
+							`,
+					"grid-template-columns": "110px 1fr;",
+					"grid-template-rows": "auto auto 1fr;",
+				},
+				".event-banner-grid-organizer": {
+					display: "grid",
+					"grid-template-areas": `
+							"sidebar title" 
+							"sidebar middle"							
+							`,
+					"grid-template-columns": "110px 1fr;",
+					"grid-template-rows": "auto 1fr;",
+					"max-width": px(900),
+				},
+				".error-text-field": {
+					"border-bottom": `3px solid ${theme.error}`,
+					"border-radius": `${px(size.radius_8)} ${px(size.radius_8)} 0 0 !important`,
+					color: theme.error,
+					"box-sizing": "border-box",
+				},
+				// helpLabel of textfield
+				".error-text-field + small": {
+					color: theme.error,
 				},
 			}
 		})

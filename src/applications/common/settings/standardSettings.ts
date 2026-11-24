@@ -20,7 +20,6 @@ import { ThemeController } from "../../../ui/ThemeController"
 import { WhitelabelThemeGenerator } from "../../../ui/WhitelabelThemeGenerator"
 import { lang } from "../../../ui/utils/LanguageViewModel"
 import { UserController } from "../api/main/UserController"
-import { isFreeSignupOnly } from "../misc/LoginUtils"
 
 export function calendarSettings(entityClient: EntityClient, userController: UserController): SettingsFolder<void> {
 	return new SettingsFolder(
@@ -76,19 +75,19 @@ export function subscriptionSettingsSection(logins: LoginController, mobilePayme
 		name: lang.getTranslation("subscriptionSettings_label"),
 		settings: [
 			new SettingsFolder<void>(
-				() => "adminSubscription_action",
+				() => "adminSubscription_label",
 				() => Icons.TrophyFilled,
 				"subscription",
 				() => new SubscriptionSettingsViewer(EnvProvider.get().getPaymentSetup() !== PaymentSetup.Default ? mobilePaymentsFacade : null),
 				undefined,
 			).setIsVisibleHandler(() => shouldShowSubscriptionSetting()),
 			new SettingsFolder<void>(
-				() => "adminPayment_action",
+				() => "adminPayment_label",
 				() => Icons.CreditcardFilled,
 				"invoice",
 				() => new PaymentViewer(),
 				undefined,
-			).setIsVisibleHandler(() => shouldShowSubscriptionSetting() && !logins.getUserController().isFreeAccount()),
+			).setIsVisibleHandler(() => shouldShowSubscriptionSetting()),
 			new SettingsFolder(
 				() => "referralSettings_label",
 				() => Icons.ShareFilled,
@@ -112,20 +111,17 @@ export function adminSettingsSection(
 	whitelabelThemeGenerator: WhitelabelThemeGenerator,
 	customerFacade: CustomerFacade,
 ): SettingsViewSection {
-	const settings = [
-		new SettingsFolder(
-			() => "globalSettings_label",
-			() => Icons.GearWheelFilled,
-			"global",
-			() => new MobileGlobalSettingsViewer(entityClient, logins, customerFacade),
-			undefined,
-		).setIsVisibleHandler(() => logins.getUserController().isGlobalAdmin()),
-	]
-	if (!isFreeSignupOnly()) {
-		settings.push(whitelabelSettings(entityClient, logins, themeController, whitelabelThemeGenerator))
-	}
 	return {
 		name: lang.getTranslation("adminSettings_label"),
-		settings,
+		settings: [
+			new SettingsFolder(
+				() => "globalSettings_label",
+				() => Icons.GearWheelFilled,
+				"global",
+				() => new MobileGlobalSettingsViewer(entityClient, logins, customerFacade),
+				undefined,
+			).setIsVisibleHandler(() => logins.getUserController().isGlobalAdmin()),
+			whitelabelSettings(entityClient, logins, themeController, whitelabelThemeGenerator),
+		],
 	}
 }

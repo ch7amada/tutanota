@@ -9,6 +9,7 @@ import {
 	groupBy,
 	groupByAndMap,
 	isNotNull,
+	lazyAsync,
 	lazyMemoized,
 	Nullable,
 	ofClass,
@@ -30,13 +31,14 @@ import { LoginController } from "../../../common/api/main/LoginController.js"
 import { MailFacade } from "../../../common/api/worker/facades/lazy/MailFacade.js"
 import { assertSystemFolderOfType } from "./MailUtils.js"
 import { ProcessInboxHandler } from "./ProcessInboxHandler"
-import { BulkMailLoader, MailWithMailDetails } from "../../workerUtils/index/BulkMailLoader"
+import { BulkMailLoader, MailsMaybeWithDetails } from "../../workerUtils/index/BulkMailLoader"
 import { Mail, MailboxGroupRoot, MailboxProperties, MailSet, MailSetEntryTypeRef, MailSetTypeRef, MailTypeRef, MovedMails } from "@tutao/entities/tutanota"
 import { MailReportType, MailSetKind, MAX_NBR_OF_MAILS_SYNC_OPERATION, ReportMovedMailsType, SystemFolderType } from "../../../../entities/tutanota/Utils"
 import { isLabel, SimpleMoveMailTarget } from "../MailUtils"
 import { EntityUpdateData, isUpdateForTypeRef, ListenerPriority } from "../../../../platform-kit/instance-pipeline/utils/EntityUpdateUtils"
 import { WebsocketCounterData } from "@tutao/entities/sys"
 import { DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS, EntityRestClientLoadOptions } from "../../../../platform-kit/instance-pipeline/RestClientOptions"
+import type { InboxRuleModel } from "./InboxRuleModel"
 
 interface MailboxSets {
 	folders: FolderSystem
@@ -80,8 +82,9 @@ export class MailModel {
 		private readonly logins: LoginController,
 		private readonly mailFacade: MailFacade,
 		private readonly connectivityModel: WebsocketConnectivityModel | null,
-		private readonly processInboxHandler: () => ProcessInboxHandler,
+		private readonly processInboxHandler: lazyAsync<ProcessInboxHandler>,
 		private readonly bulkMailLoader: BulkMailLoader,
+		private readonly inboxRuleModel: lazyAsync<InboxRuleModel>,
 		private readonly registerIndexingNotAvailableHandler: (handler: () => unknown) => unknown,
 	) {}
 
@@ -215,7 +218,8 @@ export class MailModel {
 
 				let targetFolder = sourceMailFolder
 				if (this.isInternalUser() && mailboxDetail && folderSystem) {
-					targetFolder = await this.processInboxHandler().handleIncomingMail(mail, sourceMailFolder, mailboxDetail, folderSystem, isLeaderClient)
+					const processInboxHandler = await this.processInboxHandler()
+					targetFolder = await processInboxHandler.handleIncomingMail(mail, sourceMailFolder, mailboxDetail, folderSystem, isLeaderClient)
 				}
 				if (EnvProvider.get().isBrowser()) {
 					this._showNotification(targetFolder, mail)
@@ -401,6 +405,7 @@ export class MailModel {
 		if (folderSystem == null) return
 		const deletedFolder = await this.removeAllEmpty(folderSystem, folder)
 		if (!deletedFolder) {
+			await this.deactivateInboxRulesOnFolderDeletion(folder)
 			return this.mailFacade.updateMailFolderParent(folder, assertSystemFolderOfType(folderSystem, MailSetKind.SPAM)._id)
 		}
 	}
@@ -510,6 +515,7 @@ export class MailModel {
 
 		const deletedFolder = await this.removeAllEmpty(folderSystem, folder)
 		if (!deletedFolder) {
+			await this.deactivateInboxRulesOnFolderDeletion(folder)
 			const trash = assertSystemFolderOfType(folderSystem, MailSetKind.TRASH)
 			return this.mailFacade.updateMailFolderParent(folder, trash._id)
 		}
@@ -563,6 +569,7 @@ export class MailModel {
 			throw new ProgrammingError("Cannot delete non-custom folder: " + String(folder._id))
 		}
 
+		await this.deactivateInboxRulesOnFolderDeletion(folder)
 		return await this.mailFacade
 			.deleteFolder(folder._id)
 			.catch(ofClass(NotFoundError, () => console.log("mail folder already deleted")))
@@ -607,7 +614,34 @@ export class MailModel {
 	}
 
 	async deleteLabel(label: MailSet) {
+		await this.deactivateInboxRulesOnLabelDeletion(label)
 		await this.mailFacade.deleteLabel(label)
+	}
+
+	private async deactivateInboxRulesOnLabelDeletion(label: MailSet): Promise<void> {
+		const labelSystem = this.getLabelFolderSystemByGroupId(assertNotNull(label._ownerGroup))
+		if (labelSystem == null) {
+			return
+		}
+
+		const descendants = labelSystem.getDescendantFoldersOfParent(label._id).map(({ mailSet }) => mailSet)
+		const labels = [...descendants, label]
+
+		const inboxRuleModel = await this.inboxRuleModel()
+		await inboxRuleModel.deactivateInboxRulesThatReferenceLabels(labels)
+	}
+
+	private async deactivateInboxRulesOnFolderDeletion(folder: MailSet): Promise<void> {
+		const folderSystem = this.getFolderSystemByGroupId(assertNotNull(folder._ownerGroup))
+		if (folderSystem == null) {
+			return
+		}
+
+		const descendants = folderSystem.getDescendantFoldersOfParent(folder._id).map(({ mailSet }) => mailSet)
+		const folders = [...descendants, folder]
+
+		const inboxRuleModel = await this.inboxRuleModel()
+		await inboxRuleModel.deactivateInboxRulesThatReferenceFolders(folders)
 	}
 
 	async getMailSetById(folderElementId: Id): Promise<MailSet | null> {
@@ -651,11 +685,11 @@ export class MailModel {
 	async loadMailDetails(
 		mails: readonly Mail[],
 		options: EntityRestClientLoadOptions = DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS,
-	): Promise<MailWithMailDetails[]> {
+	): Promise<MailsMaybeWithDetails> {
 		return this.bulkMailLoader.loadMailDetails(mails, options)
 	}
 
-	async loadAllMailsWithDetails(mailIds: readonly IdTuple[]): Promise<MailWithMailDetails[]> {
+	async loadAllMailsWithDetails(mailIds: readonly IdTuple[]): Promise<MailsMaybeWithDetails> {
 		const mails = await this.loadAllMails(mailIds)
 		return this.loadMailDetails(mails)
 	}

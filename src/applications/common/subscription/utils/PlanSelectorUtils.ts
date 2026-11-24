@@ -15,7 +15,7 @@ import {
 	PlanType,
 	SubscriptionType,
 } from "../../../../entities/sys/Utils"
-import { goEuropeanBlue, sovereignYellowDark, sovereignYellowLight } from "../../../../ui/builtinThemes"
+import { blackFridayGradient, goEuropeanBlue, sovereignYellowDark, sovereignYellowLight } from "../../../../ui/builtinThemes"
 import Stream from "mithril/stream"
 
 export type DiscountDetail = {
@@ -36,6 +36,7 @@ export type PlanBoxContainerAttrs = {
 	selectedSubscriptionOptions: SelectedSubscriptionOptions
 	showMultiUser: boolean
 	discountDetails?: DiscountDetails
+	forceMobileLayout?: boolean
 }
 
 export type PlanBoxPosition = "left" | "right" | "bottom"
@@ -146,7 +147,6 @@ function isRelevantNewPlanName(planName: string, subscriptionType: SubscriptionT
 	}
 
 	switch (subscriptionType) {
-		case SubscriptionType.FreeOnly:
 		case SubscriptionType.Personal:
 		case SubscriptionType.PaidPersonal:
 			return NewPersonalPlans.includes(planType)
@@ -163,7 +163,7 @@ export function hasRelevantGlobalFirstYearCampaign(
 	return Object.entries(discountDetails)
 		.filter(([planName, _]) => isRelevantNewPlanName(planName, subscriptionType))
 		.map((v) => v[1])
-		.some((v) => v.discountType === "GlobalFirstYear" || v.discountType === "BonusMonthsAndGlobalFirstYear")
+		.some((v) => v.discountType === "GlobalFirstYear" || v.discountType === "BonusMonthsAndGlobalFirstYear" || v.discountType === "BonusMonths")
 }
 
 export function getDiscountDetails(isApplePrice: boolean, priceAndConfigProvider: PriceAndConfigProvider): DiscountDetails {
@@ -182,7 +182,7 @@ export function getDiscountDetails(isApplePrice: boolean, priceAndConfigProvider
 
 	function getFirstYearDiscount(priceKey: PriceKey, targetPlan: PlanType): number {
 		if (isApplePrice) {
-			if (priceAndConfigProvider.getIosIntroOfferEligibility() && hasAppleIntroOffer(priceAndConfigProvider)) {
+			if (priceAndConfigProvider.isEligibleForIntroOffer() && hasAppleIntroOffer(priceAndConfigProvider)) {
 				const { referencePrice: rawYearlyPrice, price: rawOfferYearlyPrice } = getRawApplePrice({
 					priceAndConfigProvider,
 					targetPlan,
@@ -199,11 +199,16 @@ export function getDiscountDetails(isApplePrice: boolean, priceAndConfigProvider
 	function hasGlobalFirstYearDiscount(firstYearDiscount: number): boolean {
 		if (firstYearDiscount === 0) return false
 		return isApplePrice
-			? priceAndConfigProvider.getIosIntroOfferEligibility() && hasAppleIntroOffer(priceAndConfigProvider)
+			? priceAndConfigProvider.isEligibleForIntroOffer() && hasAppleIntroOffer(priceAndConfigProvider)
 			: priceAndConfigProvider.getRawPricingData().hasGlobalFirstYearDiscount
 	}
 
-	const targetPlans = isApplePrice ? NewPersonalPaidPlans : AvailablePlans
+	let targetPlans: ReadonlyArray<AvailablePlanType>
+	if (isApplePrice) {
+		targetPlans = priceAndConfigProvider.getMobilePrices()?.size === 0 ? [] : NewPersonalPaidPlans
+	} else {
+		targetPlans = AvailablePlans
+	}
 	for (const targetPlan of targetPlans) {
 		const priceKey = planTypeToPriceKey[targetPlan]
 		const bonusMonths = Number(pricingData[priceKey].bonusMonthsForYearlyPlan)
@@ -265,34 +270,49 @@ export function getDiscountDetails(isApplePrice: boolean, priceAndConfigProvider
 // time period of the campaign. they have to be unique.
 export const enum CAMPAIGN_NAME {
 	BIRTHDAY_12_CAMPAIGN = "birthday_12_campaign",
-	BLACKFRIDAY_CAMPAIGN = "blackfriday_campaign",
+	BLACKFRIDAY_CAMPAIGN = "black-friday-2026",
 	DIGITAL_SOVEREIGNTY_2026_CAMPAIGN = "sovereignty2026",
 }
 
-export function getPlanSelectorTitle(campaignName: string | null, isReferred: boolean): TranslationKey {
-	switch (campaignName) {
-		case CAMPAIGN_NAME.DIGITAL_SOVEREIGNTY_2026_CAMPAIGN:
-			if (isReferred) {
-				return "planselector_page_sovereignty2026_referred_title"
-			}
-			return "planselector_page_sovereignty2026_title"
-		default:
-			return "planselector_page_title"
+export function getPlanSelectorTitle(campaignName: string | null, isReferred: boolean, somePlanHasDiscount: boolean): TranslationKey {
+	if (somePlanHasDiscount) {
+		switch (campaignName) {
+			case CAMPAIGN_NAME.DIGITAL_SOVEREIGNTY_2026_CAMPAIGN:
+				if (isReferred) {
+					return "planselector_page_sovereignty2026_referred_title"
+				}
+				return "planselector_page_sovereignty2026_title"
+			case CAMPAIGN_NAME.BLACKFRIDAY_CAMPAIGN:
+				return "campaignBlackFridayTitle2026_label"
+			default:
+				return "planselector_page_title"
+		}
+	} else {
+		return "planselector_page_title"
 	}
 }
 
-export function getPlanSelectorSubtitle(campaignName: string | null, isReferred: boolean): TranslationKey {
-	switch (campaignName) {
-		case CAMPAIGN_NAME.DIGITAL_SOVEREIGNTY_2026_CAMPAIGN:
-			if (isReferred) {
-				return "planselector_page_sovereignty2026_referred_subtitle"
-			}
-			return "planselector_page_sovereignty2026_subtitle"
-		default:
-			return "planselector_page_subtitle"
+export function getPlanSelectorSubtitle(campaignName: string | null, isReferred: boolean, somePlanHasDiscount: boolean): TranslationKey {
+	if (somePlanHasDiscount) {
+		switch (campaignName) {
+			case CAMPAIGN_NAME.DIGITAL_SOVEREIGNTY_2026_CAMPAIGN:
+				if (isReferred) {
+					return "planselector_page_sovereignty2026_referred_subtitle"
+				}
+				return "planselector_page_sovereignty2026_subtitle"
+			default:
+				return "planselector_page_subtitle"
+		}
+	} else {
+		return "planselector_page_subtitle"
 	}
 }
 
+/*
+ * Primary:
+ * Secondary:
+ * Tertiary:
+ */
 export const defaultCampaignTheme = () => ({
 	...structuredClone(theme),
 	primary: isDarkTheme() ? "#FFFFFF" : "#9c7935",
@@ -325,11 +345,27 @@ export const sovereignty2026Theme = () => ({
 	outline_variant: goEuropeanBlue,
 })
 
+export const blackFridayTheme = () => ({
+	...structuredClone(theme),
+	primary: theme.black_friday_gold,
+	secondary: theme.black_friday_gold,
+	tertiary: theme.black_friday_gold,
+	on_tertiary: "#111111",
+	on_surface: "#FFFFFF",
+	surface_container_high: blackFridayGradient,
+	primary_container: theme.black_friday_gold,
+	surface: blackFridayGradient,
+	on_surface_variant: theme.black_friday_gold,
+	outline_variant: theme.black_friday_gold,
+})
+
 export function getCampaignTheme(campaignName: string | null) {
 	if (campaignName === CAMPAIGN_NAME.BIRTHDAY_12_CAMPAIGN) {
 		return birthdayTheme()
 	} else if (campaignName === CAMPAIGN_NAME.DIGITAL_SOVEREIGNTY_2026_CAMPAIGN) {
 		return sovereignty2026Theme()
+	} else if (campaignName === CAMPAIGN_NAME.BLACKFRIDAY_CAMPAIGN) {
+		return blackFridayTheme()
 	}
 
 	return defaultCampaignTheme()

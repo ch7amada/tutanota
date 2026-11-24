@@ -67,16 +67,7 @@ import { BottomNav } from "../../gui/BottomNav.js"
 import { mailLocator } from "../../mailLocator.js"
 import { showSnackBar } from "../../../../ui/base/SnackBar.js"
 import { getMailSetName } from "../model/MailUtils.js"
-import {
-	canDoDragAndDropExport,
-	editDraft,
-	getMailActionAttrs,
-	getMailViewerMoreActions,
-	MailFilterType,
-	MailViewerToolbarActions,
-	showReportPhishingMailDialog,
-	startExport,
-} from "./MailViewerUtils.js"
+import { canDoDragAndDropExport, editDraft, getMailActionAttrs, MailFilterType, MailViewerToolbarActions, startExport } from "./MailViewerUtils.js"
 import { isDraft, isMailDeletable, isMailMovable, isSpamOrTrashFolder } from "../model/MailChecks.js"
 import { DropData, DropType, FileDropData, FolderDropData, getDetachedDropdownBounds, MailDropData } from "../../../../ui/base/GuiUtils"
 import { fileListToArray } from "../../../../ui/utils/FileUtils.js"
@@ -87,8 +78,8 @@ import { MoveMode } from "../model/MailModel"
 import { UndoModel } from "../../UndoModel"
 import { PosRect } from "../../../../ui/utils/PosRect"
 import { Mail, MailSet } from "@tutao/entities/tutanota"
-import { MailReportType, MailSetKind, SystemFolderType } from "../../../../entities/tutanota/Utils"
-import { elementIdPart, elementIdToId, getElementId, isSameId, isSameSingleId } from "../../../../platform-kit/meta"
+import { MailSetKind, SystemFolderType } from "../../../../entities/tutanota/Utils"
+import { elementIdToId, getElementId, isSameId, isSameSingleId } from "../../../../platform-kit/meta"
 import { getMailFolderType, isFolder, isFolderReadOnly, isPermanentDeleteAllowedForFolder } from "../MailUtils"
 import { windowFacade } from "../../../common/misc/WindowFacade"
 import { renderHeaderButtons } from "../../../calendar-app/gui/HeaderButtons"
@@ -96,11 +87,12 @@ import { ExpanderPanel } from "../../../../ui/base/Expander"
 import { MailLabelsView } from "./MailLabelsView"
 import { showEditLabelDialog } from "./EditLabelDialog"
 import { ButtonSize } from "../../../../ui/base/ButtonSize"
-import { LockedError, NotFoundError } from "../../../../platform-kit/rest-client/error"
+import { NotFoundError } from "../../../../platform-kit/rest-client/error"
 import { Keys } from "../../../../ui/utils/KeyboardKeys"
 import { DropdownButtonAttrs } from "../../../../ui/base/Dropdown"
 import { showNotAvailableForFreeDialog } from "../../../common/misc/SubscriptionDialogs"
 import { IndexingNotSupportedError } from "../../../common/api/common/error/IndexingNotSupportedError"
+import { showDeleteFolderPopup } from "./DeleteMailSetPopup"
 
 EnvProvider.assertMainOrNode()
 
@@ -207,7 +199,7 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 												return
 											}
 											const confirmed = await Dialog.confirm(
-												lang.getTranslation("confirmDeleteFinallySystemFolder_msg", { "{1}": getMailSetName(folder) }),
+												lang.getTranslation("confirmClearFolder_msg", { "{1}": getMailSetName(folder) }),
 											)
 											if (confirmed) {
 												showProgressDialog("progressDeleting_msg", this.mailViewModel.finallyDeleteAllMailsInSelectedFolder(folder))
@@ -391,58 +383,22 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 				trash: this.getTrashMailsAction(),
 				move: this.getMoveMailsAction(),
 				label: this.getLabelsAction(),
-				markSpam: this.getSingleMailReportSpamAction(viewModel.primaryViewModel()),
-				markNotSpam: this.getSingleMailReportNotSpamAction(viewModel.primaryViewModel()),
+				markSpam: viewModel.primaryViewModel().getReportSpamAction(),
+				markNotSpam: viewModel.primaryViewModel().getReportNotSpamAction(),
 				edit: this.getEditDraftAction(viewModel),
 				cancelScheduled: this.getUnscheduleMailAction(viewModel),
 				reply: this.getReplyAction(viewModel, false),
 				replyAll: this.getReplyAction(viewModel, true),
 				forward: this.getForwardAction(viewModel),
 			},
-			mailViewerMoreActions: getMailViewerMoreActions({
+			mailViewerMoreActions: {
+				...viewModel.primaryViewModel().getMailViewerMoreActions(),
 				exportAction: this.getExportAction(),
-				viewModel: viewModel.primaryViewModel(),
-				print: this.getPrintAction(),
-				reapplyInboxRules: this.getSingleMailReapplyInboxRulesAction(viewModel.primaryViewModel()),
-				reportSpam: null,
-				reportNotSpam: null,
-				reportPhishing: this.getSingleMailPhishingAction(viewModel.primaryViewModel()),
-			}),
+				// note: Spam actions are explicitly empty here since they are in the mailViewerActions
+				reportSpamAction: undefined,
+				reportNotSpamAction: undefined,
+			},
 		})
-	}
-
-	private getPrintAction(): (() => unknown) | null {
-		if (EnvProvider.get().isApp()) {
-			return () => locator.systemFacade.print()
-		} else if (typeof window.print === "function") {
-			return () => window.print()
-		} else {
-			return null
-		}
-	}
-
-	private reportSingleMail(viewModel: MailViewerViewModel, reportType: MailReportType): void {
-		this.mailViewModel.clearStickyMail()
-		viewModel
-			.reportSpamForMail(reportType)
-			.catch(ofClass(LockedError, () => Dialog.message("operationStillActive_msg")))
-			.finally(m.redraw)
-	}
-
-	private getSingleMailReportSpamAction(viewModel: MailViewerViewModel): (() => void) | null {
-		return viewModel.canReportSpam() ? () => this.reportSingleMail(viewModel, MailReportType.SPAM) : null
-	}
-
-	private getSingleMailPhishingAction(viewModel: MailViewerViewModel): (() => void) | null {
-		return viewModel.canReportPhishing() ? () => showReportPhishingMailDialog(async () => this.reportSingleMail(viewModel, MailReportType.PHISHING)) : null
-	}
-
-	private getSingleMailReportNotSpamAction(viewModel: MailViewerViewModel): (() => void) | null {
-		return viewModel.canReportNotSpam() ? () => viewModel.reportNotSpamForMail() : null
-	}
-
-	private getSingleMailReapplyInboxRulesAction(viewModel: MailViewerViewModel): (() => void) | null {
-		return viewModel.canReapplyInboxRules() ? () => viewModel.reapplyInboxRuleForMail() : null
 	}
 
 	private getReportMailsAsSpamAction(): (() => void) | null {
@@ -475,22 +431,16 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 				try {
 					await showProgressDialog(
 						"pleaseWait_msg",
-						this.mailViewModel.reapplyInboxRulesForMails(actionableMails, this.undoModel).then(async (movedMailIds) => {
-							const mailsToMoveToInbox = actionableMails
-								.filter((mail) => !movedMailIds?.some((movedMailId) => isSameSingleId(elementIdPart(mail._id), movedMailId)))
-								.map((mail) => mail._id)
-
-							await moveMailsToSystemFolder({
-								mailboxModel: locator.mailboxModel,
-								mailModel: this.mailViewModel.mailModel,
-								currentFolder: folder,
-								mailIds: mailsToMoveToInbox,
-								targetFolderType: MailSetKind.INBOX,
-								moveMode: this.mailViewModel.getMoveMode(folder),
-								undoModel: this.undoModel,
-								contactModel: mailLocator.contactModel,
-							})
-						}),
+						moveMailsToSystemFolder({
+							mailboxModel: locator.mailboxModel,
+							mailModel: this.mailViewModel.mailModel,
+							currentFolder: folder,
+							mailIds: actionableMails.map((mail) => mail._id),
+							targetFolderType: MailSetKind.INBOX,
+							moveMode: this.mailViewModel.getMoveMode(folder),
+							undoModel: this.undoModel,
+							contactModel: mailLocator.contactModel,
+						}).then(() => this.mailViewModel.reapplyInboxRulesForMails(actionableMails, this.undoModel)),
 					)
 				} catch (e) {
 					// handle the user cancelling the dialog
@@ -569,15 +519,10 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 					}
 				},
 				moreActions: (mailViewerModel: MailViewerViewModel) => {
-					return getMailViewerMoreActions({
-						viewModel: mailViewerModel,
+					return {
+						...mailViewerModel.getMailViewerMoreActions(),
 						exportAction: this.getExportAction(),
-						print: this.getPrintAction(),
-						reapplyInboxRules: this.getSingleMailReapplyInboxRulesAction(mailViewerModel),
-						reportSpam: this.getSingleMailReportSpamAction(mailViewerModel),
-						reportNotSpam: this.getSingleMailReportNotSpamAction(mailViewerModel),
-						reportPhishing: this.getSingleMailPhishingAction(mailViewerModel),
-					})
+					}
 				},
 			}),
 		})
@@ -709,16 +654,13 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 								replyAction: this.getReplyAction(this.conversationViewModel, false),
 								replyAllAction: this.getReplyAction(this.conversationViewModel, true),
 								forwardAction: this.getForwardAction(this.conversationViewModel),
-								mailViewerMoreActions: getMailViewerMoreActions({
-									viewModel: this.conversationViewModel.primaryViewModel(),
+								mailViewerMoreActions: {
+									...this.conversationViewModel.primaryViewModel().getMailViewerMoreActions(),
 									exportAction: this.getExportAction(),
-									print: this.getPrintAction(),
-									reapplyInboxRules: this.getSingleMailReapplyInboxRulesAction(this.conversationViewModel.primaryViewModel()),
-									reportSpam: this.getSingleMailReportSpamAction(this.conversationViewModel.primaryViewModel()),
-									reportNotSpam: null,
-									reportPhishing: this.getSingleMailPhishingAction(this.conversationViewModel.primaryViewModel()),
-								}),
-								reportNotSpamAction: this.getSingleMailReportNotSpamAction(this.conversationViewModel.primaryViewModel()),
+									// note: Not spam action is explicitly empty here since it is in main actions
+									reportNotSpamAction: undefined,
+								},
+								reportNotSpamAction: this.conversationViewModel.primaryViewModel().getReportNotSpamAction(),
 							})
 						: Styles.get().isSingleColumnLayout() && this.mailViewModel.listModel?.isInMultiselect()
 							? m(MobileMailMultiselectionActionBar, {
@@ -1558,18 +1500,22 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 		const folders = await this.mailViewModel.mailModel.getMailboxFoldersForId(mailboxDetail.mailbox.mailSets._id)
 
 		if (isSpamOrTrashFolder(folders, folder)) {
-			const confirmed = await Dialog.confirm(
-				lang.getTranslation("confirmDeleteFinallyCustomFolder_msg", {
-					"{1}": getMailSetName(folder),
-				}),
+			const inboxRuleModel = await mailLocator.inboxRuleModel()
+			const allInboxRulesBeingModified = await inboxRuleModel.getInboxRulesThatReferenceMailSetSystem(folder, folders)
+			const confirmed = await showDeleteFolderPopup(
+				getMailSetName(folder),
+				allInboxRulesBeingModified.map((rule) => rule.name),
+				"delete",
 			)
 			if (!confirmed) return
 			await this.mailViewModel.mailModel.finallyDeleteCustomMailFolder(folder)
 		} else {
-			const confirmed = await Dialog.confirm(
-				lang.getTranslation("confirmDeleteCustomFolder_msg", {
-					"{1}": getMailSetName(folder),
-				}),
+			const inboxRuleModel = await mailLocator.inboxRuleModel()
+			const allInboxRulesBeingModified = await inboxRuleModel.getInboxRulesThatReferenceMailSetSystem(folder, folders)
+			const confirmed = await showDeleteFolderPopup(
+				getMailSetName(folder),
+				allInboxRulesBeingModified.map((rule) => rule.name),
+				"trash",
 			)
 			if (!confirmed) return
 			await this.mailViewModel.mailModel.trashFolderAndSubfolders(folder)
@@ -1637,13 +1583,17 @@ export class MailView extends BaseTopLevelView implements TopLevelView<MailViewA
 	private async showLabelDeleteDialog(label: MailSet) {
 		const labelSystem = mailLocator.mailModel.getLabelFolderSystemByGroupId(assertNotNull(label._ownerGroup))
 		if (labelSystem == null) return
-		const hasSublabels = isNotEmpty(labelSystem.getDescendantFoldersOfParent(label._id))
-		const confirmed = await Dialog.confirm(
-			lang.getTranslation(hasSublabels ? "confirmDeleteLabelWithSublabels_msg" : "confirmDeleteLabel_msg", {
-				"{1}": label.name,
-			}),
+
+		const inboxRuleModel = await mailLocator.inboxRuleModel()
+		const allInboxRulesBeingModified = await inboxRuleModel.getInboxRulesThatReferenceMailSetSystem(label, labelSystem)
+
+		const confirmed = await showDeleteFolderPopup(
+			getMailSetName(label),
+			allInboxRulesBeingModified.map((rule) => rule.name),
+			"delete",
 		)
 		if (!confirmed) return
+
 		await this.mailViewModel.deleteLabel(label).catch(ofClass(NotFoundError, () => console.log("label already deleted")))
 	}
 	private renderEditMailboxButton(onEditMailbox: () => unknown) {

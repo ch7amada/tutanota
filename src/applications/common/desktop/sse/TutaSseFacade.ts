@@ -29,10 +29,12 @@ import {
 	createSseConnectData,
 	MissedNotificationTypeRef,
 	NotificationInfo,
+	NotificationTypeRef,
 	SseConnectDataTypeRef,
 	sysTypeModels,
 } from "@tutao/entities/sys"
 import { IncomingServerJson, OutgoingServerJson } from "../../../../platform-kit/instance-pipeline/TypeMapper"
+import { RootPath } from "../../../../platform-kit/instance-pipeline/EncryptionContextPath"
 
 const log = makeTaggedLogger("[SSEFacade]")
 
@@ -42,6 +44,7 @@ const NOTIFICATION_HANDLER_THROTTLE_MS = 10_000
 
 export class TutaSseFacade implements SseEventHandler {
 	private currentSseInfo: SseInfo | null = null
+	private readonly pendingNotifications: Set<string> = new Set()
 
 	constructor(
 		private readonly sseStorage: SseStorage,
@@ -126,7 +129,7 @@ export class TutaSseFacade implements SseEventHandler {
 	 */
 	private onNotification = throttleStart(NOTIFICATION_HANDLER_THROTTLE_MS, async () => {
 		if ((await this.sseStorage.getMissedNotificationCheckTime()) == null) {
-			// We set default value for  the case when Push identifier was added but no notifications were received. Then more than
+			// We set default value for the case when Push identifier was added but no notifications were received. Then more than
 			// MISSED_NOTIFICATION_TTL has passed and notifications has expired
 			await this.sseStorage.recordMissedNotificationCheckTime()
 		}
@@ -134,11 +137,15 @@ export class TutaSseFacade implements SseEventHandler {
 			await this.notificationHandler.onLocalDataInvalidated()
 			return
 		}
-		let encryptedMissedNotification: EncryptedMissedNotification
+		let encryptedMissedNotification: EncryptedMissedNotification | null
 		try {
 			encryptedMissedNotification = await this.downloadMissedNotification()
 		} catch (e) {
 			log.warn("Failed to download missed notification", e)
+			return
+		}
+
+		if (encryptedMissedNotification == null) {
 			return
 		}
 
@@ -168,26 +175,32 @@ export class TutaSseFacade implements SseEventHandler {
 			const alarmIdentifier = encryptedAlarmNotification.getAlarmId()
 			const operation = downcast<OperationType>(encryptedAlarmNotification.getOperation())
 			if (operation === OperationType.CREATE) {
-				while (true) {
-					const sk = await this.alarmStorage.getNotificationSessionKey(encryptedMissedNotification.getNotificationSessionKeys())
-					if (!sk) {
-						// none of the NotificationSessionKeys in the AlarmNotification worked.
-						// this is indicative of a serious problem with the stored keys.
-						// therefore, we should invalidate the sseInfo and throw away
-						// our pushEncSessionKeys.
-						throw new CryptoError("could not find session key to decrypt alarm notification")
-					}
-					const alarmNotification = await this.nativeInstancePipeline.decryptAndMapEncryptedInstance<AlarmNotification>(
-						alarmNotificationUntyped,
-						assertNotNull(sk).sessionKey,
-					)
-					if (hasError(alarmNotification)) {
-						// some property of the AlarmNotification couldn't be decrypted with the selected key
-						// throw away the key that caused the error and try the next one
-						await this.alarmStorage.removePushIdentifierKey(elementIdPart(sk.notificationSessionKey.pushIdentifier))
-						continue
-					}
-					return await this.alarmScheduler.handleCreateAlarm(alarmNotification)
+				const sessionKeys = await this.alarmStorage.getNotificationSessionKey(encryptedAlarmNotification.getNotificationSessionKeys())
+				if (sessionKeys == null) {
+					// none of the NotificationSessionKeys worked.
+					// this is indicative of a serious problem with the stored keys.
+					// therefore, we should invalidate the sseInfo and throw away
+					// our pushEncSessionKeys.
+					throw new CryptoError("could not find session key to decrypt alarm notification")
+				}
+				// AlarmNotifications are encrypted as part of a Notification, so we need to provide the correct context for decryption
+				const notificationTypeModel = await this.nativeInstancePipeline.typeModelResolver.resolveClientTypeReference(NotificationTypeRef)
+				const instancePath = new RootPath(notificationTypeModel.app)
+					.addAssociationId(notificationTypeModel.associations[1714 /*alarms*/])
+					.addAggregateId(encryptedAlarmNotification.getId())
+				const alarmNotification = await this.nativeInstancePipeline.decryptAndMapEncryptedInstance<AlarmNotification>(
+					alarmNotificationUntyped,
+					sessionKeys.sessionKey,
+					notificationTypeModel,
+					instancePath,
+				)
+				if (hasError(alarmNotification)) {
+					// some property of the AlarmNotification couldn't be decrypted with the selected key
+					// throw away the key that caused the error
+					await this.alarmStorage.removePushIdentifierKey(elementIdPart(sessionKeys.notificationSessionKey.pushIdentifier))
+					throw new CryptoError("an alarm notification could not be decrypted")
+				} else {
+					await this.alarmScheduler.handleCreateAlarm(alarmNotification)
 				}
 			} else if (operation === OperationType.DELETE) {
 				await this.alarmScheduler.handleDeleteAlarm(alarmIdentifier)
@@ -197,32 +210,43 @@ export class TutaSseFacade implements SseEventHandler {
 		}
 	}
 
-	private async downloadMissedNotification(): Promise<EncryptedMissedNotification> {
+	private async downloadMissedNotification(): Promise<EncryptedMissedNotification | null> {
 		const sseInfo = assertNotNull(this.currentSseInfo)
-		const url = this.makeMissedNotificationUrl(sseInfo)
-
-		log.debug("downloading missed notification", url)
-		const headers: Record<string, string> = {
-			userIds: sseInfo.userIds[0],
-			v: sysTypeModels[MissedNotificationTypeRef.typeId].version,
-			cv: this.appVersion,
-		}
-		const lastProcessedId = await this.sseStorage.getLastProcessedNotificationId()
-
-		if (lastProcessedId) {
-			headers["lastProcessedNotificationId"] = lastProcessedId
+		const identifier = sseInfo.identifier
+		if (this.pendingNotifications.has(identifier)) {
+			log.warn(`Already downloading missed notifications for ${identifier}`)
+			return null
 		}
 
-		const res = await this.fetch(url, { headers })
+		try {
+			this.pendingNotifications.add(identifier)
 
-		if (!res.ok) {
-			throw handleRestError(neverNull(res.status), url, res.headers.get("error-id") as string, null)
-		} else {
-			const typeModel = await this.nativeInstancePipeline.typeModelResolver.resolveServerTypeReference(MissedNotificationTypeRef)
-			const incomingJson = IncomingServerJson.expectSingleInstance(await res.text(), typeModel)
-			const encryptedInstance = await this.nativeInstancePipeline.typeMapper.parseServerJson(incomingJson)
-			log.debug("downloaded missed notification")
-			return new EncryptedMissedNotification(encryptedInstance)
+			const url = this.makeMissedNotificationUrl(sseInfo)
+			log.debug("downloading missed notification", url)
+			const headers: Record<string, string> = {
+				userIds: sseInfo.userIds[0],
+				v: sysTypeModels[MissedNotificationTypeRef.typeId].version,
+				cv: this.appVersion,
+			}
+			const lastProcessedId = await this.sseStorage.getLastProcessedNotificationId()
+
+			if (lastProcessedId) {
+				headers["lastProcessedNotificationId"] = lastProcessedId
+			}
+
+			const res = await this.fetch(url, { headers })
+
+			if (!res.ok) {
+				throw handleRestError(neverNull(res.status), url, res.headers.get("error-id") as string, null)
+			} else {
+				const typeModel = await this.nativeInstancePipeline.typeModelResolver.resolveServerTypeReference(MissedNotificationTypeRef)
+				const incomingJson = IncomingServerJson.expectSingleInstance(await res.text(), typeModel)
+				const encryptedInstance = await this.nativeInstancePipeline.typeMapper.parseServerJson(incomingJson)
+				log.debug("downloaded missed notification")
+				return new EncryptedMissedNotification(encryptedInstance)
+			}
+		} finally {
+			this.pendingNotifications.delete(identifier)
 		}
 	}
 

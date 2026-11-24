@@ -6,23 +6,24 @@ import {
 	AeadSubKeys,
 	Aes128Key,
 	Aes256Key,
-	aes256RandomKey,
 	AesCbcThenHmacSubKeys,
 	FIXED_INITIALIZATION_VECTOR,
 	keyToUint8Array,
 	MacTag,
 	ParsedCiphertextAesCbcThenHmac,
 	ParsedCiphertextUnusedReservedUnauthenticated,
+	random,
+	SymmetricCipherUtils,
 	UnusedReservedUnauthenticatedSubKeys,
 	validateInitializationVectorLength,
 } from "../../../src/platform-kit/crypto"
 import { InitializationVector } from "../../../src/platform-kit/crypto/encryption/symmetric/SymmetricCipherUtils.js"
 import { _aes128RandomKey } from "./AesTest.js"
 import { concat } from "../../../src/platform-kit/utils"
-import { InitializationVectorVariant } from "../../../src/platform-kit/crypto/encryption/symmetric/ParsedCiphertext"
 import { SymmetricCipherFacade } from "../../../src/platform-kit/crypto/instance-pipeline-crypto/SymmetricCipherFacade"
 import { AeadFacade } from "@tutao/crypto/aead-facade"
 import { SymmetricKeyDeriver } from "@tutao/crypto/symmetric-key-deriver"
+import { AssociatedData } from "../../../src/platform-kit/crypto/encryption/symmetric/AssociatedData"
 
 o.spec("SymmetricCipherFacadeTest", function () {
 	const customInitializationVector = object<InitializationVector>()
@@ -47,20 +48,21 @@ o.spec("SymmetricCipherFacadeTest", function () {
 		aesCbcFacade = object()
 		aeadFacade = object()
 		symmetricKeyDeriver = object()
-		symmetricCipherFacade = new SymmetricCipherFacade(aesCbcFacade, aeadFacade, symmetricKeyDeriver)
-		aes256Key = aes256RandomKey()
+		const symmetricCipherUtils = new SymmetricCipherUtils(random)
+		symmetricCipherFacade = new SymmetricCipherFacade(aesCbcFacade, aeadFacade, symmetricKeyDeriver, symmetricCipherUtils)
+		aes256Key = symmetricCipherUtils.aes256RandomKey()
 		aes128Key = _aes128RandomKey()
 		aes128SubKeys = new AesCbcThenHmacSubKeys(_aes128RandomKey(), _aes128RandomKey())
-		aes256SubKeys = new AesCbcThenHmacSubKeys(aes256RandomKey(), aes256RandomKey())
+		aes256SubKeys = new AesCbcThenHmacSubKeys(symmetricCipherUtils.aes256RandomKey(), symmetricCipherUtils.aes256RandomKey())
 		unusedSubKeys256 = new UnusedReservedUnauthenticatedSubKeys(aes256Key)
 		unusedSubKeys128 = new UnusedReservedUnauthenticatedSubKeys(aes128Key)
 		when(symmetricKeyDeriver.deriveSubKeysAesCbc(aes128Key, SymmetricCipherVersion.AesCbcThenHmac)).thenReturn(aes128SubKeys)
 		when(symmetricKeyDeriver.deriveSubKeysAesCbc(aes256Key, SymmetricCipherVersion.AesCbcThenHmac)).thenReturn(aes256SubKeys)
 		when(symmetricKeyDeriver.deriveSubKeysAesCbc(aes256Key, SymmetricCipherVersion.UnusedReservedUnauthenticated)).thenReturn(unusedSubKeys256)
 		when(symmetricKeyDeriver.deriveSubKeysAesCbc(aes128Key, SymmetricCipherVersion.UnusedReservedUnauthenticated)).thenReturn(unusedSubKeys128)
-		plaintext = keyToUint8Array(aes256RandomKey()) // just 32 random bytes
+		plaintext = keyToUint8Array(symmetricCipherUtils.aes256RandomKey()) // just 32 random bytes
 		keyToEncrypt_128 = _aes128RandomKey()
-		keyToEncrypt_256 = aes256RandomKey()
+		keyToEncrypt_256 = symmetricCipherUtils.aes256RandomKey()
 		macTag = new Uint8Array(32) as MacTag
 		initializationVector = validateInitializationVectorLength(new Uint8Array(16))
 	})
@@ -122,9 +124,7 @@ o.spec("SymmetricCipherFacadeTest", function () {
 			)
 		})
 		o("decryptBytes 128", function () {
-			const cipherVersion = SymmetricCipherVersion.AesCbcThenHmac
 			const ciphertext = new Uint8Array([1, 2])
-			const initializationVectorVariant = InitializationVectorVariant.Random
 			const parsedCiphertext = new ParsedCiphertextAesCbcThenHmac(initializationVector, ciphertext, macTag)
 
 			const versionedCiphertext = concat(
@@ -156,9 +156,7 @@ o.spec("SymmetricCipherFacadeTest", function () {
 			o(decryptedBytes).equals(plaintext)
 		})
 		o("decryptBytes 256", function () {
-			const cipherVersion = SymmetricCipherVersion.AesCbcThenHmac
 			const ciphertext = new Uint8Array([1, 2])
-			const initializationVectorVariant = InitializationVectorVariant.Random
 			const parsedCiphertext = new ParsedCiphertextAesCbcThenHmac(initializationVector, ciphertext, macTag)
 
 			const versionedCiphertext = concat(
@@ -191,7 +189,11 @@ o.spec("SymmetricCipherFacadeTest", function () {
 		})
 		o("encrypt bytes with Aead", () => {
 			const subKeys: AeadSubKeys = object()
-			const associatedData = Uint8Array.from("associatedData")
+			const associatedData: AssociatedData = {
+				asBytes() {
+					return Uint8Array.from("associatedData")
+				},
+			}
 			const ciphertext = Uint8Array.from("ciphertext")
 			when(aeadFacade.encrypt(subKeys, plaintext, associatedData)).thenReturn(ciphertext)
 			const encryptedPlaintext = symmetricCipherFacade.encryptBytesWithAead(subKeys, plaintext, associatedData)
@@ -243,7 +245,6 @@ o.spec("SymmetricCipherFacadeTest", function () {
 		o("decryptKey 256", function () {
 			const cipherVersion = SymmetricCipherVersion.AesCbcThenHmac
 			const ciphertext = new Uint8Array([1, 2])
-			const initializationVectorVariant = InitializationVectorVariant.Random
 			const parsedCiphertext = new ParsedCiphertextAesCbcThenHmac(initializationVector, ciphertext, macTag)
 
 			const versionedCiphertext = concat(symmetricCipherVersionToUint8Array(cipherVersion), initializationVector.bytes, ciphertext, macTag)

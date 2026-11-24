@@ -4,7 +4,7 @@ import { deepMemoized, getStartOfDay, getStartOfNextDay, lastIndex } from "@tuta
 import { elementIdPart } from "@tutao/meta"
 import { DateTime } from "luxon"
 import { EventWrapper } from "../../../calendar-app/calendar/view/CalendarViewModel"
-import { CalendarEventBubbleDragProperties, EventBubbleInteractions, MIN_ROW_SPAN } from "./CalendarEventBubble"
+import { CalendarEventBubbleDragProperties, EventBubbleInteractions } from "./CalendarEventBubble"
 import { CellActionHandler } from "./CalendarTimeCell"
 import { CalendarDayColumn, CalendarDayColumnAttrs } from "./CalendarDayColumn"
 
@@ -17,6 +17,13 @@ export type TimeRange = {
 }
 export const SUBROWS_PER_INTERVAL = 12
 export const DEFAULT_EVENT_COLUMN_SPAN_SIZE = 1
+export const MIN_ROW_SPAN_FOR_EVENT_BUBBLE = 3
+
+// height of a single css grid row in px
+export const TIME_GRID_ROW_HEIGHT = 6
+
+// event bubble line height should be minimal row span size including the gaps (e.g. 3*6px + 2*1px = 20px)
+export const EVENT_BUBBLE_LINE_HEIGHT = 16
 
 export interface CalendarTimeGridAttributes {
 	dates: Array<Date>
@@ -31,7 +38,6 @@ export interface CalendarTimeGridAttributes {
 	eventBubbleHandlers?: EventBubbleInteractions & CalendarEventBubbleDragProperties
 	layout: {
 		rowCountForRange: number
-		gridRowHeight: number
 		hideRightBorder: boolean
 		/**
 		 * Useful for rendering a border at the first columns and not 'visually' break the grid when swiping on mobile
@@ -171,15 +177,7 @@ export class CalendarTimeGrid implements ClassComponent<CalendarTimeGridAttribut
 	 * @private
 	 */
 	private renderDayColumn(baseDate: Date, timeViewAttrs: CalendarTimeGridAttributes, hideRightBorder: boolean, showLeftBorder: boolean): Child {
-		const {
-			events: eventWrappers,
-			timeScale,
-			timeRange,
-			cellActionHandlers,
-			eventBubbleHandlers,
-			layout: { rowCountForRange, gridRowHeight },
-			showTimeZonesAtEventBubble,
-		} = timeViewAttrs
+		const { events: eventWrappers, timeScale, timeRange, cellActionHandlers, eventBubbleHandlers, layout, showTimeZonesAtEventBubble } = timeViewAttrs
 		const subRowAsMinutes = getSubRowAsMinutes(timeScale)
 		const startOfTomorrow = getStartOfNextDay(baseDate)
 		const startOfDay = getStartOfDay(baseDate)
@@ -195,10 +193,10 @@ export class CalendarTimeGrid implements ClassComponent<CalendarTimeGridAttribut
 			eventInteractions: eventBubbleHandlers,
 			timeColumnGrid: this.memoizedLayoutEvents(eventsForThisDate, timeRange, subRowAsMinutes, timeScale, baseDate),
 			layout: {
-				rowCount: rowCountForRange,
+				rowCount: layout.rowCountForRange,
 				hideRightBorder,
 				showLeftBorder,
-				gridRowHeight,
+				gridRowHeight: TIME_GRID_ROW_HEIGHT,
 			},
 			time: timeViewAttrs.time,
 			showTimeZonesAtEventBubble,
@@ -414,7 +412,7 @@ export class CalendarTimeGrid implements ClassComponent<CalendarTimeGridAttribut
 
 		let end = eventEndsAfterRange || eventEndsAtMidnight ? maxRows : Math.ceil(diffFromRangeStartToEventEnd / subRowAsMinutes) + 1
 		if (!eventEndsAfterRange) {
-			end = Math.max(end, start + MIN_ROW_SPAN) // Assert events has at least row span of MIN_ROW_SPAN
+			end = Math.max(end, start + MIN_ROW_SPAN_FOR_EVENT_BUBBLE)
 		}
 		return { start, end }
 	}

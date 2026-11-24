@@ -7,23 +7,24 @@ import type { CustomerFacade } from "../../../common/api/worker/facades/lazy/Cus
 import { EventBusClient } from "../../../../app-kit/local-store/event/EventBusClient.js"
 import { ProgressMonitorDelegate } from "../../../common/api/worker/ProgressMonitorDelegate.js"
 import { Const, EnvProvider, ProgrammingError } from "../../../../platform-kit/app-env"
-import { ContactTypeRef, ImapFolderSyncStateTypeRef, ImportFileMailStateTypeRef, MailTypeRef } from "@tutao/entities/tutanota"
+import { ContactTypeRef, ImportFileMailStateTypeRef, MailboxMigrationFolderSyncStateTypeRef, MailTypeRef } from "@tutao/entities/tutanota"
 import { UserTypeRef } from "@tutao/entities/sys"
 import type { CalendarFacade } from "../../../common/api/worker/facades/lazy/CalendarFacade.js"
 import type { GiftCardFacade } from "../../../common/api/worker/facades/lazy/GiftCardFacade.js"
 import type { ConfigurationDatabase } from "../../../common/api/worker/facades/lazy/ConfigurationDatabase.js"
 import type { NativeInterface } from "../../../../app-kit/native-bridge/common/NativeInterface.js"
 import {
+	ArchiveDownloaderFacadeSendDispatcher,
 	ExportFacadeSendDispatcher,
 	FileFacadeSendDispatcher,
-	ImapSyncSystemFacadeSendDispatcher,
 	InterWindowEventFacadeSendDispatcher,
+	MigrationSyncSystemFacadeSendDispatcher,
 	NativeCryptoFacadeSendDispatcher,
 	NativePushFacadeSendDispatcher,
 	SqlCipherFacadeSendDispatcher,
 } from "@tutao/native-bridge/generatedIpc/dispatchers"
 import { NativeFileApp } from "../../../../app-kit/native-bridge/common/FileApp.js"
-import { SqlCipherFacade } from "@tutao/native-bridge/generatedIpc/types"
+import { ArchiveDownloaderFacade, SqlCipherFacade } from "@tutao/native-bridge/generatedIpc/types"
 import { AdminClientDummyEntityRestCache } from "../../../common/api/worker/rest/AdminClientDummyEntityRestCache.js"
 import { SleepDetector } from "../../../common/api/worker/utils/SleepDetector.js"
 import { SchedulerImpl } from "../../../common/api/common/utils/Scheduler.js"
@@ -78,13 +79,18 @@ import { createBaseLocator } from "../../../../platform-kit/base/BaseLocator"
 import { createRsaImplementation } from "../../../../app-kit/native-bridge/worker/RsaImplementation.js"
 import { TutanotaEntityMigrator } from "../../../common/api/worker/TutanotaEntityMigrator.js"
 import { initClientModels } from "../../../common/api/common/ClientModelInfoInitializer"
-import { ImapImporter } from "../imapimport/ImapImporter"
+import { MailboxImporter } from "../migration/MailboxImporter"
 import { CustomContactEventCacheHandler } from "./CustomContactEventCacheHandler"
 import { WebMailIndexer } from "../index/WebMailIndexer"
 import { CustomImportFileMailStateCacheHandler } from "./CustomImportFileMailStateCacheHandler"
 import { OfflineMapper } from "../../../../platform-kit/instance-pipeline/OfflineMapper"
-import { CustomImapFolderSyncStateCacheHandler } from "./CustomImapFolderSyncStateCacheHandler"
+import { CustomMailboxMigrationFolderSyncStateCacheHandler } from "./CustomMailboxMigrationFolderSyncStateCacheHandler"
 import type { MailIndexerBackend } from "../index/MailIndexerBackend"
+import { random, SymmetricCipherUtils } from "@tutao/crypto"
+import { IndexedDbConfigurationDatabase } from "../../../common/api/worker/facades/lazy/IndexedDbConfigurationDatabase"
+import { OfflineConfigurationDatabaseDefinitions } from "../../../common/api/worker/facades/lazy/OfflineConfigurationDatabase"
+import { getEtId } from "@tutao/meta"
+import { DriveFileSharingFacade } from "../../../common/api/worker/facades/lazy/DriveFileSharingFacade"
 
 EnvProvider.assertWorkerOrNode()
 
@@ -112,6 +118,7 @@ export type WorkerLocatorType = {
 	search: lazyAsync<SearchFacade>
 	contactSearch: lazyAsync<ContactSearchFacade>
 	bulkMailLoader: lazyAsync<BulkMailLoader>
+	archiveDownloader: lazyAsync<ArchiveDownloaderFacade>
 
 	// Management facades
 	userManagement: lazyAsync<UserManagementFacade>
@@ -130,14 +137,15 @@ export type WorkerLocatorType = {
 	spamClassifier: lazyAsync<SpamClassifier>
 	spamClassifierStorageFacade: lazyAsync<SpamClassifierStorageFacade>
 	driveFacade: lazyAsync<DriveFacade>
+	driveFileSharingFacade: lazyAsync<DriveFileSharingFacade>
 
 	// Meta
 	_worker: WorkerImpl
 	_browserData: BrowserData
 	_apps: Array<NamedClientModel>
 
-	// IMAP mail import
-	imapImporter: lazyAsync<ImapImporter>
+	// Migration mail import
+	mailboxImporter: lazyAsync<MailboxImporter>
 }
 
 export const locator: WorkerLocatorType = {} as any
@@ -148,7 +156,7 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 	locator._worker = worker
 	locator._browserData = browserData
 	locator._apps = apps
-	locator.workerFacade = new WorkerFacade()
+	locator.workerFacade = new WorkerFacade(new SymmetricCipherUtils(random))
 
 	const mainInterface = worker.getMainInterface()
 	const dateProvider = new NoZoneDateProvider()
@@ -174,7 +182,9 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			throw new ProgrammingError("getting indexerCore when we should be using SQLite (local-store storage)")
 		}
 		const { IndexerCore } = await import("../index/IndexerCore.js")
-		return new IndexerCore(await db(), browserData)
+		const { IndexEncryptionUtils } = await import("../../../common/api/worker/search/IndexEncryptionUtils")
+		const indexEncryptionUtils = new IndexEncryptionUtils(locator.base.aes)
+		return new IndexerCore(await db(), browserData, locator.base.aes, indexEncryptionUtils)
 	})
 
 	const offlineStorageIndexerPersistence = lazyMemoized(async () => {
@@ -188,13 +198,12 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 		const mailFacade = await locator.mail()
 		const newMailDownloader = defaultMailIndexerNewMailDownloader(locator.base.cachingEntityClient, mailFacade)
 
-		const isOfflineStorage = EnvProvider.get().isOfflineStorageAvailable()
-		const isFullArchiveSearch = EnvProvider.get().isFullArchiveSearchAvailable()
-
-		if (isOfflineStorage && isFullArchiveSearch) {
+		if (EnvProvider.get().isOfflineStorageAvailable()) {
 			const { OfflineMailIndexer } = await import("../index/OfflineMailIndexer.js")
 			const persistence = await offlineStorageIndexerPersistence()
 			const blob = await locator.blob()
+			const archiveDownloader = new ArchiveDownloaderFacadeSendDispatcher(worker)
+
 			return new OfflineMailIndexer(
 				persistence,
 				blob,
@@ -206,28 +215,19 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 				newMailDownloader,
 				locator.base.instancePipeline,
 				locator.cacheStorage,
+				archiveDownloader,
 			)
 		} else {
 			const dateProvider = new LocalTimeDateProvider()
-
-			let mailIndexerBackendProvider: (userId: Id) => MailIndexerBackend
-			if (isOfflineStorage) {
-				const persistence = await offlineStorageIndexerPersistence()
-				const { OfflineStorageMailIndexerBackend } = await import("../index/OfflineStorageMailIndexerBackend.js")
-				mailIndexerBackendProvider = () => new OfflineStorageMailIndexerBackend(persistence)
-			} else {
-				const core = await indexerCore()
-				const { IndexedDbMailIndexerBackend } = await import("../index/IndexedDbMailIndexerBackend.js")
-				mailIndexerBackendProvider = (userId: Id) => new IndexedDbMailIndexerBackend(core, userId, locator.base.typeModelResolver)
-			}
-
+			const { IndexedDbMailIndexerBackend } = await import("../index/IndexedDbMailIndexerBackend")
 			const { WebMailIndexer } = await import("../index/WebMailIndexer.js")
+			const core = await indexerCore()
 			return new WebMailIndexer(
 				mainInterface.infoMessageHandler,
 				locator.bulkMailLoader,
 				locator.base.cachingEntityClient,
 				dateProvider,
-				mailIndexerBackendProvider,
+				(userId: Id) => new IndexedDbMailIndexerBackend(core, userId, locator.base.typeModelResolver),
 				newMailDownloader,
 			)
 		}
@@ -235,7 +235,7 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 
 	const contactSuggestionFacade = lazyMemoized(async () => {
 		const { SuggestionFacade } = await import("../index/SuggestionFacade")
-		return new SuggestionFacade(ContactTypeRef, await db(), locator.base.typeModelResolver)
+		return new SuggestionFacade(ContactTypeRef, await db(), locator.base.typeModelResolver, locator.base.aes)
 	})
 
 	const contactIndexer = lazyMemoized(async (): Promise<ContactIndexer> => {
@@ -308,6 +308,8 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			const { SearchTableDefinitions } = await import("../index/OfflineStoragePersistence.js")
 			const { AutosaveDraftsTableDefinitions } = await import("../../../common/api/worker/facades/lazy/OfflineStorageAutosaveFacade.js")
 			const { SpamClassificationTableDefinitions } = await import("../../../common/api/worker/facades/lazy/OfflineStorageSpamClassifierStorageFacade.js")
+			const { OfflineConfigurationDatabaseDefinitions } = await import("../../../common/api/worker/facades/lazy/OfflineConfigurationDatabase.js")
+
 			// fastCache does not need the CustomUserCacheHandler as the delegate on the CachingOfflineStorage already has it and will call the deleteAllOwnedBy
 			// on fastCache whenever the user is removed from a group
 			const fastCache = new EphemeralCacheStorage(locator.base.instancePipeline.modelMapper, locator.base.typeModelResolver, new CustomCacheHandlerMap())
@@ -329,8 +331,8 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 					handler: new CustomImportFileMailStateCacheHandler(mailIndexer, locator.base.cachingEntityClient),
 				},
 				{
-					ref: ImapFolderSyncStateTypeRef,
-					handler: new CustomImapFolderSyncStateCacheHandler(mailIndexer, locator.base.cachingEntityClient),
+					ref: MailboxMigrationFolderSyncStateTypeRef,
+					handler: new CustomMailboxMigrationFolderSyncStateCacheHandler(mailIndexer, locator.base.cachingEntityClient),
 				},
 			)
 
@@ -342,7 +344,14 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 				locator.base.typeModelResolver,
 				new OfflineMapper(locator.base.typeModelResolver),
 				customCacheHandler,
-				Object.assign({}, KeyVerificationTableDefinitions, SearchTableDefinitions, AutosaveDraftsTableDefinitions, SpamClassificationTableDefinitions),
+				Object.assign(
+					{},
+					KeyVerificationTableDefinitions,
+					SearchTableDefinitions,
+					AutosaveDraftsTableDefinitions,
+					SpamClassificationTableDefinitions,
+					OfflineConfigurationDatabaseDefinitions,
+				),
 			)
 			return new CachingOfflineStorage(offlineStorage, fastCache, locator.base.instancePipeline.modelMapper)
 		}
@@ -384,13 +393,20 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 		worker,
 		clientModelInfo,
 		browserData,
-		loginListenerProvider: (user) => new MailLoginListener(() => locator.eventBusClient, mainInterface.loginListener, user, worker),
+		loginListenerProvider: (user) =>
+			new MailLoginListener(
+				() => locator.eventBusClient,
+				mainInterface.loginListener,
+				user,
+				worker,
+				() => locator.configFacade(),
+			),
 		maybeUninitializedStorage,
 		lastProcessedEventBatchStorageFacade,
 		cacheManagement: locator.cacheManagement,
 		identityKeyTrustDatabase: locator.identityKeyTrustDatabase,
 		domainConfig: new DomainConfigProvider().getCurrentDomainConfig(),
-		rsa: await createRsaImplementation(worker),
+		rsa: await createRsaImplementation(worker, random),
 		fileFacade: new FileFacadeSendDispatcher(worker),
 		nativeCryptoFacade: new NativeCryptoFacadeSendDispatcher(worker),
 		argon2idFacade: null,
@@ -404,6 +420,8 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			instancePipeline,
 			restClient,
 			crypto,
+			symmetricCipherUtils,
+			keyEncryption,
 		}) =>
 			new TutanotaEntityMigrator(
 				cryptoWrapper,
@@ -415,10 +433,13 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 				instancePipeline,
 				restClient,
 				crypto,
+				symmetricCipherUtils,
+				keyEncryption,
 			),
 		entityRestCache: (entityRestClient, patchMerger, typeModelResolver, lastProcessed) =>
 			new DefaultEntityRestCache(entityRestClient, maybeUninitializedStorage, typeModelResolver, patchMerger, lastProcessed),
 	})
+	locator.workerFacade = new WorkerFacade(locator.base.symmetricCipherUtils)
 
 	// App-specific setup — all platform-kit deps accessed via locator.base.*
 
@@ -441,6 +462,11 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			await locator.base.recoverCode(),
 			locator.base.adminKeyLoader,
 			await locator.base.identityKeyCreator(),
+			locator.base.random,
+			locator.base.symmetricCipherUtils,
+			locator.base.keyEncryption,
+			locator.base.cryptoWrapper,
+			locator.base.bcrypt,
 		)
 	})
 
@@ -467,7 +493,7 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 		)
 	})
 
-	const aesApp = new AesApp(new NativeCryptoFacadeSendDispatcher(worker))
+	const aesApp = new AesApp(new NativeCryptoFacadeSendDispatcher(worker), locator.base.symmetricCipherUtils)
 	locator.blob = lazyMemoized(async () => {
 		const { BlobFacade } = await import("../../../common/api/worker/facades/lazy/BlobFacade.js")
 		return new BlobFacade(
@@ -481,6 +507,7 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			mainInterface.uploadProgressListener,
 			locator.base.typeModelResolver,
 			locator.base.serviceExecutor,
+			locator.base.aes,
 		)
 	})
 
@@ -497,6 +524,13 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			locator.base.login,
 			locator.base.keyLoader,
 			locator.base.publicEncryptionKeyProvider,
+			locator.base.instanceKey,
+			locator.base.random,
+			locator.base.symmetricCipherUtils,
+			locator.base.aes,
+			locator.base.keyEncryption,
+			locator.base.bcrypt,
+			mainInterface.inboxRuleModel,
 		)
 	})
 
@@ -518,6 +552,8 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			nativePushFacade,
 			locator.base.instancePipeline,
 			mainInterface.infoMessageHandler,
+			locator.base.symmetricCipherUtils,
+			locator.base.keyEncryption,
 		)
 	})
 
@@ -549,8 +585,30 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 	const scheduler = new SchedulerImpl(dateProvider, self, self)
 
 	locator.configFacade = lazyMemoized(async () => {
-		const { ConfigurationDatabase } = await import("../../../common/api/worker/facades/lazy/ConfigurationDatabase.js")
-		return new ConfigurationDatabase(locator.base.keyLoader, locator.base.user)
+		const indexedDbConfigurationDatabase = lazyMemoized(async () => {
+			const { IndexedDbConfigurationDatabase } = await import("../../../common/api/worker/facades/lazy/IndexedDbConfigurationDatabase.js")
+			return new IndexedDbConfigurationDatabase(
+				locator.base.symmetricCipherUtils,
+				locator.base.aes,
+				locator.base.keyEncryption,
+				locator.base.cryptoWrapper,
+				locator.base.keyLoader,
+				locator.base.user,
+			)
+		})
+
+		if (EnvProvider.get().isOfflineStorageAvailable()) {
+			const { OfflineConfigurationDatabase } = await import("../../../common/api/worker/facades/lazy/OfflineConfigurationDatabase.js")
+			const db = new OfflineConfigurationDatabase(locator.sqlCipherFacade)
+
+			if (await db.needsMigratedFromIndexedDbConfigurationDatabase()) {
+				void db.migrateFromIndexedDbConfigurationDatabase(indexedDbConfigurationDatabase, () => getEtId(locator.base.user.getLoggedInUser()))
+			}
+
+			return db
+		} else {
+			return await indexedDbConfigurationDatabase()
+		}
 	})
 
 	if (EnvProvider.get().isOfflineStorageAvailable()) {
@@ -559,7 +617,7 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			return new OfflineStorageAutosaveFacade(locator.sqlCipherFacade)
 		})
 	} else {
-		locator.autosaveFacade = locator.configFacade
+		locator.autosaveFacade = locator.configFacade as lazyAsync<IndexedDbConfigurationDatabase>
 	}
 
 	if (EnvProvider.get().isOfflineStorageAvailable()) {
@@ -570,7 +628,7 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			return new OfflineStorageSpamClassifierStorageFacade(locator.sqlCipherFacade)
 		})
 	} else {
-		locator.spamClassifierStorageFacade = locator.configFacade
+		locator.spamClassifierStorageFacade = locator.configFacade as lazyAsync<IndexedDbConfigurationDatabase>
 	}
 
 	locator.indexer = lazyMemoized(async () => {
@@ -591,8 +649,11 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 				locator.base.cachingEntityClient,
 				(await mailIndexer()) as WebMailIndexer,
 				contact,
-				locator.base.typeModelResolver,
 				locator.base.keyLoader,
+				locator.base.symmetricCipherUtils,
+				locator.base.aes,
+				locator.base.keyEncryption,
+				locator.base.cryptoWrapper,
 			)
 		}
 	})
@@ -603,14 +664,16 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			return new OfflineStorageSearchFacade(locator.sqlCipherFacade, await mailIndexer(), await contactIndexer())
 		} else {
 			const { IndexedDbSearchFacade } = await import("../index/IndexedDbSearchFacade.js")
+			const { IndexEncryptionUtils } = await import("../../../common/api/worker/search/IndexEncryptionUtils")
+			const indexEncryptionUtils = new IndexEncryptionUtils(locator.base.aes)
 			return new IndexedDbSearchFacade(
-				locator.base.user,
 				await db(),
 				await mailIndexer(),
 				await contactSuggestionFacade(),
 				browserData,
 				locator.base.cachingEntityClient,
 				locator.base.typeModelResolver,
+				indexEncryptionUtils,
 			)
 		}
 	})
@@ -636,13 +699,12 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 	}
 
 	const domainConfig = new DomainConfigProvider().getCurrentDomainConfig()
-	locator.imapImporter = lazyMemoized(async () => {
+	locator.mailboxImporter = lazyMemoized(async () => {
 		const { ImportMailFacade } = await import("../../../common/api/worker/facades/lazy/ImportMailFacade.js")
-		const { ImapFacade } = await import("../../../common/api/worker/facades/lazy/ImapFacade.js")
+		const { MailboxMigrationFacade } = await import("../../../common/api/worker/facades/lazy/MailboxMigrationFacade.js")
 		const mailFacade = await locator.mail()
 		const blobFacade = await locator.blob()
 		const importMailFacade = new ImportMailFacade(
-			mailFacade,
 			locator.base.serviceExecutor,
 			locator.base.cachingEntityClient,
 			blobFacade,
@@ -650,21 +712,25 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			locator.base.keyLoader,
 			locator.base.instancePipeline,
 			locator.base.cryptoWrapper,
+			locator.base.symmetricCipherUtils,
+			locator.base.keyEncryption,
 		)
-		const imapFacade = new ImapFacade(
+		const mailboxMigrationFacade = new MailboxMigrationFacade(
 			mailFacade,
 			locator.base.serviceExecutor,
 			locator.base.cachingEntityClient,
 			locator.base.keyLoader,
 			locator.base.cryptoWrapper,
+			locator.base.symmetricCipherUtils,
+			locator.base.user,
 		)
 
-		return new ImapImporter(new ImapSyncSystemFacadeSendDispatcher(worker), imapFacade, importMailFacade)
+		return new MailboxImporter(new MigrationSyncSystemFacadeSendDispatcher(worker), mailboxMigrationFacade, importMailFacade, locator.base.user)
 	})
 
 	const eventBusCoordinator = new EventBusEventCoordinator(
 		locator.mail,
-		locator.imapImporter,
+		locator.mailboxImporter,
 		locator.base.user,
 		locator.base.cachingEntityClient,
 		mainInterface.eventController,
@@ -705,7 +771,15 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 
 	locator.giftCards = lazyMemoized(async () => {
 		const { GiftCardFacade } = await import("../../../common/api/worker/facades/lazy/GiftCardFacade.js")
-		return new GiftCardFacade(locator.base.user, await locator.customer(), locator.base.serviceExecutor, locator.base.crypto, locator.base.keyLoader)
+		return new GiftCardFacade(
+			locator.base.user,
+			await locator.customer(),
+			locator.base.serviceExecutor,
+			locator.base.crypto,
+			locator.base.keyLoader,
+			locator.base.cryptoWrapper,
+			locator.base.symmetricCipherUtils,
+		)
 	})
 
 	locator.contactFacade = lazyMemoized(async () => {
@@ -737,6 +811,22 @@ export async function initLocator(worker: WorkerImpl, browserData: BrowserData, 
 			locator.base.crypto,
 			locator.base.cryptoWrapper,
 			locator.cacheStorage,
+			locator.base.symmetricCipherUtils,
+		)
+	})
+
+	locator.driveFileSharingFacade = lazyMemoized(async () => {
+		const { DriveFileSharingFacade } = await import("../../../common/api/worker/facades/lazy/DriveFileSharingFacade.js")
+		return new DriveFileSharingFacade(
+			locator.base.cryptoWrapper,
+			locator.base.serviceExecutor,
+			locator.base.crypto,
+			locator.base.keyLoader,
+			domainConfig,
+			locator.base.argon2idFacade,
+			locator.base.cachingEntityClient,
+			await locator.blob(),
+			locator.base.symmetricCipherUtils,
 		)
 	})
 }

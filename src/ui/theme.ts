@@ -8,7 +8,7 @@ EnvProvider.assertMainOrNodeBoot()
  * There are few built-in ones and there are whitelabel ones.
  * Whitelabel themes use domain name as an ID.
  */
-export type ThemeId = "light" | "dark" | "light_secondary" | "dark_secondary" | string
+export type ThemeId = "light" | "dark" | "light_secondary" | "dark_secondary" | "true_dark" | string
 export type BaseThemeId = "light" | "dark"
 /**
  * This one is not attached to any single theme but is persisted and is shown to the user as a preference.
@@ -102,6 +102,7 @@ export type Theme = {
 	experimental_tertiary: string
 	go_european: string
 	on_go_european: string
+	black_friday_gold: string
 	// Drive icon colors
 	drive_folder: string
 	drive_document: string
@@ -132,6 +133,10 @@ export const themeOptions = (isCalendarApp: boolean) =>
 		{
 			name: "dark_label",
 			value: "dark",
+		},
+		{
+			name: "true_dark_label",
+			value: "true_dark",
 		},
 		{
 			name: isCalendarApp ? "light_red_label" : "light_blue_label",

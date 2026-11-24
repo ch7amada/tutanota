@@ -27,20 +27,19 @@ import {
 	PaymentMethodType,
 	PlanType,
 } from "../../../entities/sys/Utils"
-import { BookingFailureReason, Const, EnvProvider, PaymentSetup, UnsubscribeFailureReason } from "@tutao/app-env"
-import { SubscriptionActionButtons } from "./SubscriptionSelector"
+import { BookingFailureReason, Const, EnvProvider, UnsubscribeFailureReason } from "@tutao/app-env"
 import stream from "mithril/stream"
+import Stream from "mithril/stream"
 import { showProgressDialog } from "../../../ui/dialogs/ProgressDialog"
 import { DialogHeaderBarAttrs } from "../../../ui/base/DialogHeaderBar"
 import type { CurrentPlanInfo } from "./SwitchSubscriptionDialogModel"
 import { SwitchSubscriptionDialogModel } from "./SwitchSubscriptionDialogModel"
 import { locator } from "../api/main/CommonLocator"
 import { PaymentInterval, PriceAndConfigProvider } from "./utils/PriceUtils"
-import { assertNotNull, base64ExtToBase64, base64ToUint8Array, defer, delay, downcast, last, lazy } from "@tutao/utils"
+import { assertNotNull, base64ExtToBase64, base64ToUint8Array, defer, downcast, last, lazy, noOp } from "@tutao/utils"
 import { showSwitchToBusinessInvoiceDataDialog } from "./SwitchToBusinessInvoiceDataDialog.js"
 import { formatNameAndAddress } from "../api/common/utils/CommonFormatter.js"
 import { PrimaryButtonAttrs } from "../../../ui/base/buttons/VariantButtons.js"
-import { MobilePaymentSubscriptionOwnership } from "@tutao/native-bridge/generatedIpc/enums"
 import {
 	externalStorePlanName,
 	getCurrentPaymentInterval,
@@ -51,10 +50,8 @@ import {
 	SubscriptionApp,
 } from "./utils/SubscriptionUtils.js"
 import { MobilePaymentError } from "../api/common/error/MobilePaymentError.js"
-import { mailLocator } from "../../mail-app/mailLocator"
 import { completeUpgradeStage } from "../ratings/UserSatisfactionUtils"
 import { PlanSelector } from "./PlanSelector.js"
-import { getPrivateBusinessSwitchButton } from "./SubscriptionPage.js"
 import { PlanSelectorHeadline } from "./components/PlanSelectorHeadline"
 import { getDiscountDetails } from "./utils/PlanSelectorUtils"
 import { px } from "../../../ui/size"
@@ -64,7 +61,7 @@ import { ClientDetector } from "../../../platform-kit/app-env/boot/ClientDetecto
 import { Keys } from "../../../ui/utils/KeyboardKeys"
 import { InvalidDataError, PreconditionFailedError } from "@tutao/rest-client/error"
 import { elementIdToId, GENERATED_MAX_ID } from "@tutao/meta"
-import { InvoiceData } from "./utils/PaymentUtils"
+import { getPrivateBusinessSwitchButton, InvoiceData, SubscriptionActionButtons } from "./utils/PaymentUtils"
 import { showManageSubscriptionThroughExternalStoreDialog } from "../misc/SubscriptionDialogs"
 
 /**
@@ -84,7 +81,11 @@ export async function showSwitchDialog({
 	acceptedPlans: readonly AvailablePlanType[]
 	reason: TranslationKey | null
 }): Promise<void> {
-	const paymentMethod = assertNotNull(getPaymentMethodType(accountingInfo))
+	const paymentMethod = getPaymentMethodType(accountingInfo)
+	if (paymentMethod == null) {
+		Dialog.message("noPaymentMethodError_msg")
+		return
+	}
 	if (isExternalPaymentMethod(paymentMethod) && !hasMatchingExternalPaymentSetup(paymentMethod)) {
 		await showManageSubscriptionThroughExternalStoreDialog(paymentMethod)
 		return
@@ -175,13 +176,12 @@ export async function showSwitchDialog({
 		.setCloseHandler(cancelAction)
 
 	const hasFirstYearDiscount = (targetPlan: PlanType) => {
-		const paymentMethod = accountingInfo.paymentMethod
 		const hasGlobalFirstYearDiscount = priceAndConfigProvider.getRawPricingData().hasGlobalFirstYearDiscount
 		const isYearly = paymentInterval() === PaymentInterval.Yearly
 
-		if (EnvProvider.get().getPaymentSetup() !== PaymentSetup.Default && (!paymentMethod || paymentMethod === PaymentMethodType.AppStore)) {
-			const prices = priceAndConfigProvider.getMobilePrices().get(PlanTypeToName[targetPlan].toLowerCase())
-			return hasGlobalFirstYearDiscount && isYearly && !!prices?.isEligibleForIntroOffer && !!prices?.displayOfferYearlyPerYear
+		if (isExternalStorePrice) {
+			const prices = priceAndConfigProvider.getMobilePrices()?.get(PlanTypeToName[targetPlan].toLowerCase())
+			return isYearly && priceAndConfigProvider.isEligibleForIntroOffer() && !!prices?.displayOfferYearlyPerYear
 		} else {
 			return hasGlobalFirstYearDiscount && isYearly
 		}
@@ -191,7 +191,7 @@ export async function showSwitchDialog({
 		[PlanType.Free]: () =>
 			({
 				label: "pricing.select_action",
-				onclick: () => onSwitchToFree(customer, dialog, currentPlanInfo, paymentMethod),
+				onclick: () => noOp(),
 			}) satisfies PrimaryButtonAttrs,
 		[PlanType.Revolutionary]: createPlanButton(
 			dialog,
@@ -210,45 +210,6 @@ export async function showSwitchDialog({
 	return deferred.promise
 }
 
-async function onSwitchToFree(customer: Customer, dialog: Dialog, currentPlanInfo: CurrentPlanInfo, paymentMethod: PaymentMethodType) {
-	if (isExternalPaymentMethod(paymentMethod)) {
-		// We want the user to disable renewal in the external store before they try to downgrade on our side
-		const ownership = await locator.mobilePaymentsFacade.queryExternalSubscriptionOwnership(
-			base64ToUint8Array(base64ExtToBase64(elementIdToId(customer._id))),
-		)
-		if (ownership === MobilePaymentSubscriptionOwnership.Owner && (await locator.mobilePaymentsFacade.isExternalSubscriptionRenewalEnabled())) {
-			await locator.mobilePaymentsFacade.showSubscriptionConfigView()
-
-			await showProgressDialog("pleaseWait_msg", waitUntilRenewalDisabled())
-
-			if (await locator.mobilePaymentsFacade.isExternalSubscriptionRenewalEnabled()) {
-				console.log("external store renewal is still enabled, canceling downgrade")
-				// User probably did not disable the renewal still, cancel
-				return
-			}
-		}
-	}
-
-	const newPlanType = await downgradeSubscription(dialog)
-
-	if (newPlanType === PlanType.Free) {
-		if (mailLocator.mailModel) {
-			// there is no mailLocator for the calendar app
-			for (const importedMailSet of mailLocator.mailModel.getImportedMailSets()) void mailLocator.mailModel.finallyDeleteCustomMailFolder(importedMailSet)
-		}
-	}
-}
-
-async function waitUntilRenewalDisabled() {
-	for (let i = 0; i < 3; i++) {
-		// Wait a bit before checking, it takes a bit to propagate
-		await delay(2000)
-		if (!(await locator.mobilePaymentsFacade.isExternalSubscriptionRenewalEnabled())) {
-			return
-		}
-	}
-}
-
 async function doSwitchToPaidPlan(
 	accountingInfo: AccountingInfo,
 	newPaymentInterval: PaymentInterval,
@@ -258,13 +219,12 @@ async function doSwitchToPaidPlan(
 ) {
 	if (hasMatchingExternalPaymentSetup(getPaymentMethodType(accountingInfo))) {
 		const customerIdBytes = base64ToUint8Array(base64ExtToBase64(assertNotNull(locator.logins.getUserController().user.customer)))
-		dialog.close()
 		try {
 			await locator.mobilePaymentsFacade.requestSubscriptionToPlan(
 				externalStorePlanName(targetSubscription),
 				newPaymentInterval,
 				customerIdBytes,
-				currentPlanInfo.paymentInterval,
+				currentPlanInfo.subscriptionForeignKey,
 			)
 		} catch (e) {
 			if (e instanceof MobilePaymentError) {
@@ -280,6 +240,51 @@ async function doSwitchToPaidPlan(
 		}
 		await switchSubscription(targetSubscription, dialog, currentPlanInfo)
 	}
+	dialog.close()
+}
+
+async function handleButtonClick(
+	accountingInfo: AccountingInfo,
+	targetSubscription: PlanType,
+	newPaymentInterval: Stream<PaymentInterval>,
+	currentPlanInfo: CurrentPlanInfo,
+	dialog: Dialog,
+) {
+	let confirmed = false
+	const isMobilePaymentMethod = isExternalPaymentMethod(accountingInfo.paymentMethod as PaymentMethodType)
+	//Business plans are not available for external payment methods
+	if (isMobilePaymentMethod && NewBusinessPlans.includes(targetSubscription as AvailablePlanType)) {
+		await Dialog.message(lang.getTranslation("businessPlansNotAvailableForExternal_msg"))
+	} else if (newPaymentInterval() !== currentPlanInfo.paymentInterval && targetSubscription === currentPlanInfo.planType) {
+		//If plan type does not change but payment interval does
+		confirmed = await Dialog.confirm(
+			lang.getTranslation("subscriptionChangeInterval_msg", {
+				"{period}":
+					newPaymentInterval() === PaymentInterval.Monthly
+						? lang.getTranslation("pricing.monthly_label").text
+						: lang.getTranslation("pricing.yearly_label").text,
+			}),
+		)
+	} else if (isMobilePaymentMethod) {
+		confirmed = await Dialog.confirm(lang.getTranslation("switchPlanMobile_msg"))
+	} else {
+		confirmed = await Dialog.choice(
+			lang.getTranslation("switchPlanImmediately_msg", {
+				"{plan}": PlanTypeToName[targetSubscription],
+				"{interval}":
+					newPaymentInterval() === PaymentInterval.Yearly
+						? lang.getTranslationText("pricing.yearly_label").toLowerCase()
+						: lang.getTranslationText("pricing.monthly_label").toLowerCase(),
+			}),
+			[
+				{ text: lang.getTranslation("cancel_action"), value: false },
+				{ text: lang.getTranslation("confirm_action"), value: true },
+			],
+		)
+	}
+	if (confirmed) {
+		await showProgressDialog("pleaseWait_msg", doSwitchToPaidPlan(accountingInfo, newPaymentInterval(), targetSubscription, dialog, currentPlanInfo))
+	}
 }
 
 function createPlanButton(
@@ -294,23 +299,7 @@ function createPlanButton(
 		label: "buy_action",
 		...(shouldApplyDiscount && { class: "go-european-button" }),
 		onclick: async () => {
-			if (
-				await Dialog.confirm(
-					lang.getTranslation("switchPlan_msg", {
-						"{plan}": PlanTypeToName[targetSubscription],
-						"{interval}":
-							newPaymentInterval() === PaymentInterval.Yearly
-								? lang.getTranslationText("pricing.yearly_label").toLowerCase()
-								: lang.getTranslationText("pricing.monthly_label").toLowerCase(),
-					}),
-					"paymentDataValidation_action",
-				)
-			) {
-				await showProgressDialog(
-					"pleaseWait_msg",
-					doSwitchToPaidPlan(accountingInfo, newPaymentInterval(), targetSubscription, dialog, currentPlanInfo),
-				)
-			}
+			await handleButtonClick(accountingInfo, targetSubscription, newPaymentInterval, currentPlanInfo, dialog)
 		},
 	})
 }
@@ -442,6 +431,10 @@ export async function handleSwitchAccountPreconditionFailed(customer: Customer, 
 
 			case UnsubscribeFailureReason.DRIVE_NOT_EMPTY:
 				detailMsg = lang.getTranslationText("driveNotEmpty_msg")
+				break
+
+			case UnsubscribeFailureReason.NO_PAYMENT_METHOD:
+				detailMsg = lang.getTranslationText("noPaymentMethodError_msg")
 				break
 
 			default:

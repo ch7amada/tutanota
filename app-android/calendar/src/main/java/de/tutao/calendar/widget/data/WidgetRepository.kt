@@ -78,14 +78,14 @@ abstract class WidgetRepository() {
 		})
 	}
 
-	open suspend fun loadEvents(
+	open suspend fun loadEventsFromServer(
 		cacheDataStore: DataStore<Preferences>,
 		widgetId: Int,
 		userId: GeneratedId,
 		calendars: List<GeneratedId>,
 		credentials: UnencryptedCredentials,
 		loggedInSdk: LoggedInSdk,
-		cryptoFacade: AndroidNativeCryptoFacade
+		cryptoFacade: AndroidNativeCryptoFacade,
 	): Map<GeneratedId, CalendarEventListDao> {
 		throw NotImplementedError()
 	}

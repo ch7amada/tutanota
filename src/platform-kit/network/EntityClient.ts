@@ -31,6 +31,7 @@ import {
 	EntityRestClientUpdateOptions,
 } from "../instance-pipeline/RestClientOptions"
 import { isNull } from "../utils/Utils"
+import { KdfNonce } from "@tutao/crypto"
 
 export class EntityClient {
 	_target: EntityRestInterface
@@ -53,7 +54,12 @@ export class EntityClient {
 		return this._target.load(typeRef, id, opts)
 	}
 
-	async loadAll<T extends ListElementEntity>(typeRef: TypeRef<T>, listId: Id, start: Nullable<Id> = null): Promise<T[]> {
+	async loadAll<T extends ListElementEntity>(
+		typeRef: TypeRef<T>,
+		listId: Id,
+		start: Nullable<Id> = null,
+		opts: EntityRestClientLoadOptions = DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS,
+	): Promise<T[]> {
 		const typeModel = await this.typeModelResolver.resolveClientTypeReference(typeRef)
 
 		if (isNull(start)) {
@@ -64,10 +70,10 @@ export class EntityClient {
 			start = typeModel.values[attributeIdFor_id].type === ValueTypeEnum.GeneratedId ? GENERATED_MIN_ID : CUSTOM_MIN_ID
 		}
 
-		const elements = await this.loadRange<T>(typeRef, listId, start, RANGE_ITEM_LIMIT, false)
+		const elements = await this.loadRange<T>(typeRef, listId, start, RANGE_ITEM_LIMIT, false, opts)
 		if (elements.length === RANGE_ITEM_LIMIT) {
 			let lastElementId = getLetId(elements[elements.length - 1])[1]
-			const nextElements = await this.loadAll<T>(typeRef, listId, lastElementId)
+			const nextElements = await this.loadAll<T>(typeRef, listId, lastElementId, opts)
 			return elements.concat(nextElements)
 		} else {
 			return elements
@@ -164,6 +170,10 @@ export class EntityClient {
 		const rootId: ListElementId = [groupId, typeModel.rootId]
 		const root = await this.load<RootInstance>(RootInstanceTypeRef, rootId, opts)
 		return this.load<T>(typeRef, idToElementId(root.reference), opts)
+	}
+
+	async ensureKdfNonce(instance: PersistentEntity): Promise<KdfNonce> {
+		return await this._target.ensureKdfNonce(instance)
 	}
 }
 

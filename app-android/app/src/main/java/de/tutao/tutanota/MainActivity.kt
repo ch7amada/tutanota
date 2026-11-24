@@ -13,7 +13,11 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
+import android.net.ConnectivityManager
+import android.net.ConnectivityManager.NetworkCallback
 import android.net.MailTo
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
@@ -39,9 +43,11 @@ import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresPermission
+import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
 import androidx.core.view.ViewCompat.setSystemGestureExclusionRects
@@ -49,7 +55,6 @@ import androidx.core.view.WindowInsetsCompat.Type.displayCutout
 import androidx.core.view.WindowInsetsCompat.Type.ime
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.core.view.doOnLayout
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -72,12 +77,12 @@ import de.tutao.tutashared.CancelledError
 import de.tutao.tutashared.DateProviderImpl
 import de.tutao.tutashared.NetworkUtils
 import de.tutao.tutashared.TempDir
-import de.tutao.tutashared.Theme
 import de.tutao.tutashared.WebViewReloader
 import de.tutao.tutashared.alarms.AlarmNotificationsManager
 import de.tutao.tutashared.alarms.SystemAlarmFacade
 import de.tutao.tutashared.createAndroidKeyStoreFacade
 import de.tutao.tutashared.credentials.CredentialsEncryptionFactory
+import de.tutao.tutashared.data.AndroidArchiveDownloaderFacade
 import de.tutao.tutashared.data.AppDatabase
 import de.tutao.tutashared.file.AndroidFileFacade
 import de.tutao.tutashared.file.TempFs
@@ -128,7 +133,7 @@ interface WebauthnHandler {
 }
 
 
-class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, WebauthnFlowRunner {
+class MainActivity : AppCompatActivity(), ActivityUtils, WebViewReloader, WebauthnFlowRunner {
 	lateinit var webView: WebView
 		private set
 	private lateinit var sseStorage: SseStorage
@@ -139,12 +144,15 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 	private lateinit var commonSystemFacade: AndroidCommonSystemFacade
 	private lateinit var sqlCipherFacade: SqlCipherFacade
 	private lateinit var paymentsFacade: AndroidMobilePaymentsFacade
+	private lateinit var archiveDownloaderFacade: AndroidArchiveDownloaderFacade
 
 	private val permissionsRequests: MutableMap<Int, Continuation<Unit>> = ConcurrentHashMap()
 	private val activityRequests: MutableMap<Int, Continuation<ActivityResult>> = ConcurrentHashMap()
 
 	private var firstLoaded = false
 	private var webauthnResultHandler: WebauthnHandler? = null
+
+	private lateinit var connectivityManager: ConnectivityManager
 
 	@SuppressLint("SetJavaScriptEnabled", "StaticFieldLeak")
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -211,16 +219,19 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		val ipcJson = Json { ignoreUnknownKeys = true }
 
 		themeFacade = AndroidThemeFacade(this, this)
+		connectivityManager = applicationContext.getSystemService<ConnectivityManager>()!!
 
 		sqlCipherFacade = AndroidSqlCipherFacade(this)
 		commonSystemFacade =
 			AndroidCommonSystemFacade(this, sqlCipherFacade, tempDir, NetworkUtils.defaultClient)
+		archiveDownloaderFacade = AndroidArchiveDownloaderFacade(sqlCipherFacade, connectivityManager)
 
 		val webauthnFacade = AndroidWebauthnFacade(this, ipcJson, "tutanota", BuildConfig.APPLICATION_ID)
 
 		paymentsFacade = AndroidMobilePaymentsFacade(this, AppType.MAIL)
 		val globalDispatcher = AndroidGlobalDispatcher(
 			ipcJson,
+			archiveDownloaderFacade,
 			commonSystemFacade,
 			calendarFacade,
 			fileFacade,
@@ -250,7 +261,7 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 			commonSystemFacade,
 		)
 
-		themeFacade.applyCurrentTheme()
+		themeFacade.applyTheme(resources.configuration)
 
 		installSplashScreen()
 
@@ -258,6 +269,7 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		actionBar?.hide()
 
 		mobileFacade = MobileFacadeSendDispatcher(ipcJson, remoteBridge)
+		archiveDownloaderFacade.setMobileFacade(mobileFacade)
 		commonNativeFacade = CommonNativeFacadeSendDispatcher(ipcJson, remoteBridge)
 
 		setupPushNotifications()
@@ -441,6 +453,21 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 			}
 
 			startWebApp(queryParameters)
+
+			val networkObserverCallback = object : NetworkCallback() {
+				override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+					launch {
+						val isMetered =
+							!networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+						mobileFacade.connectionTypeUpdate(isMetered)
+						Log.d(
+							TAG,
+							isMetered.toString()
+						)
+					}
+				}
+			}
+			connectivityManager.registerDefaultNetworkCallback(networkObserverCallback)
 		}
 
 		// Exclude bottom left screen area from system (back) gestures to open the drawer menu with a swipe from the
@@ -463,12 +490,6 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 	override suspend fun startWebauthn(uri: Uri): String {
 		val customIntent = CustomTabsIntent.Builder()
 			.build()
-		val intent = customIntent.intent.apply {
-			data = uri
-			// close custom tabs activity as soon as user navigates away from it, otherwise it will linger as a separate
-			// task
-			addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-		}
 
 		return suspendCoroutine { cont ->
 			// if there was already a handler, finish it
@@ -483,7 +504,8 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 					cont.resumeWithException(CancelledError())
 				}
 			}
-			startActivity(intent)
+
+			customIntent.launchUrl(this, uri)
 		}
 	}
 
@@ -543,15 +565,15 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 	override fun onConfigurationChanged(newConfig: Configuration) {
 		super.onConfigurationChanged(newConfig)
 		// Since the activity is not being re-created we need to re-apply our theming manually.
-		themeFacade.applyCurrentTheme()
+		themeFacade.applyTheme(newConfig)
 		lifecycleScope.launch {
 			commonNativeFacade.updateTheme()
 		}
 	}
 
 	@MainThread
-	private fun startWebApp(parameters: MutableMap<String, String>) {
-		webView.loadUrl(getInitialUrl(parameters, themeFacade.currentThemeWithFallback))
+	private suspend fun startWebApp(parameters: MutableMap<String, String>) {
+		webView.loadUrl(getInitialUrl(parameters, themeFacade.getCurrentThemeOrFallback()))
 		remoteBridge.setup()
 	}
 
@@ -638,13 +660,18 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		}
 	}
 
-	private fun getInitialUrl(parameters: MutableMap<String, String>, theme: Theme?): String {
+	private suspend fun getInitialUrl(parameters: MutableMap<String, String>, theme: Map<String, String>?): String {
 		if (theme != null) {
 			parameters["theme"] = JSONObject.wrap(theme)!!.toString()
 		}
 		parameters["platformId"] = "android"
-		if (paymentsFacade.hasPlaystorePayment()) {
-			parameters["paymentSetup"] = "playstore"
+		try {
+			if (paymentsFacade.hasPlaystorePayment()) {
+				parameters["paymentSetup"] = "playstore"
+			}
+		} catch (e: Throwable) {
+			println("failed to set up mobile payment: $e")
+			parameters["paymentSetup"] = "none"
 		}
 		val queryBuilder = StringBuilder()
 		for ((key, value) in parameters) {
@@ -912,8 +939,8 @@ class MainActivity : FragmentActivity(), ActivityUtils, WebViewReloader, Webauth
 		}
 	}
 
-	override fun reload(parameters: Map<String, String>) {
-		runOnUiThread { startWebApp(parameters.toMutableMap()) }
+	override suspend fun reload(parameters: Map<String, String>) {
+		runOnUiThread { lifecycleScope.launch { startWebApp(parameters.toMutableMap()) } }
 	}
 
 	override fun onCreateContextMenu(menu: ContextMenu, v: View, menuInfo: ContextMenuInfo?) {

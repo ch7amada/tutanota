@@ -139,7 +139,6 @@ export enum SubscriptionType {
 	Personal,
 	Business,
 	PaidPersonal,
-	FreeOnly,
 }
 
 export enum BookingItemFeatureType {
@@ -169,6 +168,14 @@ export enum PaymentMethodType {
 	AccountBalance = "4",
 	AppStore = "5",
 	GooglePlay = "6",
+}
+
+// this determines which input form we render for a payment method
+export const enum PaymentDataInput {
+	AccountBalance,
+	Paypal,
+	CreditCard,
+	Other,
 }
 
 export type ExternalPaymentMethodType = Exclude<

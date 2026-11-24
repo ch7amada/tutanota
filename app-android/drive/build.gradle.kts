@@ -20,8 +20,8 @@ android {
 		applicationId = "de.tutao.drive"
 		minSdk = 26
 		targetSdk = 36
-		versionCode = 68
-		versionName = "362.261020.0"
+		versionCode = 94
+		versionName = "371.261123.0"
 
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 	}
@@ -60,10 +60,10 @@ android {
 			isJniDebuggable = true
 		}
 		release {
-			isMinifyEnabled = true
+			manifestPlaceholders += mapOf()
+            isMinifyEnabled = true
 			resValue("string", "package_name", "de.tutao.drive")
-			setProguardFiles(listOf(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"))
-			manifestPlaceholders["contentProviderAuthority"] = "de.tutao.drive.fileprovider"
+            manifestPlaceholders["contentProviderAuthority"] = "de.tutao.drive.fileprovider"
 		}
 		create("releaseTest") {
 			initWith(getByName("release"))
@@ -160,7 +160,8 @@ tasks.register("itest") {
 }
 
 dependencies {
-	implementation(libs.tutasdk)
+	implementation(libs.appcompat)
+    implementation(libs.tutasdk)
 	implementation(project(":tutashared"))
 
 	implementation(libs.commons.io)

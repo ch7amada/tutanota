@@ -1,5 +1,5 @@
 import { EntityClient } from "../../../../platform-kit/network/EntityClient"
-import { assertNotNull, groupByAndMap, isEmpty, last, lazyAsync, neverNull, promiseMap, splitInChunks } from "../../../../platform-kit/utils"
+import { assertNotNull, groupByAndMap, isEmpty, last, lazyAsync, promiseMap, splitInChunks } from "../../../../platform-kit/utils"
 import {
 	compareNewestFirst,
 	constructMailSetEntryId,
@@ -12,7 +12,7 @@ import {
 	isSameSingleId,
 	listIdPart,
 } from "../../../../platform-kit/meta"
-import { BulkMailLoader, MailWithMailDetails } from "../index/BulkMailLoader"
+import { BulkMailLoader, MailWithDetails } from "../index/BulkMailLoader"
 import { MailFacade } from "../../../common/api/worker/facades/lazy/MailFacade"
 import { getSpamConfidence } from "../../../common/api/common/utils/spamClassificationUtils/SpamMailProcessor"
 import { EnvProvider } from "../../../../platform-kit/app-env"
@@ -46,7 +46,7 @@ export type TrainingDataset = {
 
 export type UnencryptedPopulateClientSpamTrainingDatum = Omit<
 	PopulateClientSpamTrainingDatumParams,
-	"encVectorLegacy" | "encVectorWithServerClassifiers" | "ownerEncVectorSessionKey"
+	"encVectorLegacy" | "encVectorWithServerClassifiers" | "ownerEncVectorSessionKey" | "ownerKeyVersion"
 > & {
 	vector: Uint8Array<ArrayBuffer>
 	vectorNewFormat: Uint8Array<ArrayBuffer>
@@ -112,8 +112,9 @@ export class SpamClassifierDataDealer {
 					splitInChunks(MAX_NBR_OF_MAILS_SYNC_OPERATION, mailElementIds),
 					async (mailChunk) => {
 						const mails = await this.entityClient.loadMultiple(MailTypeRef, listId, mailChunk)
-						const mailChunkWithDetails = await bulkMailLoader.loadMailDetails(mails)
-						await this.uploadTrainingDataForMails(mailChunkWithDetails, mailbox, mailSets)
+						const { mailsWithDetails } = await bulkMailLoader.loadMailDetails(mails)
+
+						await this.uploadTrainingDataForMails(mailsWithDetails, mailbox, mailSets)
 					},
 					{ concurrency: 5 },
 				)
@@ -267,7 +268,7 @@ export class SpamClassifierDataDealer {
 		return mailIdsForClassificationData
 	}
 
-	private async uploadTrainingDataForMails(mails: MailWithMailDetails[], mailBox: MailBox, mailSets: MailSet[]): Promise<void> {
+	private async uploadTrainingDataForMails(mails: MailWithDetails[], mailBox: MailBox, mailSets: MailSet[]): Promise<void> {
 		const mailFacade = await this.mailFacade()
 		const unencryptedPopulateClientSpamTrainingData: UnencryptedPopulateClientSpamTrainingDatum[] = await promiseMap(
 			mails,
@@ -277,7 +278,7 @@ export class SpamClassifierDataDealer {
 				const mailFolderId = assertNotNull(mail.sets.find((setId) => allMailFolders.find((folderId) => isSameId(setId, folderId))) ?? null)
 				const mailFolder = assertNotNull(mailSets.find((set) => isSameId(set._id, mailFolderId)) ?? null)
 				const isSpam = getMailSetKind(mailFolder) === MailSetKind.SPAM
-				const { uploadableVectorLegacy, uploadableVector } = await mailFacade.createModelInputAndUploadableVectors(mail, mailDetails, mailFolder)
+				const { uploadableVectorLegacy, uploadableVector } = await mailFacade.createModelInputAndUploadableVectors(mail, mailDetails)
 				const unencryptedPopulateClientSpamTrainingData: UnencryptedPopulateClientSpamTrainingDatum = {
 					mailId: mail._id,
 					isSpam,

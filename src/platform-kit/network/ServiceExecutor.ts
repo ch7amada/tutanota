@@ -4,11 +4,13 @@ import { HttpMethod, MediaType, RestTextBody, validateHttpMethod } from "@tutao/
 import { IServiceExecutor } from "./ServiceRequest.js"
 import { assert, assertNotNull, downcast, isNotNull, lazy, Nullable } from "@tutao/utils"
 import { EnvProvider, ProgrammingError } from "@tutao/app-env"
-import { EntityAdapter, InstancePipeline, LoggedInUserProvider, SessionKeyResolver, TypeModelResolver } from "@tutao/instance-pipeline"
+import { EntityAdapter, InstancePipeline, LoggedInUserProvider, SessionAndInstanceKeyResolver, TypeModelResolver } from "@tutao/instance-pipeline"
 import { LoginIncompleteError } from "@tutao/rest-client/error"
 import { DEFAULT_REST_CLIENT_OPTIONS, ExtraServiceParams } from "../instance-pipeline/RestClientOptions"
 import { IncomingServerJson, OutgoingServerJson } from "../instance-pipeline/TypeMapper"
 import { isNull } from "../utils/Utils"
+import { AeadCipherVersion, SubKeyInfoWithSessionKeyCbcThenHmac } from "@tutao/crypto"
+import { PaymentDataService_PUT } from "@tutao/entities/sys"
 
 EnvProvider.assertWorkerOrNode()
 
@@ -17,7 +19,7 @@ export class ServiceExecutor implements IServiceExecutor {
 		private readonly restClient: RestClient,
 		private readonly authDataProvider: LoggedInUserProvider,
 		private readonly instancePipeline: InstancePipeline,
-		private readonly sessionKeyResolver: lazy<SessionKeyResolver>,
+		private readonly sessionKeyResolver: lazy<SessionAndInstanceKeyResolver>,
 		private readonly typeModelResolver: TypeModelResolver,
 	) {}
 
@@ -87,12 +89,45 @@ export class ServiceExecutor implements IServiceExecutor {
 				throw new ProgrammingError(`Invalid service data! ${service.fullServiceName}`)
 			}
 
-			const requestTypeModel = await this.typeModelResolver.resolveClientTypeReference(requestTypeRef)
-			if (requestTypeModel.encrypted && params?.sessionKey == null) {
-				throw new ProgrammingError(`Must provide a session key for an encrypted data transfer type!: ${service.fullServiceName}`)
+			const ownerKey = params?.ownerKey ?? null
+
+			// TODO: remove this when AccountingInfo has been dealt with
+			if (service === PaymentDataService_PUT) {
+				const sessionKey = params?.sessionKey ?? null
+				if (sessionKey == null) {
+					throw new ProgrammingError(`Must provide a session key for encrypting values for AccountingInfo in: ${service.fullServiceName}`)
+				}
+				return await this.instancePipeline.mapAndEncryptWithSubKeyInfo(
+					requestEntity._type,
+					requestEntity,
+					new SubKeyInfoWithSessionKeyCbcThenHmac(sessionKey),
+					ownerKey,
+				)
 			}
 
-			return await this.instancePipeline.mapAndEncrypt(requestEntity._type, requestEntity, params?.sessionKey ?? null)
+			const requestTypeModel = await this.typeModelResolver.resolveClientTypeReference(requestTypeRef)
+			if (requestTypeModel.encrypted && params?.sessionKeyDecryptor == null) {
+				throw new ProgrammingError(`Must provide a session key decryptor for an encrypted data transfer type: ${service.fullServiceName}`)
+			}
+
+			let aeadCipherVersion: AeadCipherVersion
+			if (requestTypeModel.encrypted) {
+				aeadCipherVersion = params?.aeadCipherVersion ?? AeadCipherVersion.WithInstanceKey
+				if (aeadCipherVersion === AeadCipherVersion.Unencrypted) {
+					throw new ProgrammingError(`Invalid cipher version for encrypted data transfer type`)
+				}
+			} else {
+				aeadCipherVersion = AeadCipherVersion.Unencrypted
+			}
+			const sessionKeyDecryptor = params?.sessionKeyDecryptor ?? null
+
+			return await this.instancePipeline.mapAndEncryptForDataTransferType(
+				requestEntity._type,
+				requestEntity,
+				ownerKey,
+				aeadCipherVersion,
+				sessionKeyDecryptor,
+			)
 		} else {
 			return null
 		}

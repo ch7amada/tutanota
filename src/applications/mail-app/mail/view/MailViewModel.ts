@@ -26,7 +26,7 @@ import { EventController } from "../../../common/api/main/EventController.js"
 import { MailModel, MoveMode } from "../model/MailModel.js"
 import { assertSystemFolderOfType } from "../model/MailUtils.js"
 import { getMailFilterForType, MailFilterType } from "./MailViewerUtils.js"
-import { isMailDeletable, isOfTypeOrSubfolderOf, isSpamOrTrashFolder, isSubfolderOfType } from "../model/MailChecks.js"
+import { isMailDeletable, isOfTypeOrSubfolderOf, isSpamOrTrashFolder } from "../model/MailChecks.js"
 import { MailListModel } from "../model/MailListModel"
 import { MailSetListModel } from "../model/MailSetListModel"
 import { ConversationListModel } from "../model/ConversationListModel"
@@ -35,23 +35,22 @@ import { ClientDetector } from "../../../../platform-kit/app-env/boot/ClientDete
 import { ProcessInboxHandler } from "../model/ProcessInboxHandler"
 import { mailLocator } from "../../mailLocator"
 import { getLabelsWithParentLabelNamesPrepended, moveMails } from "./MailGuiUtils"
-import { locator } from "../../../common/api/main/CommonLocator"
 import { UndoModel } from "../../UndoModel"
 import { SyncListener, SyncTracker } from "../../../common/api/main/SyncTracker"
 import { ExposedCacheStorage } from "../../../../app-kit/local-store/CacheStorage"
 import { WsConnectionState } from "../../../../platform-kit/network/Constants"
 import {
-	ImapAccountSyncStateTypeRef,
-	ImapFolderSyncStateTypeRef,
 	ImportFileMailStateTypeRef,
 	Mail,
 	MailBox,
+	MailboxMigrationSyncStateTypeRef,
 	MailSet,
 	MailSetEntryTypeRef,
 	MailSetTypeRef,
 	MailTypeRef,
+	MailboxMigrationFolderSyncStateTypeRef,
 } from "@tutao/entities/tutanota"
-import { ImapAccountSyncStatus, MailSetKind, SystemFolderType } from "../../../../entities/tutanota/Utils"
+import { MailboxMigrationSyncStatus, MailSetKind, SystemFolderType } from "../../../../entities/tutanota/Utils"
 import { elementIdPart, getElementId, isSameId, isSameSingleId, OperationType } from "../../../../platform-kit/meta"
 import {
 	CacheSyncStatus,
@@ -61,7 +60,6 @@ import {
 	ListenerPriority,
 } from "../../../../platform-kit/instance-pipeline/utils/EntityUpdateUtils"
 import { getMailSetKind, isPermanentDeleteAllowedForFolder } from "../MailUtils"
-import { ProgrammingError } from "../../../../platform-kit/app-env"
 import { $Promisable } from "../../workerUtils/index/IndexerPromiseUtils"
 import { CacheMode, DEFAULT_ENTITY_RESTCLIENT_LOAD_OPTIONS } from "../../../../platform-kit/instance-pipeline/RestClientOptions"
 import { SearchRouter } from "../../../common/search/view/SearchRouter"
@@ -69,6 +67,7 @@ import { MailSearchModel } from "../../search/model/MailSearchModel"
 
 import { LiveSearchResult, QuickSearchQuery, SearchQuery } from "../../../common/search/SearchUtils"
 import { LoginController } from "../../../common/api/main/LoginController"
+import { ExpandedInboxRuleHandler } from "../model/ExpandedInboxRuleHandler"
 
 export interface MailOpenedListener {
 	onEmailOpened(mail: Mail): unknown
@@ -705,48 +704,54 @@ export class MailViewModel {
 			return
 		}
 
-		const currentFolder = this.getMailSet()
-		if (currentFolder == null) {
-			return
-		}
-
-		const inboxRuleHandler = mailLocator.processInboxHandler()
 		const mailboxDetails = await this.getMailboxDetails()
-		const targetFolderIdToFolderMailMap = new Map<Id, { folder: MailSet; mails: Mail[] }>()
 
-		// preload mailDetails, to cache in one request
-		await mailLocator.bulkMailLoader.loadMailDetails(actionableMails)
-
-		for (const mail of actionableMails) {
-			const folder = await inboxRuleHandler.processInboxRulesOnly(mail, currentFolder, mailboxDetails)
-			const folderId = getElementId(folder)
-			if (!targetFolderIdToFolderMailMap.has(folderId)) {
-				targetFolderIdToFolderMailMap.set(folderId, { folder, mails: [] })
-			}
-			targetFolderIdToFolderMailMap.get(folderId)!.mails.push(mail)
-		}
-
-		let movedMailIds: IdTuple[] = []
-		for (const folderId of targetFolderIdToFolderMailMap.keys()) {
-			let { folder: targetFolder, mails } = assertNotNull(targetFolderIdToFolderMailMap.get(folderId))
-			if (isSameId(currentFolder._id, targetFolder._id)) {
-				continue
+		if ((await mailLocator.inboxRuleModel()).isUsingLegacyInboxRules()) {
+			const currentFolder = this.getMailSet()
+			if (currentFolder == null) {
+				return
 			}
 
-			const resolvedMails: readonly IdTuple[] = await this.getResolvedMails(mails)
-			await moveMails({
-				targetFolder,
-				mailboxModel: locator.mailboxModel,
-				mailModel: mailLocator.mailModel,
-				mailIds: resolvedMails,
-				moveMode: this.getMoveMode(currentFolder),
-				undoModel,
-				contactModel: mailLocator.contactModel,
-			})
-			movedMailIds.push(...resolvedMails)
-		}
+			const inboxRuleHandler = await mailLocator.processInboxHandler()
+			const targetFolderIdToFolderMailMap = new Map<Id, { folder: MailSet; mails: Mail[] }>()
 
-		return movedMailIds.flat()
+			// preload mailDetails, to cache in one request
+			await mailLocator.bulkMailLoader.loadMailDetails(actionableMails)
+
+			for (const mail of actionableMails) {
+				const folder = await inboxRuleHandler.getInboxRuleMoveTarget(mail, currentFolder, mailboxDetails)
+				const folderId = getElementId(folder)
+				if (!targetFolderIdToFolderMailMap.has(folderId)) {
+					targetFolderIdToFolderMailMap.set(folderId, { folder, mails: [] })
+				}
+				targetFolderIdToFolderMailMap.get(folderId)!.mails.push(mail)
+			}
+
+			let movedMailIds: IdTuple[] = []
+			for (const folderId of targetFolderIdToFolderMailMap.keys()) {
+				let { folder: targetFolder, mails } = assertNotNull(targetFolderIdToFolderMailMap.get(folderId))
+				if (isSameId(currentFolder._id, targetFolder._id)) {
+					continue
+				}
+
+				const resolvedMails: readonly IdTuple[] = await this.getResolvedMails(mails)
+				await moveMails({
+					targetFolder,
+					mailboxModel: mailLocator.mailboxModel,
+					mailModel: mailLocator.mailModel,
+					mailIds: resolvedMails,
+					moveMode: this.getMoveMode(currentFolder),
+					undoModel,
+					contactModel: mailLocator.contactModel,
+				})
+				movedMailIds.push(...resolvedMails)
+			}
+
+			return movedMailIds.flat()
+		} else {
+			const inboxRuleHandler = (await mailLocator.inboxRuleHandler()) as ExpandedInboxRuleHandler
+			await inboxRuleHandler.applyRulesToGivenMails(actionableMails, mailboxDetails)
+		}
 	}
 
 	private async onEntityUpdatesReceived(updates: ReadonlyArray<EntityUpdateData>) {
@@ -772,21 +777,24 @@ export class MailViewModel {
 					if (targetFolder) {
 						await this.deleteMailSetEntryRangeFolder(targetFolder, true)
 					}
-				} else if (isUpdateForTypeRef(ImapAccountSyncStateTypeRef, update)) {
-					// We need to drop all ranges for mailSets corresponding to ImapFolderSyncStates + imapSyncLabel
-					const imapAccountSyncState = await this.entityClient.load(ImapAccountSyncStateTypeRef, [
+				} else if (isUpdateForTypeRef(MailboxMigrationSyncStateTypeRef, update)) {
+					// We need to drop all ranges for mailSets corresponding to MigrationFolderSyncStates + syncLabel
+					const mailboxMigrationSyncState = await this.entityClient.load(MailboxMigrationSyncStateTypeRef, [
 						assertNotNull(update.instanceListId),
 						update.instanceId,
 					])
 					// we only reload the folder / label the user is currently viewing in case we are done
-					const shouldReload = imapAccountSyncState.status !== ImapAccountSyncStatus.RUNNING
+					const shouldReload = mailboxMigrationSyncState.status !== MailboxMigrationSyncStatus.RUNNING
 
-					const imapFolderSyncStates = await this.entityClient.loadAll(ImapFolderSyncStateTypeRef, imapAccountSyncState.imapFolderSyncStateList)
-					if (imapAccountSyncState.imapSyncLabel) {
-						const syncLabel = await this.entityClient.load(MailSetTypeRef, imapAccountSyncState.imapSyncLabel)
+					const mailboxMigrationFolderSyncStates = await this.entityClient.loadAll(
+						MailboxMigrationFolderSyncStateTypeRef,
+						mailboxMigrationSyncState.mailboxMigrationFolderSyncStates,
+					)
+					if (mailboxMigrationSyncState.syncLabel) {
+						const syncLabel = await this.entityClient.load(MailSetTypeRef, mailboxMigrationSyncState.syncLabel)
 						await this.deleteMailSetEntryRangeFolder(syncLabel, shouldReload)
 					}
-					const mailSetIdsToDeleteRange = imapFolderSyncStates.map((imapFolderSyncState) => imapFolderSyncState.mailSet).filter(isNotNull)
+					const mailSetIdsToDeleteRange = mailboxMigrationFolderSyncStates.map((folderSyncState) => folderSyncState.mailSet).filter(isNotNull)
 					if (isNotEmpty(mailSetIdsToDeleteRange)) {
 						const mailSetsToDeleteRange = await pMap(
 							mailSetIdsToDeleteRange,
@@ -807,7 +815,7 @@ export class MailViewModel {
 
 	private async deleteMailSetEntryRangeFolder(targetFolder: MailSet, shouldReload: boolean = false) {
 		// This deletes the range of MailSetEntries for a targetFolder entries list,
-		// currently used when importing mails from a file or IMAP.
+		// currently used when importing mails from a file or Migration.
 		// This makes sure that we keep already downloaded MailSetEntries in the cache but still show
 		// all mails inside the targetFolder correctly.
 		// The MailIndexer is downloading the MailSetEntries and Mails corresponding to an import in the background
@@ -883,27 +891,11 @@ export class MailViewModel {
 		// remove any selection to avoid that the next mail is loaded and selected for each deleted mail event
 		this.listModel?.selectNone()
 
-		const mailboxDetail = await this.getMailboxDetails()
-
-		// the request is handled a little differently if it is the system folder vs. a subfolder
-		if (folder.folderType === MailSetKind.TRASH || folder.folderType === MailSetKind.SPAM) {
-			return this.mailModel.clearFolder(folder).catch(
-				ofClass(PreconditionFailedError, () => {
-					throw new UserError("operationStillActive_msg")
-				}),
-			)
-		} else {
-			const folders = await this.mailModel.getMailboxFoldersForId(mailboxDetail.mailbox.mailSets._id)
-			if (isSubfolderOfType(folders, folder, MailSetKind.TRASH) || isSubfolderOfType(folders, folder, MailSetKind.SPAM)) {
-				return this.mailModel.finallyDeleteCustomMailFolder(folder).catch(
-					ofClass(PreconditionFailedError, () => {
-						throw new UserError("operationStillActive_msg")
-					}),
-				)
-			} else {
-				throw new ProgrammingError(`Cannot delete mails in folder ${String(folder._id)} with type ${folder.folderType}`)
-			}
-		}
+		return this.mailModel.clearFolder(folder).catch(
+			ofClass(PreconditionFailedError, () => {
+				throw new UserError("operationStillActive_msg")
+			}),
+		)
 	}
 
 	onSingleSelection(mail: Mail) {

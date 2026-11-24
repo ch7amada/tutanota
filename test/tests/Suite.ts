@@ -10,14 +10,14 @@ import "./typerefs/EntityFunctionsTest.js"
 import "./api/common/utils/FileUtilsTest.js"
 import "./api/common/utils/LoggerTest.js"
 import "./api/common/utils/PlainTextSearchTest.js"
-import "./api/common/utils/imapImportUtils/ImapImportUtilsTest.js"
+import "./api/common/utils/migrationImportUtils/MigrationImportUtilsTest.js"
 import "./api/common/utils/PlainTextToHtmlConverterTest.js"
-import "./api/worker/facades/ImapFacadeTest.js"
+import "./api/worker/facades/MailboxMigrationFacadeTest.js"
 import "./api/worker/facades/ImportMailFacadeTest.js"
-import "./api/worker/utils/imapImport/ImapImporterTest"
-import "./settings/imapimport/ImapMaiImportControllerTest.js"
-import "./settings/imapimport/oauth/OAuthHandlerTest.js"
-import "./settings/imapimport/oauth/OAuthErrorHandlerTest.js"
+import "./api/worker/utils/migration/MailboxImporterTest"
+import "./settings/migration/MailboxMigrationControllerTest.js"
+import "./settings/migration/oauth/OAuthHandlerTest.js"
+import "./settings/migration/oauth/MigrationErrorHandlerTest.js"
 import "./api/main/EntropyCollectorTest.js"
 import "./api/main/SyncTrackerTest.js"
 import "./instance-pipeline/CompressionTest.js"
@@ -29,6 +29,7 @@ import "./network/crypto/AsymmetricCryptoFacadeTest.js"
 import "./api/worker/crypto/CompatibilityTest.js"
 import "./instance-pipeline/CryptoMapperTest.js"
 import "./instance-pipeline/InstancePipelineTest.js"
+import "./instance-pipeline/EncryptionContextPathTest.js"
 import "./network/crypto/CryptoFacadeTest.js"
 import "./instance-pipeline/CryptoWrapperTest.js"
 import "./instance-pipeline/EntityAdapterTest.js"
@@ -37,16 +38,22 @@ import "./instance-pipeline/EntityUtilsTest.js"
 import "./instance-pipeline/ModelMapperTransformationsTest.js"
 import "./instance-pipeline/TypeMapperTest.js"
 import "./instance-pipeline/ApplicationTypesFacadeTest.js"
+import "./instance-pipeline/CanonicalIdTest.js"
+import "./instance-pipeline/InstanceTypeContextTest.js"
 import "./network/facades/BlobAccessTokenFacadeTest.js"
 import "./api/worker/facades/BlobFacadeTest.js"
 import "./api/worker/facades/CalendarFacadeTest.js"
 import "./api/worker/facades/AlarmFacadeTest.js"
-import "./api/worker/facades/ConfigurationDbTest.js"
+import "./api/worker/facades/IndexedDbConfigurationDatabaseTest.js"
 import "./api/worker/facades/ContactFacadeTest.js"
 import "./api/worker/facades/DriveFacadeTest.js"
+import "./api/worker/facades/DriveFileSharingFacadeTest.js"
 import "./network/facades/lazy/GroupManagementFacadeTest.js"
+import "./network/facades/lazy/ShareFacadeTest.js"
 import "./network/crypto/facades/AdminKeyLoaderFacadeTest.js"
 import "./api/worker/facades/IdentityKeyCreatorTest.js"
+import "./api/worker/facades/InstanceKeyFacadeTest.js"
+import "./api/worker/facades/InstanceKeyProviderMakerTest.js"
 import "./network/crypto/facades/KeyAuthenticationFacadeTest.js"
 import "./network/crypto/facades/KeyCacheTest.js"
 import "./network/crypto/facades/KeyLoaderFacadeTest.js"
@@ -94,7 +101,6 @@ import "./api/worker/search/IndexedDbIndexerTest.js"
 import "./api/worker/search/WebMailIndexerTest.js"
 import "./api/worker/search/OfflineMailIndexerTest.js"
 import "./api/worker/search/MailIndexerTest.js"
-import "./api/worker/search/OfflineStorageMailIndexerBackendTest.js"
 import "./api/worker/search/IndexedDbMailIndexerBackendTest.js"
 import "./api/worker/search/IndexedDbSearchFacadeTest.js"
 import "./api/worker/search/SearchIndexEncodingTest.js"
@@ -151,7 +157,9 @@ import "./gui/base/WizardDialogNTest.js"
 import "./gui/base/WizardTest.js"
 import "./login/LoginViewModelTest.js"
 import "./login/PostLoginUtilsTest.js"
-import "./mail/InboxRuleHandlerTest.js"
+import "./mail/inboxrules/InboxRuleHandlerTest.js"
+import "./mail/inboxrules/LegacyInboxRuleHandlerTest.js"
+import "./mail/inboxrules/ExpandedInboxRuleHandlerTest.js"
 import "./mail/ProcessInboxHandlerTest.js"
 import "./mail/KnowledgeBaseSearchFilterTest.js"
 import "./mail/MailModelTest.js"
@@ -248,6 +256,7 @@ import "./crypto/KyberTest.js"
 import "./crypto/HmacTest.js"
 import "./crypto/Blake3Test.js"
 import "./crypto/AeadFacadeTest.js"
+import "./ui/AttachmentBubbleTest.js"
 import "./usagetests/UsageTestAll.js"
 import "./utils/UtilsTest.js"
 import "./utils/MapUtilsTest.js"
@@ -265,7 +274,7 @@ import "./app-env/TimeConstants.js"
 import "./crypto/InstanceDecryptorTest.js"
 import "./crypto/ParsedCiphertextTest.js"
 import "./crypto/ValueDecryptorTest.js"
-import "./drive/DriveFilePickerTests.js"
+import "./drive/DriveFilePickerTest.js"
 import "./drive/DriveTransferStackTest.js"
 import "./calendar/CalendarSearchTest.js"
 import "./drive/DriveSearchModelTest.js"
@@ -278,6 +287,7 @@ import "./plugin-kit/plugin-manager/hostApi/PluginHostTest.js"
 import "./plugin-kit/plugin-manager/PluginManagerTest.js"
 import "./plugin-kit/plugins/nextcloud/NextcloudPluginTest.js"
 import "./plugin-kit/plugins/nextcloud/NextcloudApiTest.js"
+import "./drive/DriveUtilsTest.js"
 
 import * as td from "testdouble"
 import { EntropySource } from "../../src/platform-kit/crypto"
@@ -349,13 +359,17 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./desktop/db/OfflineDbFacadeTest.js")
 		await import("./desktop/export/DesktopExportFacadeTest.js")
 		await import("./desktop/files/DesktopFileFacadeTest.js")
-		await import("./desktop/imapimport/DesktopImapSyncSystemFacadeTest.js")
-		await import("./desktop/imapimport/imapsync/imapmail/ImapParserUtilsTest.js")
+		await import("./desktop/migration/DesktopMigrationSyncSystemFacadeTest.js")
+		await import("./desktop/migration/mailparser/MailParserUtilsTest.js")
 		await import("./desktop/DesktopOauthWindowFacadeTest.js")
-		await import("./desktop/imapimport/imapsync/ImapSyncTest.js")
-		await import("./desktop/imapimport/imapsync/ImapSyncSessionTest.js")
-		await import("./desktop/imapimport/imapsync/DifferentialUidLoaderTest.js")
-		await import("./desktop/imapimport/imapsync/ImapSyncSessionProcessTest.js")
+		await import("./desktop/migration/imapsync/ImapSyncSessionTest.js")
+		await import("./desktop/migration/imapsync/DifferentialUidLoaderTest.js")
+		await import("./desktop/migration/imapsync/ImapSyncSessionProcessTest.js")
+		await import("./desktop/migration/m365sync/M365SyncSessionTest.js")
+		await import("./desktop/migration/m365sync/GraphApiClientTest.js")
+		await import("./desktop/migration/gmailsync/GmailSyncSessionTest.js")
+		await import("./desktop/migration/gmailsync/GmailApiClientTest.js")
+		await import("./desktop/migration/ApiClientRequestPacerTest.js")
 		await import("./desktop/files/TempFsTest.js")
 		await import("./desktop/files/TempFsTest.js")
 		await import("./desktop/integration/DesktopIntegratorTest.js")
@@ -373,6 +387,7 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./api/worker/facades/OfflineStorageAutosaveFacadeTest.js")
 		await import("./api/worker/facades/OfflineStorageSpamClassifierStorageFacadeTest.js")
 		await import("./restClient/RestClientTest.js")
+		await import("./api/worker/facades/OfflineConfigurationDatabaseTest.js")
 	}
 
 	// testdouble complains about certain mocking related code smells, and also prints a warning whenever you replace a property on an object.

@@ -1,5 +1,5 @@
 import m, { Children, Component, RouteLinkAttrs, Vnode } from "mithril"
-import { component_size, px } from "../size"
+import { component_size, rem, px } from "../size"
 import type { lazy } from "../../platform-kit/utils"
 import { neverNull } from "../../platform-kit/utils"
 import { lazyStringValue } from "./MaybeLazy"
@@ -139,7 +139,7 @@ export class NavButton implements Component<NavButtonAttrs> {
 			draggable: a.dragStartHandler ? "true" : undefined,
 			ondragstart: a.dragStartHandler,
 			style: {
-				"font-size": a.fontSize ? px(a.fontSize) : "",
+				"font-size": a.fontSize ? rem(a.fontSize) : "",
 				...(isDrawerItem
 					? {
 							height: px(getDrawerItemHeight()),

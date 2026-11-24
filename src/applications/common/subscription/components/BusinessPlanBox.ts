@@ -1,5 +1,5 @@
 import m, { Children, Component, Vnode } from "mithril"
-import { px, size } from "../../../../ui/size"
+import { rem, font_size, px, size } from "../../../../ui/size"
 import { Theme, theme } from "../../../../ui/theme"
 import { PaymentInterval, PriceAndConfigProvider } from "../utils/PriceUtils"
 import { TranslationKeyType } from "../../../../ui/utils/TranslationKey"
@@ -11,7 +11,7 @@ import { getFeaturePlaceholderReplacement, PlanTypeToName } from "../utils/Subsc
 import { PlanConfig } from "./BusinessPlanContainer"
 import { DefaultAnimationTime } from "../../../../ui/animation/Animations"
 import { Styles } from "../../../../ui/styles"
-import { boxShadowHigh, boxShadowLow } from "../../../../ui/main-styles"
+import { boxShadowHigh, boxShadowInline, boxShadowLow } from "../../../../ui/main-styles"
 import { PlanBadge } from "./PlanBadge"
 import { DiscountDetail, getCampaignTheme, getHasCampaign } from "../utils/PlanSelectorUtils"
 import { PromotionRibbon } from "./PromotionRibbon"
@@ -122,6 +122,7 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 					transform: isSelected && !isMobileLayout ? `translateY(${px(-size.core_16)})` : "initial",
 					transition: `transform ${DefaultAnimationTime}ms, box-shadow ${DefaultAnimationTime}ms, background-color ${DefaultAnimationTime}ms`,
 					"margin-top": hasCampaign ? px(size.spacing_24) : "initial",
+					scale: isMobileLayout && isSelected ? "1.04" : "",
 				},
 				onmouseenter: () => {
 					if (!canHover) return
@@ -162,12 +163,12 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 						borderStyle: "solid",
 						borderWidth: hasCampaign ? `0 ${px(2)} ${px(2)} ${px(2)}` : px(2),
 						borderColor: isSelected ? localTheme.primary : showHover ? localTheme.outline : localTheme.outline_variant,
-						backgroundColor: isSelected ? localTheme.surface_container_high : localTheme.surface,
+						background: isSelected ? localTheme.surface_container_high : localTheme.surface,
 						color: localTheme.on_surface,
 						borderRadius: hasCampaign ? `0 0 ${px(12)} ${px(12)}` : px(12),
 						padding: `${px(isMobileLayout ? 12 : size.spacing_24)} ${px(isMobileLayout ? 12 : size.spacing_24)}`,
 						opacity: isDisabled ? 0.6 : 1,
-						"box-shadow": isSelected ? boxShadowHigh : showHover ? boxShadowLow : "initial",
+						"box-shadow": this.getBoxShadow(isSelected, showHover, hasCampaign),
 						transition: `border-color ${DefaultAnimationTime}ms ease-out, box-shadow ${DefaultAnimationTime}ms ease-out`,
 						height: "100%",
 					},
@@ -194,6 +195,7 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 										transform: `rotateZ(${attrs.isSelected ? 180 : 0}deg)`,
 										transition: `transform ${DefaultAnimationTime}ms`,
 										color: localTheme.on_surface_variant,
+										fill: hasCampaign ? localTheme.on_surface : "",
 									},
 								}),
 							]),
@@ -209,19 +211,17 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 								? m(PlanBadge, { langKey: isCurrentPlan ? "pricing.currentPlan_label" : "unavailable_label" })
 								: m(`div.no-wrap${isMobileLayout ? ".right" : ".center"}`, [
 										m("div.lh-s", [
-											referencePrice
-												? m("span.strike.mr-8.smaller", { style: { color: localTheme.on_surface_variant } }, referencePrice)
-												: null,
+											referencePrice ? m("span.strike.mr-8.smaller", { style: { color: localTheme.on_surface } }, referencePrice) : null,
 											m("span.h1", price),
 										]),
 										m(
 											"div.small",
-											{ style: { color: localTheme.on_surface_variant } },
+											{ style: { color: localTheme.on_surface } },
 											lang.getTranslationText(priceHintLabel ?? "pricing.perUserMonth_label"),
 											(discountDetail?.discountType === "GlobalFirstYear" ||
 												discountDetail?.discountType === "BonusMonthsAndGlobalFirstYear") &&
 												isYearly &&
-												m("sup", { style: { "font-size": px(8) } }, "1"),
+												m("sup", { style: { "font-size": rem(size.core_8_em) } }, "1"),
 										),
 									]),
 						),
@@ -283,13 +283,27 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 			),
 		)
 	}
+	private getBoxShadow = (isSelected: boolean, showHover: boolean, hasCampaign: boolean) => {
+		if (isSelected) {
+			if (hasCampaign) {
+				return boxShadowInline
+			} else {
+				return boxShadowHigh
+			}
+		} else if (showHover) {
+			return boxShadowLow
+		} else {
+			return "initial"
+		}
+	}
+
 	private renderTagLine(isMobileLayout: boolean, hasCampaign: boolean, localTheme: Theme, planConfig: PlanConfig) {
 		return m(
 			"div",
 			{
 				style: {
 					display: isMobileLayout ? "none" : "block",
-					fontSize: px(12),
+					fontSize: rem(font_size.small_em),
 					color: hasCampaign ? localTheme.primary : undefined,
 				},
 			},
@@ -310,7 +324,7 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 				style: {
 					lineHeight: 1,
 					fontWeight: "bold",
-					fontSize: px(isMobileLayout ? 18 : 20),
+					fontSize: rem(isMobileLayout ? size.core_18_em : size.core_20_em),
 					color,
 				},
 			},
@@ -335,7 +349,7 @@ export class BusinessPlanBox implements Component<BusinessPlanBoxAttrs> {
 				}),
 				m(
 					".smaller",
-					{ style: { color: hasCampaign ? localTheme.secondary : undefined } },
+					{ style: { color: hasCampaign ? localTheme.on_surface : undefined } },
 					lang.getTranslation(langKey, getFeaturePlaceholderReplacement(replacement, planType, provider)).text,
 				),
 			)

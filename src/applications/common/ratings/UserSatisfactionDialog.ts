@@ -12,7 +12,7 @@ import { EvaluationPage } from "./pages/EvaluationPage.js"
 import m from "mithril"
 import { DateTime } from "luxon"
 import { ButtonType } from "../../../ui/base/Button.js"
-import { AndroidPlayStorePage } from "./pages/AndroidPlayStorePage.js"
+import { RateUsPage } from "./pages/RateUsPage.js"
 import { SupportTutaPage } from "./pages/SupportTutaPage.js"
 import { DissatisfactionPage } from "./pages/DissatisfactionPage.js"
 import { SuggestionPage } from "./pages/SuggestionPage.js"
@@ -25,13 +25,18 @@ import { windowFacade } from "../misc/WindowFacade.js"
 import { EnvProvider, TUTA_MAIL_APP_STORE_URL, TUTA_MAIL_GOOGLE_PLAY_URL } from "@tutao/app-env"
 import { isEmpty, noOp } from "@tutao/utils"
 import { Dialog } from "../../../ui/base/Dialog.js"
-import { SupportCategory, SupportTopic } from "@tutao/entities/tutanota"
+import { createUserSettingsGroupRoot, SupportCategory, SupportTopic } from "@tutao/entities/tutanota"
 import { getCurrentDate } from "../../mail-app/mail/MailUtils"
+import { locator } from "../api/main/CommonLocator.js"
+import { showProgressDialog } from "../../../ui/dialogs/ProgressDialog.js"
 
-export type UserSatisfactionDialogPage = "evaluation" | "dissatisfaction" | "androidPlayStore" | "supportTuta" | "suggestion" | "contactSupport"
+export type UserSatisfactionDialogPage = "evaluation" | "dissatisfaction" | "rateUs" | "supportTuta" | "suggestion" | "contactSupport"
 
 export async function showUserSatisfactionDialog(triggerType: TriggerType): Promise<void> {
 	const { ContactSupportPage } = await import("../support/pages/ContactSupportPage.js")
+	if (triggerType !== "ManualFeedback" && locator.logins.getUserController().userSettingsGroupRoot.satisfactionDialogDisabled) {
+		return
+	}
 	completeTriggerStage(triggerType)
 
 	deviceConfig.setNextEvaluationDate(DateTime.now().plus({ month: 4 }).toJSDate())
@@ -51,7 +56,7 @@ export async function showUserSatisfactionDialog(triggerType: TriggerType): Prom
 	}
 
 	const dialog = new MultiPageDialog<UserSatisfactionDialogPage>(
-		"evaluation",
+		triggerType !== "ManualFeedback" ? "evaluation" : "suggestion",
 		(dialog, navigateToPage, goBack) => ({
 			evaluation: {
 				content: m(EvaluationPage, {
@@ -59,6 +64,19 @@ export async function showUserSatisfactionDialog(triggerType: TriggerType): Prom
 					dialog,
 					navigate: navigateToPage,
 				}),
+				leftAction: {
+					label: "neverAgain_label",
+					type: ButtonType.Secondary,
+					click: async () => {
+						if (!(await Dialog.confirm("disableSatisfactionDialogConfirm_msg", "neverAgain_label"))) return
+						const userController = locator.logins.getUserController()
+						const settings = createUserSettingsGroupRoot(userController.userSettingsGroupRoot)
+						settings.satisfactionDialogDisabled = true
+						await showProgressDialog("pleaseWait_msg", locator.entityClient.update(settings))
+						userController.userSettingsGroupRoot.satisfactionDialogDisabled = true
+						dialog.close()
+					},
+				},
 				rightAction: {
 					label: "notNow_label",
 					click: () => {
@@ -77,8 +95,8 @@ export async function showUserSatisfactionDialog(triggerType: TriggerType): Prom
 					completeEvaluationStage(triggerType, "NotNow")
 				},
 			},
-			androidPlayStore: {
-				content: m(AndroidPlayStorePage, { triggerType, dialog }),
+			rateUs: {
+				content: m(RateUsPage, { triggerType, dialog }),
 			},
 			dissatisfaction: {
 				content: m(DissatisfactionPage, {
@@ -101,17 +119,28 @@ export async function showUserSatisfactionDialog(triggerType: TriggerType): Prom
 				},
 			},
 			suggestion: {
-				content: m(SuggestionPage, { dialog }),
-				leftAction: {
-					label: "back_action",
-					type: ButtonType.Secondary,
-					click: () => goBack(),
-				},
-				rightAction: {
-					label: "notNow_label",
-					type: ButtonType.Secondary,
-					click: () => dialog.close(),
-				},
+				title: "Feedback",
+				content: m(SuggestionPage, { dialog, triggerType }),
+				leftAction:
+					triggerType !== "ManualFeedback"
+						? {
+								label: "back_action",
+								type: ButtonType.Secondary,
+								click: () => goBack(),
+							}
+						: undefined,
+				rightAction:
+					triggerType !== "ManualFeedback"
+						? {
+								label: "notNow_label",
+								type: ButtonType.Secondary,
+								click: () => dialog.close(),
+							}
+						: {
+								label: "close_alt",
+								type: ButtonType.Secondary,
+								click: () => dialog.close(),
+							},
 			},
 			contactSupport: {
 				content: m(ContactSupportPage, {

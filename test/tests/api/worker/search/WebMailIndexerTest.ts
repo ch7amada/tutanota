@@ -1,5 +1,5 @@
 import o from "@tutao/otest"
-import { FREE_MAIL_INDEX_DEFAULT_RANGE_DAYS, FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP, TimeConstants } from "../../../../../src/platform-kit/app-env"
+import { FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP, TimeConstants } from "../../../../../src/platform-kit/app-env"
 import {
 	constructMailSetEntryId,
 	idToElementId,
@@ -10,16 +10,26 @@ import {
 	LEGACY_TO_RECIPIENTS_ID,
 	timestampToGeneratedId,
 } from "../../../../../src/platform-kit/meta"
-import { _getCurrentIndexTimestamp, MboxIndexData, WebMailIndexer } from "../../../../../src/applications/mail-app/workerUtils/index/WebMailIndexer.js"
+import {
+	_getCurrentIndexTimestamp,
+	INITIAL_MAIL_INDEX_INTERVAL_DAYS,
+	MboxIndexData,
+	WebMailIndexer,
+} from "../../../../../src/applications/mail-app/workerUtils/index/WebMailIndexer.js"
 import { clientInitializedTypeModelResolver, createTestEntity } from "../../../TestUtils.js"
-import { assertNotNull, defer, downcast, getDayShifted } from "../../../../../src/platform-kit/utils"
+import { assertNotNull, defer, delay, downcast, getDayShifted } from "../../../../../src/platform-kit/utils"
 import { EntityRestClientMock } from "../rest/EntityRestClientMock.js"
 import type { DateProvider } from "../../../../../src/applications/common/api/worker/DateProvider.js"
 import { func, matchers, object, verify, when } from "testdouble"
 import { InfoMessageHandler } from "../../../../../src/applications/common/gui/InfoMessageHandler.js"
 import { MailFacade } from "../../../../../src/applications/common/api/worker/facades/lazy/MailFacade.js"
 import { EntityClient } from "../../../../../src/platform-kit/network/EntityClient.js"
-import { BulkMailLoader, MAIL_INDEXER_CHUNK, MailWithMailDetails } from "../../../../../src/applications/mail-app/workerUtils/index/BulkMailLoader.js"
+import {
+	BulkMailLoader,
+	MAIL_INDEXER_CHUNK,
+	MailsMaybeWithDetails,
+	MailWithDetails,
+} from "../../../../../src/applications/mail-app/workerUtils/index/BulkMailLoader.js"
 import { MailIndexerBackend, MailWithDetailsAndAttachments } from "../../../../../src/applications/mail-app/workerUtils/index/MailIndexerBackend"
 import { SearchIndexStateInfo } from "../../../../../src/applications/common/api/worker/search/SearchTypes"
 import * as restError from "../../../../../src/platform-kit/rest-client/error"
@@ -50,7 +60,11 @@ import { GroupMembershipTypeRef, User, UserTypeRef } from "@tutao/entities/sys"
 import { ProgressMonitor } from "../../../../../src/platform-kit/network/ProgressMonitorInterface"
 import { GroupType } from "../../../../../src/entities/sys/Utils"
 import { MailState } from "../../../../../src/entities/tutanota/Utils"
-import { defaultMailIndexerNewMailDownloader, MailIndexerNewMailDownloader } from "../../../../../src/applications/mail-app/workerUtils/index/MailIndexer"
+import {
+	defaultMailIndexerNewMailDownloader,
+	MailIndexerNewMailDownloader,
+	MailIndexingAbortReason,
+} from "../../../../../src/applications/mail-app/workerUtils/index/MailIndexer"
 
 class FixedDateProvider implements DateProvider {
 	now: number
@@ -153,7 +167,7 @@ o.spec("WebMailIndexer", () => {
 			//                           m3      m4  m2     m1                            m0
 			const rangeStart = 1554415200000 // "2019-04-04T22:00:00.000Z"
 			// Simulating time zone changes by adding/subtracting one hour
-			const rangeEnd = getDayShifted(new Date(rangeStart), -FREE_MAIL_INDEX_DEFAULT_RANGE_DAYS).getTime() + 60 * 60 * 1000
+			const rangeEnd = getDayShifted(new Date(rangeStart), -INITIAL_MAIL_INDEX_INTERVAL_DAYS).getTime() + 60 * 60 * 1000
 			const rangeEnd2 = getDayShifted(new Date(rangeEnd), -1).getTime() - 60 * 60 * 1000
 			const rangeEndShifted2Days = getDayShifted(new Date(rangeEnd), -2).getTime()
 			const userId = "userId1"
@@ -290,7 +304,7 @@ o.spec("WebMailIndexer", () => {
 				const mailsCaptor = matchers.captor()
 				verify(backend.indexMails(timestampsCaptor.capture(), mailsCaptor.capture()))
 				o.check(timestampsCaptor.value).deepEquals(timestamps)
-				const indexedMailData: MailWithMailDetails[] = mailsCaptor.value
+				const indexedMailData: MailWithDetails[] = mailsCaptor.value
 				o.check(indexedMailData.length).equals(mailsWithData.length)(
 					`All mails are indexed. Actually indexed: ${indexedMailData.map((data) => data.mail.subject)}`,
 				)
@@ -302,8 +316,10 @@ o.spec("WebMailIndexer", () => {
 
 			o.test("indexing disabled", async function () {
 				await initWithEnabled(false)
+				// dirty partial mock
+				entityMock.load = func<EntityRestClientMock["load"]>()
 				await indexer.indexMailboxes(user, rangeEnd)
-				verify(entityClient.load(matchers.anything(), matchers.anything()), { times: 0 })
+				verify(entityMock.load(matchers.anything(), matchers.anything()), { times: 0 })
 			})
 
 			o.test("fully indexed", async function () {
@@ -430,11 +446,11 @@ o.spec("WebMailIndexer", () => {
 				expectedNewestTimestampForIndexMailListCall: number | null
 			}) {
 				const mailsChunk: Mail[] = []
-				const mailDetailsAndMailsChunk: MailWithMailDetails[] = []
+				const mailDetailsAndMailsChunk: MailsMaybeWithDetails = { mailsWithDetails: [], corruptMailsWithoutDetails: [] }
 				for (let i = 0; i < MAIL_INDEXER_CHUNK; i++) {
 					const mail: Mail = createTestEntity(MailTypeRef)
 					mailsChunk.push(mail)
-					mailDetailsAndMailsChunk.push({
+					mailDetailsAndMailsChunk.mailsWithDetails.push({
 						mail,
 						mailDetails: createTestEntity(MailDetailsTypeRef),
 					})
@@ -548,6 +564,7 @@ o.spec("WebMailIndexer", () => {
 				infoMessageHandler.onSearchIndexStateUpdate({
 					initializing: false,
 					mailIndexEnabled: true,
+					autoRestartEnabled: true,
 					progress: 0,
 					currentMailIndexTimestamp: now,
 					aimedMailIndexTimestamp: indexingTimestampAim,
@@ -589,6 +606,7 @@ o.spec("WebMailIndexer", () => {
 				infoMessageHandler.onSearchIndexStateUpdate({
 					initializing: false,
 					mailIndexEnabled: true,
+					autoRestartEnabled: true,
 					// progress is set to 1 when indexing is cancelled before restarting
 					progress: 1,
 					currentMailIndexTimestamp: now,
@@ -599,6 +617,9 @@ o.spec("WebMailIndexer", () => {
 					error: null,
 				}),
 			)
+
+			// prevent microtask shenanigans; this still enqueues a new task, giving enough time for the second attempt to start before the test ends
+			await delay(0)
 		})
 	})
 
@@ -828,6 +849,7 @@ o.spec("WebMailIndexer", () => {
 				infoMessageHandler.onSearchIndexStateUpdate({
 					initializing: false,
 					mailIndexEnabled: true,
+					autoRestartEnabled: true,
 					progress: 0,
 					currentMailIndexTimestamp: currentTimestamp,
 					aimedMailIndexTimestamp: currentTimestamp,
@@ -962,14 +984,14 @@ o.spec("WebMailIndexer", () => {
 			const rangeEnd = 0
 
 			const lotsOfMails: Mail[] = []
-			const lotsOfMailDetailsAndMails: MailWithMailDetails[] = []
+			const lotsOfMailDetailsAndMails: MailsMaybeWithDetails = { mailsWithDetails: [], corruptMailsWithoutDetails: [] }
 			for (let i = 0; i < MAIL_INDEXER_CHUNK; i++) {
 				const _id: IdTuple = ["helloooo", "I'm a mail!"]
 				const mail: Mail = createTestEntity(MailTypeRef, {
 					_id,
 				})
 				lotsOfMails.push(mail)
-				lotsOfMailDetailsAndMails.push({
+				lotsOfMailDetailsAndMails.mailsWithDetails.push({
 					mail,
 					mailDetails: createTestEntity(MailDetailsTypeRef, {
 						recipients: createTestEntity(RecipientsTypeRef, {
@@ -1105,6 +1127,7 @@ o.spec("WebMailIndexer", () => {
 				infoMessageHandler.onSearchIndexStateUpdate({
 					initializing: false,
 					mailIndexEnabled: true,
+					autoRestartEnabled: true,
 					progress: 0,
 					currentMailIndexTimestamp: now,
 					// aimedMailIndexTimestamp is set to currentMailIndexTimestamp when indexing is cancelled
@@ -1143,13 +1166,14 @@ o.spec("WebMailIndexer", () => {
 
 			const mailboxIndexingPromise = indexer.indexMailboxes(user, indexingTimestampAim)
 			await initPromise
-			indexer.cancelMailIndexingBeforeRestart()
+			indexer.cancelMailIndexing(MailIndexingAbortReason.Restarting)
 			await mailboxIndexingPromise
 
 			verify(
 				infoMessageHandler.onSearchIndexStateUpdate({
 					initializing: false,
 					mailIndexEnabled: true,
+					autoRestartEnabled: true,
 					// progress is set to 1 when indexing is cancelled before restarting
 					progress: 1,
 					currentMailIndexTimestamp: now,
@@ -1218,6 +1242,7 @@ function updateIndexingState(info?: Partial<SearchIndexStateInfo>): SearchIndexS
 	const defaultInfo: SearchIndexStateInfo = {
 		initializing: false,
 		mailIndexEnabled: false,
+		autoRestartEnabled: true,
 		progress: 0,
 		currentMailIndexTimestamp: 0,
 		aimedMailIndexTimestamp: 0,

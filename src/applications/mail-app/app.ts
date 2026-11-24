@@ -63,6 +63,9 @@ import { DriveSearchViewModel } from "../drive-app/search/view/DriveSearchViewMo
 import { FolderItem } from "../drive-app/drive/view/DriveUtils"
 import { KeyManager } from "../../ui/utils/KeyManager"
 import { PickedDestinationAction } from "../drive-app/drive/view/DriveItemPicker"
+import { MigrationPreLogoutAction } from "./mail/migration/MigrationPreLogoutAction"
+import { DriveFileShareView, DriveFileShareViewAttrs } from "../drive-app/drive/view/DriveFileShareView"
+import { DataFile } from "../../entities/tutanota/Utils"
 
 EnvProvider.assertMainOrNodeBoot()
 EnvProvider.bootFinished()
@@ -214,6 +217,7 @@ import("../../ui/translations/en.js")
 					}
 					await mailLocator.mailboxModel.init()
 					await mailLocator.mailModel.init()
+					await (await mailLocator.inboxRuleModel()).init()
 				},
 				async onFullLoginSuccess({ sessionType }) {
 					if (sessionType === SessionType.Temporary) {
@@ -308,7 +312,7 @@ import("../../ui/translations/en.js")
 			})
 			mailLocator.logins.addPostLoginAction(async () => {
 				const { MailIndexerPostLoginAction } = await import("./search/model/MailIndexerPostLoginAction.js")
-				return new MailIndexerPostLoginAction(mailLocator.indexerFacade, mailLocator.syncTracker, mailLocator.logins)
+				return new MailIndexerPostLoginAction(mailLocator.indexerFacade, mailLocator.syncTracker)
 			})
 			mailLocator.logins.addPostLoginAction(async () => {
 				const { RegisterPushServicePostLoginAction } = await import("../common/native/RegisterPushServicePostLoginAction.js")
@@ -323,13 +327,17 @@ import("../../ui/translations/en.js")
 
 		if (EnvProvider.get().isDesktop()) {
 			mailLocator.logins.addPostLoginAction(async () => {
-				const { ImapImportPostLoginAction } = await import("./mail/imapimport/ImapImportPostLoginAction")
-				return new ImapImportPostLoginAction(
-					mailLocator.getImapMailImportController(),
+				const { MigrationPostLoginAction } = await import("./mail/migration/MigrationPostLoginAction")
+				return new MigrationPostLoginAction(
+					mailLocator.getMailboxMigrationController(),
 					mailLocator.customerFacade,
 					mailLocator.entityClient,
 					mailLocator.syncTracker,
 				)
+			})
+			mailLocator.logins.addPreLogoutAction(async () => {
+				const { MigrationPreLogoutAction } = await import("./mail/migration/MigrationPreLogoutAction")
+				return new MigrationPreLogoutAction(mailLocator.getMailboxMigrationController())
 			})
 		}
 
@@ -735,6 +743,39 @@ import("../../ui/translations/en.js")
 							bottomNav: cache.bottomNav,
 							filePicker: cache.filePicker,
 							sendFileViaMail: sendDriveFileViaMail,
+							fileShareDialog: mailLocator.driveFileShareDialog,
+						}
+					},
+				},
+				mailLocator.logins,
+			),
+			driveFileShare: makeViewResolver<
+				DriveFileShareViewAttrs,
+				DriveFileShareView,
+				{
+					downloadFileForShare: DriveFileShareViewAttrs["downloadFileForShare"]
+					downloadBlobsForShare: DriveFileShareViewAttrs["downloadBlobsForShare"]
+					saveDataFile: (file: DataFile) => Promise<void>
+				}
+			>(
+				{
+					requireLogin: false,
+					prepareRoute: async () => {
+						const { DriveFileShareView } = await import("../drive-app/drive/view/DriveFileShareView.js")
+						return {
+							component: DriveFileShareView,
+							cache: {
+								downloadFileForShare: mailLocator.driveFileSharingFacade.loadSharedFile,
+								downloadBlobsForShare: mailLocator.driveFileSharingFacade.downloadSharedFileContent,
+								saveDataFile: mailLocator.fileController.saveDataFile,
+							},
+						}
+					},
+					prepareAttrs: (cache) => {
+						return {
+							downloadFileForShare: cache.downloadFileForShare,
+							downloadBlobsForShare: cache.downloadBlobsForShare,
+							saveDataFile: cache.saveDataFile,
 						}
 					},
 				},
@@ -808,6 +849,7 @@ import("../../ui/translations/en.js")
 						showMoveItemDialog: (items, moveItems) => mailLocator.showMoveItemDialog(items, moveItems),
 						filePicker,
 						sendFileViaMail: sendDriveFileViaMail,
+						fileShareDialog: mailLocator.driveFileShareDialog,
 					}),
 				},
 				mailLocator.logins,
@@ -1162,6 +1204,9 @@ function assignEnvPaymentSetup(urlQueryParams: Mithril.Params) {
 			break
 		case PaymentSetup.Playstore:
 			env.paymentSetup = PaymentSetup.Playstore
+			break
+		case PaymentSetup.None:
+			env.paymentSetup = PaymentSetup.None
 			break
 		case undefined:
 			break

@@ -38,10 +38,10 @@ import { checkApprovalStatus } from "../../../common/misc/LoginUtils"
 import { locator } from "../../../common/api/main/CommonLocator"
 import {
 	ALLOWED_IMAGE_FORMATS,
-	CancelledError,
 	EnvProvider,
 	FeatureType,
 	MailAuthenticationStatus,
+	ProgrammingError,
 	TimeConstants,
 	UNDO_SEND_TIMEOUT_SECONDS,
 	UpgradePromptType,
@@ -51,7 +51,7 @@ import type { DialogHeaderBarAttrs } from "../../../../ui/base/DialogHeaderBar"
 import { Button, ButtonColor, ButtonType } from "../../../../ui/base/Button.js"
 import { attachDropdown, createDropdown, DropdownChildAttrs } from "../../../../ui/base/Dropdown.js"
 import { Icons } from "../../../../ui/base/icons/Icons"
-import { AnimationPromise, animations, height, opacity } from "../../../../ui/animation/Animations"
+import { animations, onbeforeremoveColapseAnimation, oncreateExpandAnimation, opacity } from "../../../../ui/animation/Animations"
 import type { LegacyTextFieldAttrs } from "../../../../ui/base/LegacyTextField.js"
 import { Autocomplete, LegacyTextField } from "../../../../ui/base/LegacyTextField.js"
 import { attachDriveFile, chooseAndAttachFile, cleanupInlineAttachments, createAttachmentBubbleAttrs, getConfidentialStateMessage } from "./MailEditorViewModel"
@@ -67,11 +67,14 @@ import {
 	cleanMatch,
 	debounce,
 	downcast,
+	isEmpty,
 	isNotNull,
+	last,
 	lazy,
 	LazyLoaded,
 	noOp,
 	ofClass,
+	promiseMap,
 	throttle,
 	typedValues,
 } from "../../../../platform-kit/utils"
@@ -145,6 +148,10 @@ import { Keys } from "../../../../ui/utils/KeyboardKeys"
 import { DriveFile } from "@tutao/entities/drive"
 import { ArchiveDataType } from "../../../../entities/sys/Utils"
 import { TransferProgressDispatcher } from "../../../common/api/main/TransferProgressDispatcher"
+import type { NativeFileApp } from "../../../../app-kit/native-bridge/common/FileApp"
+import { formatDate, formatDateWithWeekdayAndYear } from "../../../../ui/utils/Formatter"
+import { AriaPopupType } from "../../../../ui/AriaUtils"
+import { keyboardEventFrom } from "../../../../ui/base/GuiUtils" // Interval where we save drafts locally.
 
 // Interval where we save drafts locally.
 //
@@ -764,23 +771,8 @@ export class MailEditor implements Component<MailEditorAttrs> {
 					? m(
 							"",
 							{
-								oncreate: (vnode) => {
-									// overflow needs to be hidden when the animation is running for it to look smooth
-									// but if that style stays the time picker drop-down is hidden
-									const dom = vnode.dom as HTMLElement
-									dom.style.overflow = "hidden"
-
-									return this.animateHeight(dom, true).then(() => {
-										dom.style.overflow = "visible"
-									})
-								},
-								onbeforeremove: (vnode) => {
-									const dom = vnode.dom as HTMLElement
-									// overflow needs to be hidden for animateHeight to work as expected
-									dom.style.overflow = "hidden"
-
-									return this.animateHeight(dom, false)
-								},
+								oncreate: (vnode) => oncreateExpandAnimation(vnode.dom as HTMLElement),
+								onbeforeremove: (vnode) => onbeforeremoveColapseAnimation(vnode.dom as HTMLElement),
 							},
 							[
 								m(
@@ -796,14 +788,7 @@ export class MailEditor implements Component<MailEditorAttrs> {
 													minWidth: "125px",
 												},
 											},
-											m(dateComponents.DatePicker, {
-												date: sendAt,
-												onDateSelected: (date) => {
-													model.setSendAtDate(date)
-												},
-												startOfTheWeekOffset: getStartOfTheWeekOffsetForUser(model.logins.getUserController().userSettingsGroupRoot),
-												label: lang.getTranslation("sendDate_label"),
-											}),
+											this.renderDatePicker(dateComponents, sendAt, model),
 										),
 										m(
 											"",
@@ -890,6 +875,46 @@ export class MailEditor implements Component<MailEditorAttrs> {
 				m(".pb-16"),
 			],
 		)
+	}
+
+	private renderDatePicker(
+		dateComponents: {
+			DatePicker: Class<DatePicker>
+			TimePicker: Class<TimePicker>
+		},
+		sendAt: Date,
+		model: SendMailModel,
+	): Children {
+		return m(dateComponents.DatePicker, {
+			date: sendAt,
+			onDateSelected: (date) => {
+				model.setSendAtDate(date)
+			},
+			startOfTheWeekOffset: getStartOfTheWeekOffsetForUser(model.logins.getUserController().userSettingsGroupRoot),
+			label: lang.getTranslation("sendDate_label"),
+			renderCustomTextField: ({ value, label, disabled, focused, onfocus, onkeydown, oncreateTextField, onblur, oninput }) =>
+				m(LegacyTextField, {
+					value: focused ? value : formatDate(sendAt),
+					label,
+					disabled,
+					helpLabel: () => formatDateWithWeekdayAndYear(sendAt),
+					hasPopup: AriaPopupType.Dialog,
+					onDomInputCreated: (_, vnode) => {
+						oncreateTextField(vnode)
+					},
+					keyHandler: (key) => {
+						onkeydown(keyboardEventFrom(key))
+						return true // HACK for TS
+					},
+					oninput: () => {
+						oninput({} as InputEvent)
+					},
+					onfocus: () => {
+						onfocus({ relatedTarget: null } as FocusEvent)
+					},
+					onblur,
+				}),
+		})
 	}
 
 	private renderInvalidSendAtMessage(): Children | null {
@@ -1016,8 +1041,8 @@ export class MailEditor implements Component<MailEditorAttrs> {
 		return m(
 			".external-recipients.overflow-hidden",
 			{
-				oncreate: (vnode) => this.animateHeight(vnode.dom as HTMLElement, true),
-				onbeforeremove: (vnode) => this.animateHeight(vnode.dom as HTMLElement, false),
+				oncreate: (vnode) => oncreateExpandAnimation(vnode.dom as HTMLElement),
+				onbeforeremove: (vnode) => onbeforeremoveColapseAnimation(vnode.dom as HTMLElement),
 			},
 			this.sendMailModel
 				.allRecipients()
@@ -1026,8 +1051,8 @@ export class MailEditor implements Component<MailEditorAttrs> {
 					if (!this.recipientShowConfidential.has(recipient.address)) this.recipientShowConfidential.set(recipient.address, false)
 
 					return m(PasswordField, {
-						oncreate: (vnode) => this.animateHeight(vnode.dom as HTMLElement, true),
-						onbeforeremove: (vnode) => this.animateHeight(vnode.dom as HTMLElement, false),
+						oncreate: (vnode) => oncreateExpandAnimation(vnode.dom as HTMLElement),
+						onbeforeremove: (vnode) => onbeforeremoveColapseAnimation(vnode.dom as HTMLElement),
 						label: lang.getTranslation("passwordFor_label", { "{1}": recipient.address }),
 						value: this.sendMailModel.getPassword(recipient.address),
 						passwordStrength: this.sendMailModel.getPasswordStrength(recipient),
@@ -1159,17 +1184,6 @@ export class MailEditor implements Component<MailEditorAttrs> {
 				showTemplatePopupInEditor(templateModel, this.editor, null, this.editor.getSelectedText())
 			})
 		}
-	}
-
-	private animateHeight(domElement: HTMLElement, fadein: boolean): AnimationPromise {
-		const childHeight = domElement.offsetHeight
-		if (fadein) {
-			// if this height is not set to 0, there is sometimes a jitter as it will display at full height for a second before the animation
-			domElement.style.height = "0"
-		}
-		return animations.add(domElement, fadein ? height(0, childHeight) : height(childHeight, 0)).then(() => {
-			domElement.style.height = ""
-		})
 	}
 }
 
@@ -1720,54 +1734,86 @@ async function confirmNewEditor(autosaveFacade: AutosaveFacade, minimizedEditorV
 	return false
 }
 
+/**
+ * Process attach params from mailto URL.
+ *
+ * Prompts for confirmation, resolves attachments, check for the size limit.
+ */
+async function processMailtoAttachmentsOnDesktop(fileApp: NativeFileApp, rawAttachmentUrls: readonly string[]): Promise<Attachment[]> {
+	if (!EnvProvider.get().isDesktop()) {
+		throw new ProgrammingError()
+	}
+	// Limit number of attachments as untrusted URL could lock up the app otherwise
+	const attachmentUrls = rawAttachmentUrls.slice(0, 15)
+
+	// Convert files to paths so that they can be displayed to the user in a prompt.
+	// This also has a nice side effect of discarding non-file URLs early, even though it does not touch the file system.
+	const filePaths = (await promiseMap(attachmentUrls, (url) => fileApp.fileUrlToDisplayPath(url))).filter(isNotNull)
+	if (isEmpty(filePaths)) {
+		return []
+	}
+
+	// Prompt user with the file list, make sure the user is aware which files will be attached.
+	// Do this before resolving them (which should be harmless but better be safe).
+	const attachmentsConfirmed = await Dialog.confirm("attachmentWarning_msg", "attachFiles_action", () =>
+		filePaths.map((filePath) =>
+			// for each path show the last part (usually the name) and the whole path
+			m(".flex.col.mt-12", [m(".text-break.selectable", last(filePath.split("/"))), m(".text-break.selectable.smaller", filePath)]),
+		),
+	)
+	if (!attachmentsConfirmed) {
+		return []
+	}
+
+	// If confirmed, resolve the files. This will filter out invalid files and not-actually-a-file files.
+	const resolvedAttachments = (
+		await promiseMap(attachmentUrls, (fileUri) =>
+			fileApp.uriToFileRef(fileUri).catch((e) => {
+				console.log("could not read mailto attachment url at ", fileUri, e)
+				return null
+			}),
+		)
+	).filter(isNotNull)
+	const { attachableFiles, tooBigFiles } = checkAttachmentSize(resolvedAttachments)
+
+	if (tooBigFiles.length > 0) {
+		// Let user know which files won't be attached but still proceed with the rest.
+		await Dialog.message("tooBigAttachment_msg", () => tooBigFiles.map((file) => m(".text-break.selectable", file)))
+	}
+
+	return attachableFiles
+}
+
+/**
+ * Create a mail editor from a possibly untrusted mailto: URL.
+ * @param mailtoUrl
+ * @param confidential if new mail editor should be started in a confidential/E2E mode
+ * @param mailboxDetails what mailbox to use for the editor. Default to user mailbox.
+ */
 export async function newMailtoUrlMailEditor(mailtoUrl: string, confidential: boolean, mailboxDetails?: MailboxDetail): Promise<Dialog | null> {
+	// mailto URL is completely untrusted at this point, treat it as toxic
+	const logins = locator.logins
+
 	const detailsProperties = await getMailboxDetailsAndProperties(mailboxDetails)
+
 	const mailTo = parseMailtoUrl(mailtoUrl)
-	let dataFiles: Attachment[] = []
+	let attachments: readonly Attachment[]
 
-	if (mailTo.attach) {
-		const attach = mailTo.attach
-
-		if (EnvProvider.get().isDesktop()) {
-			const files = await Promise.all(attach.map((uri) => locator.fileApp.readDataFile(uri)))
-			dataFiles = files.filter(isNotNull)
-		}
-		// make sure the user is aware that (and which) files have been attached
-		const keepAttachments =
-			dataFiles.length === 0 ||
-			(await Dialog.confirm("attachmentWarning_msg", "attachFiles_action", () =>
-				dataFiles.map((df, i) =>
-					m(
-						".text-break.selectable.mt-4",
-						{
-							title: attach[i],
-						},
-						df.name,
-					),
-				),
-			))
-
-		if (keepAttachments) {
-			const sizeCheckResult = checkAttachmentSize(dataFiles)
-			dataFiles = sizeCheckResult.attachableFiles
-
-			if (sizeCheckResult.tooBigFiles.length > 0) {
-				await Dialog.message("tooBigAttachment_msg", () => sizeCheckResult.tooBigFiles.map((file) => m(".text-break.selectable", file)))
-			}
-		} else {
-			throw new CancelledError("user cancelled opening mail editor with attachments")
-		}
+	if (EnvProvider.get().isDesktop() && mailTo.attach) {
+		attachments = await processMailtoAttachmentsOnDesktop(locator.fileApp, mailTo.attach)
+	} else {
+		attachments = []
 	}
 
 	return newMailEditorFromTemplate(
 		detailsProperties.mailboxDetails,
 		mailTo.recipients,
 		mailTo.subject || "",
-		appendEmailSignature(mailTo.body || "", locator.logins.getUserController().props),
-		dataFiles,
+		/** bodyText= */ appendEmailSignature(mailTo.body || "", logins.getUserController().props),
+		attachments,
 		confidential,
-		undefined,
-		true, // emails created with mailto should always save as draft
+		/** senderMailAddress= */ undefined,
+		/** initialChangedState= */ true, // emails created with mailto should always save as draft
 	)
 }
 

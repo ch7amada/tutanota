@@ -22,21 +22,19 @@ import { RestClient } from "@tutao/rest-client"
 import { HttpMethod, MediaType } from "../../rest-client/types"
 import { EntityClient } from "../../network/EntityClient"
 import {
-	_encryptString,
-	aes256DecryptWithRecoveryKey,
 	Aes256Key,
-	aes256RandomKey,
-	aesDecrypt,
 	AesKey,
 	base64ToKey,
+	Bcrypt,
 	createAuthVerifier,
 	createAuthVerifierAsBase64Url,
-	encryptKey,
-	generateKeyFromPassphraseBcrypt,
-	generateRandomSalt,
+	CryptoWrapper,
+	KeyEncryption,
 	KeyLength,
 	keyToUint8Array,
+	Randomizer,
 	sha256Hash,
+	SymmetricCipherUtils,
 	SymmetricEncryptionScheme,
 	TotpSecret,
 	TotpVerifier,
@@ -116,6 +114,8 @@ import {
 import { EntityUtils } from "../../instance-pipeline/EntityUtils"
 import { IncomingServerJson } from "../../instance-pipeline/TypeMapper"
 import { isNull } from "../../utils/Utils"
+import { InstanceKeyFacade } from "../base-crypto/InstanceKeyFacade"
+import { InstanceKeySharingRolloutAction } from "../base-crypto/InstanceKeySharingRolloutAction"
 
 EnvProvider.assertWorkerOrNode()
 
@@ -236,6 +236,7 @@ export class LoginFacade implements SessionTypeProvider {
 		private readonly instancePipeline: InstancePipeline,
 		private readonly cryptoFacade: CryptoFacade,
 		private readonly keyRotationFacade: KeyRotationFacade,
+		private readonly instanceKeyFacade: InstanceKeyFacade,
 		/**
 		 *  Only needed so that we can initialize the offline storage after login.
 		 *  This is necessary because we don't know if we'll be persistent or not until the user tries to log in
@@ -255,6 +256,11 @@ export class LoginFacade implements SessionTypeProvider {
 		private readonly rolloutFacade: RolloutFacade,
 		private readonly applicationTypesFacade: ApplicationTypesFacade,
 		private readonly entityMigrator: EntityMigrator,
+		private readonly keyEncryption: KeyEncryption,
+		private readonly cryptoWrapper: CryptoWrapper,
+		private readonly symmetricCipherUtils: SymmetricCipherUtils,
+		private readonly random: Randomizer,
+		private readonly bcrypt: Bcrypt,
 	) {}
 
 	async resetSession(): Promise<void> {
@@ -300,7 +306,7 @@ export class LoginFacade implements SessionTypeProvider {
 		let accessKey: AesKey | null = null
 
 		if (sessionType === SessionType.Persistent) {
-			accessKey = aes256RandomKey()
+			accessKey = this.cryptoWrapper.aes256RandomKey()
 			createSessionData.accessKey = keyToUint8Array(accessKey)
 		}
 		const createSessionReturn = await this.serviceExecutor.execute(SessionService_POST, createSessionData, null)
@@ -328,8 +334,9 @@ export class LoginFacade implements SessionTypeProvider {
 		const credentials = {
 			login: mailAddress,
 			accessToken,
-			encryptedPassword: sessionType === SessionType.Persistent ? uint8ArrayToBase64(_encryptString(neverNull(accessKey), passphrase)) : null,
-			encryptedPassphraseKey: sessionType === SessionType.Persistent ? encryptKey(neverNull(accessKey), userPassphraseKey) : null,
+			encryptedPassword:
+				sessionType === SessionType.Persistent ? uint8ArrayToBase64(this.cryptoWrapper.encryptString(neverNull(accessKey), passphrase)) : null,
+			encryptedPassphraseKey: sessionType === SessionType.Persistent ? this.cryptoWrapper.encryptKey(neverNull(accessKey), userPassphraseKey) : null,
 			userId: sessionData.userId,
 			type: CredentialType.Internal,
 		}
@@ -374,12 +381,12 @@ export class LoginFacade implements SessionTypeProvider {
 		const newPassphraseKeyData = {
 			passphrase,
 			kdfType: targetKdfType,
-			salt: generateRandomSalt(),
+			salt: this.bcrypt.generateRandomSalt(),
 		}
 		const newUserPassphraseKey = await this.deriveUserPassphraseKey(newPassphraseKeyData)
 
 		const currentUserGroupKey = this.userFacade.getCurrentUserGroupKey()
-		const pwEncUserGroupKey = encryptKey(newUserPassphraseKey, currentUserGroupKey.object)
+		const pwEncUserGroupKey = this.cryptoWrapper.encryptKey(newUserPassphraseKey, currentUserGroupKey.object)
 		const newAuthVerifier = createAuthVerifier(newUserPassphraseKey)
 
 		const changeKdfPostIn = createChangeKdfPostIn({
@@ -432,7 +439,7 @@ export class LoginFacade implements SessionTypeProvider {
 		let accessKey: Aes256Key | null = null
 
 		if (persistentSession) {
-			accessKey = aes256RandomKey()
+			accessKey = this.cryptoWrapper.aes256RandomKey()
 			sessionData.accessKey = keyToUint8Array(accessKey)
 		}
 
@@ -448,8 +455,8 @@ export class LoginFacade implements SessionTypeProvider {
 		const credentials = {
 			login: userId,
 			accessToken,
-			encryptedPassword: isNotNull(accessKey) ? uint8ArrayToBase64(_encryptString(accessKey, passphrase)) : null,
-			encryptedPassphraseKey: isNotNull(accessKey) ? encryptKey(accessKey, userPassphraseKey) : null,
+			encryptedPassword: isNotNull(accessKey) ? uint8ArrayToBase64(this.cryptoWrapper.encryptString(accessKey, passphrase)) : null,
+			encryptedPassphraseKey: isNotNull(accessKey) ? this.cryptoWrapper.encryptKey(accessKey, userPassphraseKey) : null,
 			userId,
 			type: CredentialType.External,
 		}
@@ -472,7 +479,7 @@ export class LoginFacade implements SessionTypeProvider {
 	async deriveUserPassphraseKey({ kdfType, passphrase, salt }: PassphraseKeyData): Promise<AesKey> {
 		switch (kdfType) {
 			case KdfType.Bcrypt: {
-				return generateKeyFromPassphraseBcrypt(passphrase, salt, KeyLength.b128)
+				return this.bcrypt.generateKeyFromPassphrase(passphrase, salt, KeyLength.b128)
 			}
 			case KdfType.Argon2id: {
 				return this.argon2idFacade.generateKeyFromPassphrase(passphrase, salt)
@@ -647,11 +654,11 @@ export class LoginFacade implements SessionTypeProvider {
 	): Promise<Nullable<PassphraseAndKey>> {
 		const currentUserPassphraseKey = await this.deriveUserPassphraseKey(currentPasswordKeyData)
 		const currentAuthVerifier = createAuthVerifier(currentUserPassphraseKey)
-		const newPasswordKeyData = { ...newPasswordKeyDataTemplate, salt: generateRandomSalt() }
+		const newPasswordKeyData = { ...newPasswordKeyDataTemplate, salt: this.bcrypt.generateRandomSalt() }
 
 		const newUserPassphraseKey = await this.deriveUserPassphraseKey(newPasswordKeyData)
 		const currentUserGroupKey = this.userFacade.getCurrentUserGroupKey()
-		const pwEncUserGroupKey = encryptKey(newUserPassphraseKey, currentUserGroupKey.object)
+		const pwEncUserGroupKey = this.cryptoWrapper.encryptKey(newUserPassphraseKey, currentUserGroupKey.object)
 		const authVerifier = createAuthVerifier(newUserPassphraseKey)
 		const changePasswordPostIn = createChangePasswordPostIn({
 			code: null,
@@ -671,8 +678,8 @@ export class LoginFacade implements SessionTypeProvider {
 		const sessionData = await this.loadSessionData(accessToken)
 		if (sessionData.accessKey != null) {
 			// if we have an accessKey, this means we are storing the encrypted password locally, in which case we need to store the new one
-			const newEncryptedPassphrase = uint8ArrayToBase64(_encryptString(sessionData.accessKey, newPasswordKeyDataTemplate.passphrase))
-			const newEncryptedPassphraseKey = encryptKey(sessionData.accessKey, newUserPassphraseKey)
+			const newEncryptedPassphrase = uint8ArrayToBase64(this.cryptoWrapper.encryptString(sessionData.accessKey, newPasswordKeyDataTemplate.passphrase))
+			const newEncryptedPassphraseKey = this.cryptoWrapper.encryptKey(sessionData.accessKey, newUserPassphraseKey)
 			return { newEncryptedPassphrase, newEncryptedPassphraseKey }
 		} else {
 			return null
@@ -759,6 +766,7 @@ export class LoginFacade implements SessionTypeProvider {
 			this.typeModelResolver,
 			lazyCrypto,
 			() => this.entityMigrator,
+			this.symmetricCipherUtils,
 		)
 		const entityClient = new EntityClient(eventRestClient, this.typeModelResolver)
 		const createSessionReturn = await this.serviceExecutor.execute(SessionService_POST, sessionData, null) // Don't pass email address to avoid proposing to reset second factor when we're resetting password
@@ -783,13 +791,13 @@ export class LoginFacade implements SessionTypeProvider {
 			extraHeaders: recoverCodeExtraHeaders,
 		})
 		try {
-			const groupKey = aes256DecryptWithRecoveryKey(recoverCodeKey, recoverCodeData.recoverCodeEncUserGroupKey)
-			const salt = generateRandomSalt()
+			const groupKey = this.keyEncryption.aes256DecryptWithRecoveryKey(recoverCodeKey, recoverCodeData.recoverCodeEncUserGroupKey)
+			const salt = this.bcrypt.generateRandomSalt()
 			const newKdfType = DEFAULT_KDF_TYPE
 
 			const newPassphraseKeyData = { kdfType: newKdfType, passphrase: newPassword, salt }
 			const userPassphraseKey = await this.deriveUserPassphraseKey(newPassphraseKeyData)
-			const pwEncUserGroupKey = encryptKey(userPassphraseKey, groupKey)
+			const pwEncUserGroupKey = this.cryptoWrapper.encryptKey(userPassphraseKey, groupKey)
 			const newPasswordVerifier = createAuthVerifier(userPassphraseKey)
 			const postData = createChangePasswordPostIn({
 				code: null,
@@ -893,6 +901,12 @@ export class LoginFacade implements SessionTypeProvider {
 				await this.rolloutFacade.configureRollout(
 					rolloutType,
 					new KeyRotationRolloutAction(this.keyRotationFacade, this.userFacade, rolloutType, userPassphraseKey, modernKdfType, sessionType),
+				)
+			}
+			if (rolloutType === RolloutType.InstanceKeySharing) {
+				await this.rolloutFacade.configureRollout(
+					rolloutType,
+					new InstanceKeySharingRolloutAction(this.instanceKeyFacade, this.userFacade, sessionType),
 				)
 			}
 		}
@@ -1009,7 +1023,7 @@ export class LoginFacade implements SessionTypeProvider {
 		// Previously only the encryptedPassword was stored, now we prefer to use the key if it's already there
 		// and keep passphrase for migrating KDF for now.
 		if (isNotNull(credentials.encryptedPassword)) {
-			const passphrase = utf8Uint8ArrayToString(aesDecrypt(accessKey, base64ToUint8Array(credentials.encryptedPassword)))
+			const passphrase = utf8Uint8ArrayToString(this.cryptoWrapper.aesDecrypt(accessKey, base64ToUint8Array(credentials.encryptedPassword)))
 			if (isExternalUser) {
 				await this.checkOutdatedExternalSalt(credentials, sessionData, externalUserKeyDeriver.salt)
 				userPassphraseKey = await this.deriveUserPassphraseKey({ ...externalUserKeyDeriver, passphrase })
@@ -1017,7 +1031,7 @@ export class LoginFacade implements SessionTypeProvider {
 				const passphraseData = await this.loadUserPassphraseKey(credentials.login, passphrase)
 				userPassphraseKey = passphraseData.userPassphraseKey
 			}
-			const encryptedPassphraseKey = encryptKey(accessKey, userPassphraseKey)
+			const encryptedPassphraseKey = this.cryptoWrapper.encryptKey(accessKey, userPassphraseKey)
 			credentialsWithPassphraseKey = { ...credentials, encryptedPassphraseKey }
 		} else {
 			throw new ProgrammingError("no key or password stored in credentials!")
@@ -1046,7 +1060,7 @@ export class LoginFacade implements SessionTypeProvider {
 		// We only need to migrate the kdf in case an internal user resumes the session.
 		const modernKdfType = this.isModernKdfType(asKdfType(user.kdfVersion))
 		if (!isExternalUser && credentials.encryptedPassword != null && !modernKdfType) {
-			const passphrase = utf8Uint8ArrayToString(aesDecrypt(accessKey, base64ToUint8Array(credentials.encryptedPassword)))
+			const passphrase = utf8Uint8ArrayToString(this.cryptoWrapper.aesDecrypt(accessKey, base64ToUint8Array(credentials.encryptedPassword)))
 			await this.migrateKdfType(KdfType.Argon2id, passphrase, user)
 		}
 
@@ -1217,7 +1231,7 @@ export class LoginFacade implements SessionTypeProvider {
 	}
 
 	private getTotpVerifier(): Promise<TotpVerifier> {
-		return Promise.resolve(new TotpVerifier())
+		return Promise.resolve(new TotpVerifier(this.random))
 	}
 }
 

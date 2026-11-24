@@ -6,15 +6,17 @@ import { EntityRestClient } from "../../../../platform-kit/network/EntityRestCli
 import { MailFacade } from "../../../common/api/worker/facades/lazy/MailFacade"
 import { MailDetails, MailDetailsBlobTypeRef, MailDetailsDraftTypeRef, MailTypeRef } from "@tutao/entities/tutanota"
 import { assertNotNull, first, newPromise } from "@tutao/utils"
-import { isDraft } from "../../mail/model/MailChecks"
+import { isDraft, isMailWithoutDetails } from "../../mail/model/MailChecks"
 import { elementIdPart, listIdPart } from "@tutao/meta"
 import { cryptoUtils } from "@tutao/crypto"
 import { NotAuthorizedError, NotFoundError } from "@tutao/rest-client/error"
 import { CancelledError } from "@tutao/app-env"
 import { MailImportType } from "../../../../entities/tutanota/Utils"
+import { CryptoError } from "@tutao/crypto/error"
 
 export const enum MailIndexingAbortReason {
 	Cancelled = "MailIndexingCancelled",
+	UserCancelled = "MailIndexingUserCancelled",
 	Restarting = "MailIndexingRestarting",
 }
 
@@ -33,10 +35,9 @@ export interface MailIndexer {
 	afterMailUpdated(mailid: IdTuple): Promise<void>
 	beforeImportedMailFinished(importedMailsList: Id, mailImportType: MailImportType): Promise<void>
 	rebuildIndex(user: User): Promise<void>
-	extendMailIndex(user: User, aimedTimestamp: number): Promise<void>
-	cancelMailIndexing(): void
-	doInitialMailIndexing(user: User): Promise<void>
-	enableMailIndexing(): Promise<boolean>
+	extendMailIndex(user: User): Promise<void>
+	cancelMailIndexing(abortReason: MailIndexingAbortReason): void
+	remainingDataInBytes(): Promise<number>
 }
 
 /**
@@ -55,6 +56,11 @@ export function defaultMailIndexerNewMailDownloader(entityClient: EntityClient |
 	return async (mailId: IdTuple) => {
 		try {
 			const mail = await entityClient.load(MailTypeRef, mailId)
+			if (isMailWithoutDetails(mail)) {
+				// The mail is corrupted
+				return null
+			}
+
 			// Will be always there, if it was not updated yet, it will still be set by CryptoFacade
 			const mailOwnerEncSessionKey = assertNotNull(mail._ownerEncSessionKey)
 			let mailDetails: MailDetails
@@ -100,6 +106,9 @@ export function defaultMailIndexerNewMailDownloader(entityClient: EntityClient |
 				return null
 			} else if (e instanceof NotAuthorizedError) {
 				console.log("tried to index mail without permission", mailId)
+				return null
+			} else if (e instanceof CryptoError) {
+				console.warn("tried to index corrupted mail", mailId)
 				return null
 			} else {
 				throw e

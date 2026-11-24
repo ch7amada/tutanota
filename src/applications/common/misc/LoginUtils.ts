@@ -13,7 +13,7 @@ import {
 	NotFoundError,
 	TooManyRequestsError,
 } from "@tutao/rest-client/error"
-import { ApprovalStatus, CancelledError } from "@tutao/app-env"
+import { ApprovalStatus, CancelledError, EnvProvider, PaymentSetup } from "@tutao/app-env"
 import type { ResetAction } from "../login/recover/RecoverLoginDialog"
 import { showProgressDialog } from "../../../ui/dialogs/ProgressDialog"
 import { UserError } from "../api/main/UserError"
@@ -28,7 +28,6 @@ import { Customer } from "@tutao/entities/sys"
 import { AvailablePlans, AvailablePlanType, NewBusinessPlans, PlanType, SubscriptionType } from "../../../entities/sys/Utils"
 
 import { CacheMode } from "../../../platform-kit/instance-pipeline/RestClientOptions"
-import { ClientDetector, ClientPlatform } from "../../../platform-kit/app-env/boot/ClientDetector"
 
 function getAccountAgeInMs(customer: Customer) {
 	return new Date().getTime() - generatedIdToTimestamp(elementIdToId(customer._id))
@@ -116,8 +115,9 @@ export function getLoginErrorMessage(error: Error, isExternalLogin: boolean): Ma
 	switch (error.constructor) {
 		case BadRequestError:
 		case NotAuthenticatedError:
-		case AccessDeactivatedError:
 			return "loginFailed_msg"
+		case AccessDeactivatedError:
+			return "accessDeactivated_msg"
 
 		case AccessBlockedError:
 			return "loginFailedOften_msg"
@@ -173,6 +173,8 @@ export function getLoginErrorStateAndMessage(error: Error): { errorMessage: Mayb
 		state = LoginState.InvalidCredentials
 	} else if (error instanceof AccessExpiredError) {
 		state = LoginState.AccessExpired
+	} else if (error instanceof AccessDeactivatedError) {
+		state = LoginState.AccessDeactivated
 	} else {
 		state = LoginState.UnknownError
 	}
@@ -191,8 +193,14 @@ export function getWebsiteLangFromParams(urlParams: Params): { code: LanguageCod
 }
 
 export function getAvailablePlansFromSubscriptionParameters(params: SubscriptionParameters | null): readonly AvailablePlanType[] {
-	// Default to all available plans if the params do not have the needed information
-	if (params == null || params.type == null) return AvailablePlans
+	if (EnvProvider.get().getPaymentSetup() === PaymentSetup.None) {
+		// there is no point in returning paid plans if payments are not working.
+		return [PlanType.Free]
+	}
+	if (params == null || params.type == null) {
+		// Default to all available plans if the params do not have the needed information
+		return AvailablePlans
+	}
 
 	try {
 		const type = stringToSubscriptionType(params.type)
@@ -204,8 +212,6 @@ export function getAvailablePlansFromSubscriptionParameters(params: Subscription
 			case SubscriptionType.Personal:
 			case SubscriptionType.PaidPersonal:
 				return AvailablePlans
-			case SubscriptionType.FreeOnly:
-				return [PlanType.Free]
 		}
 	} catch (e) {
 		// If params.type is not a valid subscription type, return the default value
@@ -221,8 +227,6 @@ export function stringToSubscriptionType(string: string): SubscriptionType {
 			return SubscriptionType.Personal
 		case "privatepaid":
 			return SubscriptionType.PaidPersonal
-		case "freeonly":
-			return SubscriptionType.FreeOnly
 		default:
 			throw new Error(`Failed to get subscription type: ${string}`)
 	}
@@ -280,8 +284,5 @@ export async function showGiftCardDialog(urlHash: string) {
 
 export async function showRecoverDialog(mailAddress: string, resetAction: ResetAction) {
 	const dialog = await import("../login/recover/RecoverLoginDialog")
-	dialog.show(mailAddress, resetAction)
-}
-export function isFreeSignupOnly() {
-	return ClientDetector.get().getClientPlatform() === ClientPlatform.ANDROID_CALENDAR_APP
+	dialog.showRecoveryDialog(mailAddress, resetAction)
 }

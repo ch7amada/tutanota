@@ -1,13 +1,16 @@
 import type { DesktopNotifier } from "./notifications/DesktopNotifier"
 import { InfoLink, lang } from "../../../ui/utils/LanguageViewModel"
 import type { DesktopConfig } from "./config/DesktopConfig"
-import { assertNotNull, delay, downcast, LazyLoaded, neverNull, newPromise } from "../../../platform-kit/utils"
+import { assertNotNull, delay, downcast, LazyLoaded, newPromise } from "../../../platform-kit/utils"
 import { DesktopNativeCryptoFacade } from "./DesktopNativeCryptoFacade"
 import electron, { App, NativeImage } from "electron"
 import type { UpdaterWrapper } from "./UpdaterWrapper"
 import type { UpdateDownloadedEvent, UpdateInfo } from "electron-updater"
 import { BuildConfigKey, DesktopConfigKey } from "../../../platform-kit/app-env"
 import { FsExports } from "./ElectronExportTypes.js"
+import { WindowManager } from "./DesktopWindowManager"
+import { ScheduledPeriodicId, Scheduler } from "../api/common/utils/Scheduler"
+import { Buffer } from "node:buffer"
 
 /**
  * Wraps electron-updater for Tutanota Desktop
@@ -40,10 +43,10 @@ type IntervalID = ReturnType<typeof setTimeout>
 export type IntervalSetter = (fn: (...arr: Array<unknown>) => unknown, time?: number) => IntervalID
 
 export class ElectronUpdater {
-	private updatePollInterval: IntervalID | null = null
-	private checkUpdateSignature: boolean = false
+	private updatePollInterval: ScheduledPeriodicId | null = null
 	private errorCount: number = 0
 	private readonly logger: UpdaterLogger
+	/** verified update info */
 	private _updateInfo: TutanotaUpdateInfo | null = null
 
 	readonly enableAutoUpdateListener = () => {
@@ -56,13 +59,14 @@ export class ElectronUpdater {
 
 	constructor(
 		private readonly conf: DesktopConfig,
+		private readonly wm: WindowManager,
 		private readonly notifier: DesktopNotifier,
 		private readonly crypto: DesktopNativeCryptoFacade,
 		private readonly app: App,
 		private readonly icon: LazyLoaded<NativeImage>,
 		private readonly updater: UpdaterWrapper,
 		private readonly fs: FsExports,
-		private readonly scheduler: IntervalSetter = setInterval,
+		private readonly scheduler: Scheduler,
 	) {
 		this.logger = {
 			info: (m: string, ...args: any) => console.log.apply(console, [TAG, "INFO:", m].concat(args)),
@@ -94,20 +98,33 @@ export class ElectronUpdater {
 				this.logger.debug("update dl progress:", prg)
 			})
 			.on("update-downloaded", async (info: UpdateDownloadedEvent & { signature: string }) => {
-				this._updateInfo = info
+				// reset updateInfo to make sure we only assign it when it's valid
+				this._updateInfo = null
 				this.logger.info(`update-downloaded: ${JSON.stringify(info)}`)
 				this.stopPolling()
 
-				const data = await this.fs.promises.readFile(info.downloadedFile)
+				let data: Buffer<ArrayBuffer>
+				try {
+					data = await this.fs.promises.readFile(info.downloadedFile)
+				} catch (e) {
+					this.logger.warn("Could not read update file", info.downloadedFile, e)
+					await this.fs.promises.unlink(info.downloadedFile).catch((e) => {
+						this.logger.warn("Could not delete update file", info.downloadedFile, e)
+					})
+					return
+				}
 				const publicKeys: string[] = await this.conf.getConst(BuildConfigKey.pubKeys)
-				const verified = publicKeys.some((pk) => this.verifySignature(pk, assertNotNull(info), data))
-
-				if (verified) {
-					this.notifyAndInstall(info)
+				const skipSignatureCheck = (await this.conf.getConst(BuildConfigKey.checkUpdateSignature)) === false
+				if (skipSignatureCheck) {
+					this.logger.info("Update signature checking is disabled, proceeding with the update")
+					this._updateInfo = info
+					this.showUpdateAvailableNotification()
+				} else if (await this.verifySignature(publicKeys, assertNotNull(info), data)) {
+					this._updateInfo = info
+					this.showUpdateAvailableNotification()
 				} else {
-					this._updateInfo = null
-					this.logger.warn(`all signatures invalid, could not update. Deleting ${info.downloadedFile}.`)
-					this.fs.promises.unlink(info.downloadedFile)
+					this.logger.warn(`could not find valid update signature. Deleting ${info.downloadedFile}.`)
+					await this.fs.promises.unlink(info.downloadedFile)
 				}
 			})
 			.on("error", (e) => {
@@ -154,33 +171,30 @@ export class ElectronUpdater {
 			return
 		}
 
-		this.checkUpdateSignature = await this.conf.getConst(BuildConfigKey.checkUpdateSignature)
-		this.startPolling()
+		await this.startPolling()
 		// the first check is immediate, all others are done with a delay
 		// and random exponential backoff
-		this.checkUpdate()
+		await this.checkUpdate()
 	}
 
-	private verifySignature(pubKey: string, updateInfo: TutanotaUpdateInfo, data: Uint8Array<ArrayBuffer>): boolean {
-		if (!this.checkUpdateSignature) {
-			return true
-		}
-		try {
-			const signature = Buffer.from(updateInfo.signature, "base64")
+	/**
+	 * @return true iff signature from {@param updateInfo} for {@param data} is valid for **any** of {@param pubKeys} .
+	 */
+	private async verifySignature(pubKeys: readonly string[], updateInfo: TutanotaUpdateInfo, data: Uint8Array<ArrayBuffer>): Promise<boolean> {
+		const signature = Buffer.from(updateInfo.signature, "base64")
 
-			if (this.crypto.verifySignature(pubKey, data, signature)) {
-				this.logger.info("Signature verification successful, installing update")
-				return true
+		for (const publicKey of pubKeys) {
+			try {
+				if (this.crypto.verifySignature(publicKey, data, signature)) {
+					this.logger.info("Signature verification successful, installing update")
+					return true
+				}
+			} catch (e) {
+				this.logger.error("Failed to verify update signature", e)
 			}
-		} catch (e) {
-			this.logger.error("Failed to verify update signature", e)
-			return false
 		}
-		return false
-	}
 
-	setUpdateDownloadedListener(listener: () => void): void {
-		this.updater.electronUpdater.on("update-downloaded", listener)
+		return false
 	}
 
 	private async startPolling() {
@@ -189,7 +203,7 @@ export class ElectronUpdater {
 			// between (base value) and (base value) * 2^(errorCount)
 			const multiplier = Math.floor(Math.random() * Math.pow(2, this.errorCount)) + 1
 			const interval = await this.conf.getConst(BuildConfigKey.pollingInterval)
-			this.updatePollInterval = this.scheduler(() => this.checkUpdate(), interval * multiplier)
+			this.updatePollInterval = this.scheduler.schedulePeriodic(() => this.checkUpdate(), interval * multiplier)
 		}
 	}
 
@@ -205,7 +219,7 @@ export class ElectronUpdater {
 	}
 
 	private stopPolling() {
-		clearInterval(neverNull(this.updatePollInterval))
+		this.scheduler.unschedulePeriodic(this.updatePollInterval)
 		this.updatePollInterval = null
 	}
 
@@ -220,7 +234,9 @@ export class ElectronUpdater {
 	 * @returns {Promise} true if an update was downloaded, false otherwise
 	 */
 	private async checkUpdate(): Promise<boolean> {
-		const autoUpdater = await this.updater.electronUpdater
+		// reset updateInfo before we check for updates to ensure we have correct state
+		this._updateInfo = null
+		const autoUpdater = this.updater.electronUpdater
 		return newPromise((resolve) => {
 			let cleanup = (hasUpdate: boolean) => {
 				cleanup = (hasUpdate) => {}
@@ -231,12 +247,13 @@ export class ElectronUpdater {
 			}
 			const updateNotAvailable = () => cleanup(false)
 			const updateDownloaded = () => cleanup(true)
+
+			autoUpdater.once("update-not-available", updateNotAvailable).once("update-downloaded", updateDownloaded).once("error", updateNotAvailable)
+
 			autoUpdater.checkForUpdates().catch((e: Error) => {
 				this.logger.error("Update check failed,", e.message)
 				cleanup(false)
 			})
-
-			autoUpdater.once("update-not-available", updateNotAvailable).once("update-downloaded", updateDownloaded).once("error", updateNotAvailable)
 		})
 	}
 
@@ -266,9 +283,18 @@ export class ElectronUpdater {
 		}
 	}
 
-	private async notifyAndInstall(info: TutanotaUpdateInfo): Promise<void> {
+	private async showUpdateAvailableNotification(): Promise<void> {
+		if (this._updateInfo == null) {
+			this.logger.error("tried to notify about update without validated updateInfo")
+			return
+		}
+		const info = this._updateInfo
 		this.logger.debug("notifying for update")
 		try {
+			for (let applicationWindow of this.wm.getAll()) {
+				await applicationWindow.desktopFacade.appUpdateDownloaded()
+			}
+
 			const icon = await this.icon.getAsync()
 			await this.notifier.showOneShot({
 				title: lang.get("updateAvailable_label", { "{version}": info.version }),
@@ -281,7 +307,11 @@ export class ElectronUpdater {
 		}
 	}
 
-	installUpdate() {
+	private installUpdate() {
+		if (this.updateInfo == null) {
+			this.logger.error("Trying to install the update, even if there is not update info!")
+			return
+		}
 		// We cannot reliably update on macOS if the app is not in the applications folder (e.g. might be in a DMG)
 		if (process.platform === "darwin" && !this.app.isInApplicationsFolder()) {
 			console.log("Not in the Applications folder on an Apple device. Refusing to automatically update.")

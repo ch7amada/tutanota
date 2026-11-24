@@ -1,4 +1,4 @@
-import { assert, assertNotNull, downcast, isNotNull, lazyAsync } from "@tutao/utils"
+import { assert, assertNotNull, downcast, isNotNull, lazyAsync, Nullable } from "@tutao/utils"
 import {
 	type AppName,
 	AppNameEnum,
@@ -7,6 +7,7 @@ import {
 	CardinalityEnum,
 	ClientTypeModel,
 	EntityTypeEnum,
+	isSameTypeRef,
 	ModelAssociation,
 	ModelValue,
 	ServerTypeModel,
@@ -16,6 +17,7 @@ import {
 import { EnvProvider, InvalidModelError, ProgrammingError } from "@tutao/app-env"
 import { ApplicationTypesGetOut } from "./ApplicationTypesFacade"
 import { TypeChecks } from "../app-env/TsTypeChecks"
+import { AccountingInfoTypeRef, OrderProcessingAgreementTypeRef } from "@tutao/entities/sys"
 
 export type ApplicationTypesHash = string
 export type ApplicationVersionSum = number
@@ -227,6 +229,7 @@ export class ServerModelInfo {
 			encrypted: this.asBoolean(typeInfoRecord.encrypted),
 			isPublic: this.asBoolean(typeInfoRecord.isPublic),
 			rootId: this.asString(typeInfoRecord.rootId),
+			targetTypeId: this.asNullableNumber(typeInfoRecord.targetTypeId),
 			values: this.parseModelValues(valuesRecord, this.getClientModelType(app, String(typeId))),
 			associations: this.parseModelAssociations(associationsRecord, this.getClientModelType(app, String(typeId))),
 		} as ServerTypeModel
@@ -243,15 +246,20 @@ export class ServerModelInfo {
 			const serverName = this.asString(modelValueInfoRecord.name)
 			const serverFinal = this.asBoolean(modelValueInfoRecord.final)
 			const serverCardinality = this.ensureVariantOf(CardinalityEnum, String(modelValueInfoRecord.cardinality))
+			const serverTransferredAttributeId = this.asNullableNumber(modelValueInfoRecord.transferredAttributeId)
 
 			const clientModelValue = clientModelType?.values[attrId] ?? null
 
 			if (isNotNull(clientModelValue) && isNotNull(clientModelType)) {
 				const isEncrypted = this.asBoolean(clientModelValue.encrypted)
 				if (isEncrypted && !serverEncrypted) {
-					throw new InvalidModelError(
-						`Trying to parse encrypted value as unencrypted for: ${clientModelType?.app}:${clientModelType.id}:${clientModelValue.id}`,
-					)
+					//the following exceptions are required as we are making the types unencrypted and can be removed once the client model types are also unencrypted
+					const typeRef = new TypeRef(clientModelType.app, clientModelType.id)
+					if (!isSameTypeRef(AccountingInfoTypeRef, typeRef) && !isSameTypeRef(OrderProcessingAgreementTypeRef, typeRef)) {
+						throw new InvalidModelError(
+							`Trying to parse encrypted value as unencrypted for: ${clientModelType?.app}:${clientModelType.id}:${clientModelValue.id}`,
+						)
+					}
 				}
 
 				const clientValueType = clientModelValue.type
@@ -278,6 +286,7 @@ export class ServerModelInfo {
 				type: serverValueType,
 				encrypted: serverEncrypted,
 				cardinality: serverCardinality,
+				transferredAttributeId: serverTransferredAttributeId,
 			}
 
 			Object.assign(values, { [modelValue.id]: modelValue })
@@ -304,6 +313,7 @@ export class ServerModelInfo {
 				dependency: TypeChecks.isString(associationInfoRecord.dependency)
 					? this.ensureVariantOf(AppNameEnum, associationInfoRecord.dependency as string)
 					: null,
+				transferredAttributeId: this.asNullableNumber(associationInfoRecord.transferredAttributeId),
 			}
 
 			Object.assign(associations, { [modelAssociation.id]: modelAssociation })
@@ -353,6 +363,12 @@ export class ServerModelInfo {
 
 	private asNumber(value: any): number {
 		if (value != null && (TypeChecks.isString(value) || TypeChecks.isNumber(value))) return parseInt(value.toString())
+		else throw new Error(`value ${value} is not number compatible`)
+	}
+
+	private asNullableNumber(value: any): Nullable<number> {
+		if (value == null) return null
+		if (TypeChecks.isString(value) || TypeChecks.isNumber(value)) return parseInt(value.toString())
 		else throw new Error(`value ${value} is not number compatible`)
 	}
 

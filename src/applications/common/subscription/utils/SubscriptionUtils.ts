@@ -1,5 +1,5 @@
-import { TranslationKey } from "../../../../ui/utils/LanguageViewModel"
-import { assertNotNull, downcast, isEmpty, LazyLoaded } from "@tutao/utils"
+import { InfoLink, lang, Translation, TranslationKey } from "../../../../ui/utils/LanguageViewModel"
+import { downcast, isEmpty, LazyLoaded } from "@tutao/utils"
 import { locator } from "../../api/main/CommonLocator"
 import { ApprovalStatus, CertificateType, EnvProvider, getClientType, PaymentSetup, ProgrammingError, UpgradePromptType } from "@tutao/app-env"
 import { IServiceExecutor } from "../../../../platform-kit/network/ServiceRequest.js"
@@ -356,9 +356,21 @@ function hasMatchingExternalSubscription(lastBooking: Booking | null): boolean {
 	return false
 }
 
+export async function getExternalSubscriptionError(foreignKey: string | null = null): Promise<Translation | null> {
+	// We pass `null` because we expect no subscription when upgrading
+	const externalSubscriptionOwnership = await queryExternalSubscriptionOwnership(foreignKey)
+	if (externalSubscriptionOwnership === MobilePaymentSubscriptionOwnership.Unknown) {
+		return lang.getTranslation("appStoreSubscriptionError_msg")
+	}
+	if (externalSubscriptionOwnership !== MobilePaymentSubscriptionOwnership.NoSubscription) {
+		return lang.getTranslation("storeMultiSubscriptionError_msg", { "{AppStorePayment}": InfoLink.AppStorePayment })
+	}
+	return null
+}
+
 /** Check if the latest transaction using the current Store Account belongs to the user */
-export async function queryExternalSubscriptionOwnership(userIdBytes: Uint8Array<ArrayBuffer> | null): Promise<MobilePaymentSubscriptionOwnership> {
-	return await locator.mobilePaymentsFacade.queryExternalSubscriptionOwnership(userIdBytes)
+export async function queryExternalSubscriptionOwnership(foreignKey: string | null): Promise<MobilePaymentSubscriptionOwnership> {
+	return await locator.mobilePaymentsFacade.queryExternalSubscriptionOwnership(foreignKey)
 }
 
 // we can't do the upgrade from the client because apple or google is supposed to contact us.
@@ -464,7 +476,7 @@ export function getPriceStr({ priceAndConfigProvider, targetPlan, paymentInterva
  * If a discount is applied, `referencePriceStr` will show the normal yearly price instead. Otherwise, `referencePriceStr` will be `undefined`.
  */
 export function getApplePriceStr({ priceAndConfigProvider, targetPlan, paymentInterval }: GetPriceStrProps): GetPriceStrReturn {
-	const applePrices = priceAndConfigProvider.getMobilePrices().get(PlanTypeToName[targetPlan].toLowerCase())
+	const applePrices = priceAndConfigProvider.getMobilePrices()?.get(PlanTypeToName[targetPlan].toLowerCase())
 	if (!applePrices) {
 		console.warn("Cannot get the apple prices")
 		return { priceStr: "", referencePriceStr: "" }
@@ -474,7 +486,7 @@ export function getApplePriceStr({ priceAndConfigProvider, targetPlan, paymentIn
 	let priceStr: string
 	let referencePriceStr: string | undefined = undefined
 	if (paymentInterval === PaymentInterval.Yearly) {
-		if (priceAndConfigProvider.getIosIntroOfferEligibility()) {
+		if (priceAndConfigProvider.isEligibleForIntroOffer()) {
 			priceStr = displayOfferYearlyPerYear ?? displayYearlyPerYear
 			referencePriceStr = displayOfferYearlyPerYear ? displayYearlyPerYear : undefined
 		} else {
@@ -496,7 +508,7 @@ export function getRawApplePrice({ priceAndConfigProvider, targetPlan, paymentIn
 	referencePrice: number
 } {
 	const planKey = PlanTypeToName[targetPlan].toLowerCase()
-	const applePrices = priceAndConfigProvider.getMobilePrices().get(planKey)
+	const applePrices = priceAndConfigProvider.getMobilePrices()?.get(planKey)
 	if (!applePrices) {
 		throw new Error("Cannot get the apple prices of plan: " + planKey)
 	}
@@ -506,7 +518,7 @@ export function getRawApplePrice({ priceAndConfigProvider, targetPlan, paymentIn
 	let referencePrice: number
 	if (paymentInterval === PaymentInterval.Yearly) {
 		referencePrice = rawYearlyPerYear
-		if (priceAndConfigProvider.getIosIntroOfferEligibility()) {
+		if (priceAndConfigProvider.isEligibleForIntroOffer()) {
 			price = rawOfferYearlyPerYear ?? rawYearlyPerYear
 		} else {
 			price = rawYearlyPerYear

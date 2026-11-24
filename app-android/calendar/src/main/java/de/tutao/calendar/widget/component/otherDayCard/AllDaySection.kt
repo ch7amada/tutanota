@@ -39,7 +39,7 @@ fun AllDaySectionPreview() {
 	AllDaySection(
 		allDayEvents = listOf(
 			UIEvent(
-				"calendarId", IdTuple("list", "elemnt"), "dd55ff", "My all day", "", "", true
+				"calendarId", IdTuple("list", "elemnt"), "dd55ff", "My all day", "", "", true, ""
 			)
 		)
 	)
@@ -53,7 +53,7 @@ fun AllDaySectionBirthdayPreview() {
 	AllDaySection(
 		allDayEvents = listOf(
 			UIEvent(
-				"calendarId", IdTuple("list", "elemnt"), "aa55ff", "Jane Birthday", "", "", true, true
+				"calendarId", IdTuple("list", "elemnt"), "aa55ff", "Jane Birthday", "", "", true, ""
 			)
 		)
 	)
