@@ -1,6 +1,6 @@
 import o from "@tutao/otest"
 import { argbFromHex, Contrast, CorePalette, DynamicScheme, Hct, hexFromArgb, TonalPalette } from "@material/material-color-utilities"
-import { themes } from "../../../src/ui/builtinThemes.js"
+import { generateThemes } from "../../../src/ui/builtinThemes.js"
 import { fillMissingColorRoles, Theme } from "../../../src/ui/theme.js"
 import { hexToRgb } from "../../../src/ui/base/Color.js"
 import { downcast } from "../../../src/platform-kit/utils"
@@ -184,7 +184,7 @@ function generateMailPalette(isDark: boolean): Record<(typeof MAIL_PALETTE_ROLES
 o.spec("builtin themes", () => {
 	for (const base of ["light", "dark"] as const) {
 		o.spec(`Mail ${base}`, () => {
-			const theme = () => themes()[base]
+			const theme = () => generateThemes()[base]
 
 			o.test("Material 3 roles match the palette recipe", () => {
 				const expected = generateMailPalette(base === "dark")
@@ -228,7 +228,7 @@ o.spec("builtin themes", () => {
 			"shadow",
 		] as const
 		for (const themeId of ["light_secondary", "dark_secondary"] as const) {
-			const theme = themes()[themeId]
+			const theme = generateThemes()[themeId]
 			const withoutAddedRoles: Partial<Theme> = { ...theme }
 			for (const role of addedRoles) delete withoutAddedRoles[role]
 			const derived = fillMissingColorRoles(withoutAddedRoles as Theme, withoutAddedRoles)
@@ -240,7 +240,7 @@ o.spec("builtin themes", () => {
 })
 
 o.spec("fillMissingColorRoles", () => {
-	const base = () => themes().light
+	const base = () => generateThemes().light
 
 	o.test("derives missing roles from customized colors instead of keeping the base theme's", () => {
 		const customizations: Partial<Theme> = { primary: "#0040ff", surface: "#ffffff", surface_container: "#eeeeee", on_surface: "#111111" }

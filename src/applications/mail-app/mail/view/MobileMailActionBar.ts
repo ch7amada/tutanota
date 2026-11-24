@@ -47,13 +47,13 @@ export class MobileMailActionBar implements Component<MobileMailActionBarAttrs> 
 	}
 
 	private reportNotSpamButton({ reportNotSpamAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
-		return (
-			reportNotSpamAction && {
-				label: "reportNotSpam_action",
-				click: reportNotSpamAction,
-				icon: Icons.BugCrossedFilled,
-			}
-		)
+		return reportNotSpamAction
+			? {
+					label: "reportNotSpam_action",
+					click: reportNotSpamAction,
+					icon: Icons.BugCrossedFilled,
+				}
+			: null
 	}
 
 	private moveButton({ moveMailsAction }: MobileMailActionBarAttrs): FloatingToolbarAction | null {
