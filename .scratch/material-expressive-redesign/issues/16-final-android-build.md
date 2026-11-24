@@ -25,3 +25,10 @@ The early Android test build (old ticket 06) was dropped on 2026-10-30: the user
 - Output: `artifacts/app-android/tutanota-app-tutao-release-<version>.apk`; install with `adb install` after uninstalling the official app (different signature).
 
 2026-10-30: the user installed the APK on their phone, tested it and reported it works. Closed.
+
+2026-11-24 release rebuild (after merging upstream v371.261123.0):
+- The machine changed since 2026-10-30: `~/emsdk` and `~/.tuta-keystore` were gone. Reinstalled emsdk 3.1.59 to `~/emsdk`. The old keystore was lost, so a NEW self-signed keystore was created (`~/.tuta-keystore/tutanota-redesign.jks`, alias `tuta`, env in `~/.tuta-keystore/env.sh`). Because the signing key changed, the old APK must be uninstalled before installing this one.
+- JDK 21 is now a mise install: `mise where java` → `~/.local/share/mise/installs/java/21.0.13+9.0.LTS`.
+- Android SDK is at `~/Android/Sdk`; `app-android/local.properties` was repointed to it.
+- Build (same as before, new paths): `source ~/emsdk/emsdk_env.sh; export PATH="$HOME/emsdk/upstream/bin:$HOME/Android/Sdk/platform-tools:$PATH" ANDROID_HOME=$HOME/Android/Sdk JAVA_HOME="$(mise where java)"; export PATH="$JAVA_HOME/bin:$PATH"; source ~/.tuta-keystore/env.sh; LANG=en_US.UTF-8 node android prod -b release`
+- The node test suite needs `LANG=en_US.UTF-8` on this machine (default `de_DE` breaks PriceUtilsTest's `Intl.NumberFormat` assertions).
